@@ -6,6 +6,7 @@ module air_composition
    use runtime_obj,          only: unset_real, unset_int
    use phys_vars_init_check, only: std_name_len
    use physics_types,        only: cpairv, rairv, cappav, mbarv, zvirv
+   use physics_types,        only: cp_or_cv_dycore
 
    implicit none
    private
@@ -504,11 +505,15 @@ CONTAINS
    !-------------------------------------------------------------------------
    !===========================================================================
 
-   subroutine air_composition_update(mmr, ncol, to_moist_factor)
+   subroutine air_composition_update(mmr, ncol, vcoord, to_moist_factor)
+      use dyn_tests_utils, only: vc_height, vc_moist_pressure, vc_dry_pressure
 
       real(kind_phys),           intent(in) :: mmr(:,:,:) ! constituents array
       integer,                   intent(in) :: ncol       ! number of columns
+      integer,                   intent(in) :: vcoord     ! vertical coordinate specifier for dycore
       real(kind_phys), optional, intent(in) :: to_moist_factor(:,:)
+
+      character(len=*), parameter :: subname = 'air_composition_update'
 
       call get_R_dry(mmr(:ncol, :, :), thermodynamic_active_species_idx, &
            rairv(:ncol, :), fact=to_moist_factor)
@@ -518,6 +523,30 @@ CONTAINS
            mbarv(:ncol,:), fact=to_moist_factor)
 
       cappav(:ncol,:) = rairv(:ncol,:) / cpairv(:ncol,:)
+
+      ! update enthalpy or internal energy scaling factor for energy consistency with CAM physics
+      ! FIXME hplin 9/5/24: why is air_composition_update in CAM-SIMA to_moist_factor
+      !                     whereas water_composition_update in CAM to_dry_factor.
+      ! get_cp_dry implementation appears to be the same?, but
+      ! get_cp implementation appears to take an 1/factor.
+      ! Nothing in CAM-SIMA passes to_moist_factor to cam_thermo_update for now, so it is not possible
+      ! to know which is correct. In CAM, physpkg.F90 calls cam_thermo_water_update with to_dry_factor=pdel/pdeldry.
+      if (vcoord == vc_moist_pressure) then
+         ! FV: moist pressure vertical coordinate does not need update.
+      else if (vcoord == vc_dry_pressure) then
+         ! SE
+         call get_cp(mmr(:ncol,:,:), .false., cp_or_cv_dycore(:ncol,:), &
+                     dp_dry=to_moist_factor, active_species_idx_dycore=thermodynamic_active_species_idx)
+      else if (vcoord == vc_height) then
+         ! MPAS
+         ! Note hplin 9/5/24: the below code is "unused and untested" and reproduced verbatim (together with this warning)
+         ! from CAM air_composition.F90
+         call get_R(mmr(:ncol,:,:), thermodynamic_active_species_idx, cp_or_cv_dycore(:ncol,:), &
+                    fact=to_moist_factor, R_dry=rairv(:ncol,:))
+         cp_or_cv_dycore(:ncol,:) = cp_or_cv_dycore(:ncol,:) * (cpairv(:ncol,:) - rairv(:ncol,:)) / rairv(:ncol,:)
+      else
+         call endrun(subname//': dycore vcoord not supported')
+      end if
 
    end subroutine air_composition_update
 

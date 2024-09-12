@@ -396,6 +396,13 @@
       <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
       <initial_value>zvir</initial_value>
     </variable>
+    <variable local_name="cp_or_cv_dycore"
+              standard_name="enthalpy_or_internal_energy_scaling_factor_for_energy_consistency?"
+              units="1" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <long_name>Enthalpy or internal energy scaling factor for energy consistency</long_name>
+      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+    </variable>
     <!-- Constituent Variables -->
     <!-- These are only used to set possible IC file input names, as the constituents object handles allocation. -->
     <variable local_name="q"

@@ -1554,20 +1554,23 @@ CONTAINS
    !
    !***************************************************************************
    !
-   subroutine get_hydrostatic_energy_1hd(tracer, pdel, cp_or_cv, U, V, T,     &
-        vcoord, ps, phis, z_mid, dycore_idx, qidx, te, se, ke,                &
-        wv, H2O, liq, ice)
+   subroutine get_hydrostatic_energy_1hd(tracer, moist_mixing_ratio, pdel_in, &
+        cp_or_cv, U, V, T, vcoord, ptop, phis, z_mid, dycore_idx, qidx,       &
+        te, se, po, ke, wv, H2O, liq, ice)
 
       use cam_logfile,     only: iulog
       use dyn_tests_utils, only: vc_height, vc_moist_pressure, vc_dry_pressure
       use air_composition, only: wv_idx
-      use physconst,       only: gravit, latvap, latice
+      use physconst,       only: rga, latvap, latice
 
       ! Dummy arguments
       ! tracer: tracer mixing ratio
+      !
+      ! note - if pdeldry passed to subroutine then tracer mixing ratio must be dry
       real(kind_phys), intent(in)            :: tracer(:,:,:)
+      logical, intent(in)             :: moist_mixing_ratio
       ! pdel: pressure level thickness
-      real(kind_phys), intent(in)            :: pdel(:,:)
+      real(kind_phys), intent(in)            :: pdel_in(:,:)
       ! cp_or_cv: dry air heat capacity under constant pressure or
       !           constant volume (depends on vcoord)
       real(kind_phys), intent(in)            :: cp_or_cv(:,:)
@@ -1575,7 +1578,7 @@ CONTAINS
       real(kind_phys), intent(in)            :: V(:,:)
       real(kind_phys), intent(in)            :: T(:,:)
       integer,         intent(in)            :: vcoord ! vertical coordinate
-      real(kind_phys), intent(in),  optional :: ps(:)
+      real(kind_phys), intent(in),  optional :: ptop(:)
       real(kind_phys), intent(in),  optional :: phis(:)
       real(kind_phys), intent(in),  optional :: z_mid(:,:)
       ! dycore_idx: use dycore index for thermodynamic active species
@@ -1588,8 +1591,12 @@ CONTAINS
       real(kind_phys), intent(out), optional :: te (:)
       ! KE: vertically integrated kinetic energy
       real(kind_phys), intent(out), optional :: ke (:)
-      ! SE: vertically integrated internal+geopotential energy
+      ! SE: vertically integrated enthalpy (pressure coordinate)
+      !     or internal energy (z coordinate)
       real(kind_phys), intent(out), optional :: se (:)
+      ! PO: vertically integrated PHIS term (pressure coordinate)
+      !     or potential energy (z coordinate)
+      real(kind_phys), intent(out), optional :: po (:)
       ! WV: vertically integrated water vapor
       real(kind_phys), intent(out), optional :: wv (:)
       ! liq: vertically integrated liquid
@@ -1599,10 +1606,12 @@ CONTAINS
 
       ! Local variables
       real(kind_phys) :: ke_vint(SIZE(tracer, 1))  ! Vertical integral of KE
-      real(kind_phys) :: se_vint(SIZE(tracer, 1))  ! Vertical integral of SE
+      real(kind_phys) :: se_vint(SIZE(tracer, 1))  ! Vertical integral of enthalpy or internal energy
+      real(kind_phys) :: po_vint(SIZE(tracer, 1))  ! Vertical integral of PHIS or potential energy
       real(kind_phys) :: wv_vint(SIZE(tracer, 1))  ! Vertical integral of wv
       real(kind_phys) :: liq_vint(SIZE(tracer, 1)) ! Vertical integral of liq
       real(kind_phys) :: ice_vint(SIZE(tracer, 1)) ! Vertical integral of ice
+      real(kind_phys) :: pdel(SIZE(tracer, 1),SIZE(tracer, 2)) ! moist pressure level thickness
       real(kind_phys)                      :: latsub ! latent heat of sublimation
 
       integer                       :: ierr
@@ -1649,51 +1658,56 @@ CONTAINS
          wvidx = wv_idx
       end if
 
+      if (moist_mixing_ratio) then
+        pdel     = pdel_in
+      else
+        pdel     = pdel_in
+        do qdx = dry_air_species_num+1, thermodynamic_active_species_num
+          pdel(:,:) = pdel(:,:) + pdel_in(:, :)*tracer(:,:,species_idx(qdx))
+        end do
+      end if
+
+      ke_vint = 0._kind_phys
+      se_vint = 0._kind_phys
       select case (vcoord)
       case(vc_moist_pressure, vc_dry_pressure)
-         if ((.not. present(ps)) .or. (.not. present(phis))) then
-            write(iulog, *) subname, ' ps and phis must be present for ',     &
+         if (.not. present(ptop).or. (.not. present(phis))) then
+            write(iulog, *) subname, ' ptop and phis must be present for ',     &
                  'moist/dry pressure vertical coordinate'
-            call endrun(subname//':  ps and phis must be present for '//      &
+            call endrun(subname//':  ptop and phis must be present for '//      &
                  'moist/dry pressure vertical coordinate')
          end if
-         ke_vint = 0._kind_phys
-         se_vint = 0._kind_phys
-         wv_vint = 0._kind_phys
+         po_vint = ptop
          do kdx = 1, SIZE(tracer, 2)
             do idx = 1, SIZE(tracer, 1)
                ke_vint(idx) = ke_vint(idx) + (pdel(idx, kdx) *                &
-                    0.5_kind_phys * (U(idx, kdx)**2 + V(idx, kdx)**2) / gravit)
+                    0.5_kind_phys * (U(idx, kdx)**2 + V(idx, kdx)**2)) * rga
                se_vint(idx) = se_vint(idx) + (T(idx, kdx) *                   &
-                    cp_or_cv(idx, kdx) * pdel(idx, kdx) / gravit)
-               wv_vint(idx) = wv_vint(idx) + (tracer(idx, kdx, wvidx) *       &
-                    pdel(idx, kdx) / gravit)
+                    cp_or_cv(idx, kdx) * pdel(idx, kdx) * rga)
+               po_vint(idx) =  po_vint(idx)+pdel(idx, kdx)
+
             end do
          end do
          do idx = 1, SIZE(tracer, 1)
-            se_vint(idx) = se_vint(idx) + (phis(idx) * ps(idx) / gravit)
+            po_vint(idx) =  (phis(idx) * po_vint(idx) * rga)
          end do
       case(vc_height)
-         if (.not. present(z_mid)) then
-            write(iulog, *) subname,                                          &
-                 ' z_mid must be present for height vertical coordinate'
-            call endrun(subname//': z_mid must be present for height '//      &
-                 'vertical coordinate')
+         if (.not. present(phis)) then
+            write(iulog, *) subname, ' phis must be present for ',     &
+                 'heigt-based vertical coordinate'
+            call endrun(subname//':  phis must be present for '//      &
+                 'height-based vertical coordinate')
          end if
-         ke_vint = 0._kind_phys
-         se_vint = 0._kind_phys
-         wv_vint = 0._kind_phys
+         po_vint = 0._kind_phys
          do kdx = 1, SIZE(tracer, 2)
             do idx = 1, SIZE(tracer, 1)
                ke_vint(idx) = ke_vint(idx) + (pdel(idx, kdx) *                &
-                    0.5_kind_phys * (U(idx, kdx)**2 + V(idx, kdx)**2) / gravit)
+                    0.5_kind_phys * (U(idx, kdx)**2 + V(idx, kdx)**2) * rga)
                se_vint(idx) = se_vint(idx) + (T(idx, kdx) *                   &
-                    cp_or_cv(idx, kdx) * pdel(idx, kdx) / gravit)
+                    cp_or_cv(idx, kdx) * pdel(idx, kdx) * rga)
                ! z_mid is height above ground
-               se_vint(idx) = se_vint(idx) + (z_mid(idx, kdx) +               &
-                    phis(idx) / gravit) * pdel(idx, kdx)
-               wv_vint(idx) = wv_vint(idx) + (tracer(idx, kdx, wvidx) *       &
-                    pdel(idx, kdx) / gravit)
+               po_vint(idx) = po_vint(idx) + (z_mid(idx, kdx) +               &
+                    phis(idx) * rga) * pdel(idx, kdx)
             end do
          end do
       case default
@@ -1701,26 +1715,39 @@ CONTAINS
          call endrun(subname//': vertical coordinate not supported')
       end select
       if (present(te)) then
-         te  = se_vint + ke_vint
+         te  = se_vint + po_vint + ke_vint
       end if
       if (present(se)) then
          se = se_vint
       end if
+      if (present(po)) then
+         po = po_vint
+      end if
       if (present(ke)) then
          ke = ke_vint
-      end if
-      if (present(wv)) then
-         wv = wv_vint
       end if
       !
       ! vertical integral of total liquid water
       !
+      if (.not.moist_mixing_ratio) then
+        pdel = pdel_in! set pseudo density to dry
+      end if
+
+      wv_vint = 0._kind_phys
+      do kdx = 1, SIZE(tracer, 2)
+        do idx = 1, SIZE(tracer, 1)
+          wv_vint(idx) = wv_vint(idx) + (tracer(idx, kdx, wvidx) *       &
+               pdel(idx, kdx) * rga)
+        end do
+      end do
+      if (present(wv)) wv = wv_vint
+
       liq_vint = 0._kind_phys
       do qdx = 1, thermodynamic_active_species_liq_num
          do kdx = 1, SIZE(tracer, 2)
             do idx = 1, SIZE(tracer, 1)
-               liq_vint(idx) = liq_vint(idx) + (pdel(idx, kdx) *              &
-                    tracer(idx, kdx, species_liq_idx(qdx)) / gravit)
+               liq_vint(idx) = liq_vint(idx) + (pdel(idx, kdx) *         &
+                    tracer(idx, kdx, species_liq_idx(qdx)) * rga)
             end do
          end do
       end do
@@ -1734,7 +1761,7 @@ CONTAINS
          do kdx = 1, SIZE(tracer, 2)
             do idx = 1, SIZE(tracer, 1)
                ice_vint(idx) = ice_vint(idx) + (pdel(idx, kdx) *              &
-                    tracer(idx, kdx, species_ice_idx(qdx))  / gravit)
+                    tracer(idx, kdx, species_ice_idx(qdx))  * rga)
             end do
          end do
       end do
@@ -1762,7 +1789,6 @@ CONTAINS
          end select
       end if
       deallocate(species_idx, species_liq_idx, species_ice_idx)
-
    end subroutine get_hydrostatic_energy_1hd
 
    !===========================================================================
