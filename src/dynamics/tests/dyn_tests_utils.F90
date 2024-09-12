@@ -20,4 +20,10 @@ module dyn_tests_utils
   integer, parameter :: vc_height         = 2 ! Height vertical coord
   public :: vc_moist_pressure, vc_dry_pressure, vc_height
 
+!> \section arg_table_dyn_tests_utils  Argument Table
+!! \htmlinclude dyn_tests_utils.html
+  integer :: vc_dycore  ! vertical coordinate of dynamical core - set in dyn_comp.F90
+  integer :: vc_physics ! vertical coordinate of physics - set in physconst.F90
+  public  :: vc_dycore, vc_physics
+
 end module dyn_tests_utils

@@ -580,6 +580,7 @@ subroutine dyn_init(cam_runtime_opts, dyn_in, dyn_out)
    use control_mod,        only: runtype, raytau0, raykrange, rayk0, molecular_diff, nu_top
    use test_fvm_mapping,   only: test_mapping_addfld
    use control_mod,        only: vert_remap_uvTq_alg, vert_remap_tracer_alg
+   use dyn_tests_utils,    only: vc_dycore, vc_dry_pressure
 
    ! Dummy arguments:
    type(runtime_options), intent(in)  :: cam_runtime_opts
@@ -641,6 +642,8 @@ subroutine dyn_init(cam_runtime_opts, dyn_in, dyn_out)
    real(r8) :: tau0, krange, otau0, scale
    real(r8) :: km_sponge_factor_local(nlev+1)
    !----------------------------------------------------------------------------
+   ! Set dynamical core vertical coordinate
+   vc_dycore = vc_dry_pressure
 
    ! Now allocate and set condenstate vars
    allocate(cnst_name_gll(qsize), stat=iret) ! constituent names for gll tracers
