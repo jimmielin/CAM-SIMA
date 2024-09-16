@@ -16,6 +16,7 @@
   <metadata_file>$SRCROOT/src/data/ref_pres.meta</metadata_file>
   <metadata_file>$SRCROOT/src/dynamics/utils/vert_coord.meta</metadata_file>
   <metadata_file>$SRCROOT/src/dynamics/utils/hycoef.meta</metadata_file>
+  <metadata_file>$SRCROOT/src/dynamics/tests/dyn_tests_utils.meta</metadata_file>
   <!-- Variables registered to physics_types -->
   <file name="physics_types" type="module">
     <use module="ccpp_kinds" reference="kind_phys"/>
@@ -254,7 +255,7 @@
     <!-- Timestep properties -->
     <variable local_name="is_first_timestep"
               standard_name="is_first_timestep"
-              units="flag" type="logical" access="protected">
+              units="flag" type="logical">
       <long_name>flag indicating if is first timestep of initial run</long_name>
     </variable>
     <!-- State tendencies -->
@@ -422,8 +423,8 @@
       <initial_value>zvir</initial_value>
     </variable>
     <variable local_name="cp_or_cv_dycore"
-              standard_name="enthalpy_or_internal_energy_scaling_factor_for_energy_consistency?"
-              units="1" type="real" kind="kind_phys"
+              standard_name="enthalpy_or_internal_energy_scaling_factor_for_energy_consistency_tbd"
+              units="J kg-1 K-1" type="real" kind="kind_phys"
               allocatable="allocatable">
       <long_name>Enthalpy or internal energy scaling factor for energy consistency</long_name>
       <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>

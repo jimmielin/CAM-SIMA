@@ -220,7 +220,7 @@ CONTAINS
    subroutine cam_thermo_dry_air_update(mmr, T, ncol, update_thermo_variables, to_dry_factor)
       use air_composition, only: dry_air_composition_update
       use air_composition, only: update_zvirv
-      use string_utils,    only: int2str
+      use string_utils,    only: to_str
 
       real(kind_phys),    intent(in) :: mmr(:,:,:) ! constituents array (mmr = dry mixing ratio, if not use to_dry_factor to convert)
       real(kind_phys),    intent(in) :: T(:,:)     ! temperature
@@ -1579,6 +1579,7 @@ CONTAINS
       use cam_logfile,     only: iulog
       use dyn_tests_utils, only: vc_height, vc_moist_pressure, vc_dry_pressure
       use air_composition, only: wv_idx
+      use air_composition, only: dry_air_species_num
       use physconst,       only: rga, latvap, latice
 
       ! Dummy arguments

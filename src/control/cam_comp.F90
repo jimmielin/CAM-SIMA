@@ -152,7 +152,7 @@ CONTAINS
       dtime_phys = 0.0_r8
       call mark_as_initialized('timestep_for_physics')
 
-      is_first_timestep = is_first_step()
+      is_first_timestep = .true.
       call mark_as_initialized('is_first_timestep')
 
       call init_pio_subsystem()
