@@ -33,8 +33,10 @@ module cam_thermo
 
    ! cam_thermo_init: Initialize constituent dependent properties
    public :: cam_thermo_init
-   ! cam_thermo_update: Update constituent dependent properties
-   public :: cam_thermo_update
+   ! cam_thermo_dry_air_update: Update dry air composition dependent properties
+   public :: cam_thermo_dry_air_update
+   ! cam_thermo_water_update: Update water dependent properties
+   public :: cam_thermo_water_update
    ! get_enthalpy: enthalpy quantity = dp*cp*T
    public :: get_enthalpy
    ! get_virtual_temp: virtual temperature
@@ -208,51 +210,67 @@ CONTAINS
 
    !===========================================================================
 
-   !***************************************************************************
-   !
-   ! cam_thermo_update: update species dependent constants for physics
    !
    !***************************************************************************
    !
-   subroutine cam_thermo_update(mmr, T, ncol, update_thermo_variables, to_moist_factor)
-      use air_composition, only: air_composition_update, update_zvirv
-      use string_utils,    only: to_str
+   ! cam_thermo_dry_air_update: update dry air species dependent constants for physics
+   !
+   !***************************************************************************
+   !
+   subroutine cam_thermo_dry_air_update(mmr, T, ncol, update_thermo_variables, to_dry_factor)
+      use air_composition, only: dry_air_composition_update
+      use air_composition, only: update_zvirv
+      use string_utils,    only: int2str
+
+      real(kind_phys),    intent(in) :: mmr(:,:,:) ! constituents array (mmr = dry mixing ratio, if not use to_dry_factor to convert)
+      real(kind_phys),    intent(in) :: T(:,:)     ! temperature
+      integer,            intent(in) :: ncol       ! number of columns
+      logical,            intent(in) :: update_thermo_variables ! true: calculate composition-dependent thermo variables
+                                                                ! false: do not calculate composition-dependent thermo variables
+      real(kind_phys), optional, intent(in) :: to_dry_factor(:,:) ! if mmr moist convert
+
+      ! Local vars
+      real(kind_phys) :: sponge_factor(SIZE(mmr, 2))
+      character(len=*), parameter :: subname = 'cam_thermo_dry_air_update: '
+
+      if (present(to_dry_factor)) then
+        if (SIZE(to_dry_factor, 1) /= ncol) then
+          call endrun(subname//'DIM 1 of to_dry_factor is'//to_str(SIZE(to_dry_factor,1))//'but should be'//to_str(ncol))
+        end if
+      end if
+
+      sponge_factor = 1.0_kind_phys
+
+      call dry_air_composition_update(mmr, ncol, to_dry_factor=to_dry_factor)
+      call get_molecular_diff_coef(T(:ncol,:), .true., sponge_factor, kmvis(:ncol,:), &
+           kmcnd(:ncol,:), tracer=mmr(:ncol,:,:), fact=to_dry_factor,  &
+           active_species_idx_dycore=thermodynamic_active_species_idx)
+
+      ! Calculate zvirv for WACCM-X.
+      call update_zvirv()
+
+    end subroutine cam_thermo_dry_air_update
+
+    !
+    !***************************************************************************
+    !
+    ! cam_thermo_water_update: update water species dependent constants for physics
+    !
+    !***************************************************************************
+    !
+    subroutine cam_thermo_water_update(mmr, ncol, vcoord, to_dry_factor)
+      use air_composition, only: water_composition_update
       !-----------------------------------------------------------------------
       ! Update the physics "constants" that vary
       !-------------------------------------------------------------------------
 
-      !------------------------------Arguments----------------------------------
-
       real(kind_phys),           intent(in) :: mmr(:,:,:) ! constituents array
-      real(kind_phys),           intent(in) :: T(:,:)     ! temperature
       integer,                   intent(in) :: ncol       ! number of columns
-      logical,                   intent(in) :: update_thermo_variables ! true: calculate composition-dependent thermo variables
-                                                                       ! false: do not calculate composition-dependent thermo variables
+      integer,                   intent(in) :: vcoord
+      real(kind_phys), optional, intent(in) :: to_dry_factor(:,:)
 
-      real(kind_phys), optional, intent(in) :: to_moist_factor(:,:)
-      !
-      !---------------------------Local storage-------------------------------
-      real(kind_phys):: sponge_factor(SIZE(mmr, 2))
-      character(len=*), parameter :: subname = 'cam_thermo_update: '
-
-      if (.not. update_thermo_variables) then
-         return
-      end if
-
-      if (present(to_moist_factor)) then
-         if (SIZE(to_moist_factor, 1) /= ncol) then
-            call endrun(subname//'DIM 1 of to_moist_factor is'//to_str(SIZE(to_moist_factor,1))//'but should be'//to_str(ncol))
-         end if
-      end if
-      sponge_factor = 1.0_kind_phys
-
-      call air_composition_update(mmr, ncol, to_moist_factor=to_moist_factor)
-      call get_molecular_diff_coef(T(:ncol,:), .true., sponge_factor, kmvis(:ncol,:), &
-           kmcnd(:ncol,:), tracer=mmr(:ncol,:,:), fact=to_moist_factor,  &
-           active_species_idx_dycore=thermodynamic_active_species_idx)
-      call update_zvirv()
-
-   end subroutine cam_thermo_update
+      call water_composition_update(mmr, ncol, vcoord, to_dry_factor=to_dry_factor)
+    end subroutine cam_thermo_water_update
 
    !===========================================================================
 
