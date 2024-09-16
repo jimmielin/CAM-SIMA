@@ -1,4 +1,5 @@
-! air_composition module defines major species of the atmosphere and manages the physical properties that are dependent on the composition of air
+! air_composition module defines major species of the atmosphere and manages
+! the physical properties that are dependent on the composition of air
 module air_composition
 
    use ccpp_kinds,           only: kind_phys
@@ -13,7 +14,8 @@ module air_composition
    save
 
    public  :: air_composition_init
-   public  :: air_composition_update
+   public  :: dry_air_composition_update
+   public  :: water_composition_update
    ! get_cp_dry: (generalized) heat capacity for dry air
    public :: get_cp_dry
    ! get_cp: (generalized) heat capacity
@@ -511,54 +513,66 @@ CONTAINS
 
    !===========================================================================
    !-----------------------------------------------------------------------
-   ! air_composition_update: Update the physics "constants" that vary
+   ! dry_air_composition_update: Update the physics "constants" that vary
    !-------------------------------------------------------------------------
    !===========================================================================
 
-   subroutine air_composition_update(mmr, ncol, vcoord, to_moist_factor)
+   subroutine dry_air_composition_update(mmr, ncol, to_dry_factor)
+
+      !(mmr = dry mixing ratio, if not, use to_dry_factor to convert!)
+      real(kind_phys),           intent(in) :: mmr(:,:,:) ! mixing ratios for species dependent dry air
+      integer,                   intent(in) :: ncol       ! number of columns
+      real(kind_phys), optional, intent(in) :: to_dry_factor(:,:)
+
+      call get_R_dry(mmr(:ncol, :, :), thermodynamic_active_species_idx, &
+           rairv(:ncol, :), fact=to_dry_factor)
+      call get_cp_dry(mmr(:ncol,:,:), thermodynamic_active_species_idx, &
+           cpairv(:ncol,:), fact=to_dry_factor)
+      call get_mbarv(mmr(:ncol,:,:), thermodynamic_active_species_idx, &
+           mbarv(:ncol,:), fact=to_dry_factor)
+
+      cappav(:ncol,:) = rairv(:ncol,:) / cpairv(:ncol,:)
+
+   end subroutine air_composition_update
+
+   !===========================================================================
+   !---------------------------------------------------------------------------
+   ! water_composition_update: Update generalized cp or cv depending on dycore
+   !---------------------------------------------------------------------------
+   !===========================================================================
+   subroutine water_composition_update(mmr, ncol, vcoord, to_dry_factor)
       use dyn_tests_utils, only: vc_height, vc_moist_pressure, vc_dry_pressure
 
       real(kind_phys),           intent(in) :: mmr(:,:,:) ! constituents array
       integer,                   intent(in) :: ncol       ! number of columns
       integer,                   intent(in) :: vcoord     ! vertical coordinate specifier for dycore
-      real(kind_phys), optional, intent(in) :: to_moist_factor(:,:)
+      real(kind_phys), optional, intent(in) :: to_dry_factor(:,:)
 
-      character(len=*), parameter :: subname = 'air_composition_update'
-
-      call get_R_dry(mmr(:ncol, :, :), thermodynamic_active_species_idx, &
-           rairv(:ncol, :), fact=to_moist_factor)
-      call get_cp_dry(mmr(:ncol,:,:), thermodynamic_active_species_idx, &
-           cpairv(:ncol,:), fact=to_moist_factor)
-      call get_mbarv(mmr(:ncol,:,:), thermodynamic_active_species_idx, &
-           mbarv(:ncol,:), fact=to_moist_factor)
-
-      cappav(:ncol,:) = rairv(:ncol,:) / cpairv(:ncol,:)
+      character(len=*), parameter :: subname = 'water_composition_update'
 
       ! update enthalpy or internal energy scaling factor for energy consistency with CAM physics
-      ! FIXME hplin 9/5/24: why is air_composition_update in CAM-SIMA to_moist_factor
-      !                     whereas water_composition_update in CAM to_dry_factor.
-      ! get_cp_dry implementation appears to be the same?, but
-      ! get_cp implementation appears to take an 1/factor.
-      ! Nothing in CAM-SIMA passes to_moist_factor to cam_thermo_update for now, so it is not possible
-      ! to know which is correct. In CAM, physpkg.F90 calls cam_thermo_water_update with to_dry_factor=pdel/pdeldry.
+      ! cp_or_cv_dycore is now a registry variable (physics_types) in CAM-SIMA instead of in-module
+
       if (vcoord == vc_moist_pressure) then
          ! FV: moist pressure vertical coordinate does not need update.
       else if (vcoord == vc_dry_pressure) then
          ! SE
          call get_cp(mmr(:ncol,:,:), .false., cp_or_cv_dycore(:ncol,:), &
-                     dp_dry=to_moist_factor, active_species_idx_dycore=thermodynamic_active_species_idx)
+                     factor=to_dry_factor, active_species_idx_dycore=thermodynamic_active_species_idx, &
+                     cpdry=cpairv(:ncol,:))
       else if (vcoord == vc_height) then
          ! MPAS
-         ! Note hplin 9/5/24: the below code is "unused and untested" and reproduced verbatim (together with this warning)
-         ! from CAM air_composition.F90
-         call get_R(mmr(:ncol,:,:), thermodynamic_active_species_idx, cp_or_cv_dycore(:ncol,:), &
-                    fact=to_moist_factor, R_dry=rairv(:ncol,:))
+         call get_R(mmr(:ncol,:,:), thermodynamic_active_species_idx, &
+                    cp_or_cv_dycore(:ncol,:), fact=to_dry_factor, Rdry=rairv(:ncol,:))
+
+         ! internal energy coefficient for MPAS
+         ! (equation 92 in Eldred et al. 2023; https://rmets.onlinelibrary.wiley.com/doi/epdf/10.1002/qj.4353)
          cp_or_cv_dycore(:ncol,:) = cp_or_cv_dycore(:ncol,:) * (cpairv(:ncol,:) - rairv(:ncol,:)) / rairv(:ncol,:)
       else
          call endrun(subname//': dycore vcoord not supported')
       end if
 
-   end subroutine air_composition_update
+   end subroutine water_composition_update
 
    !===========================================================================
    !***************************************************************************
@@ -668,27 +682,33 @@ CONTAINS
    !
    !***************************************************************************
    !
-   subroutine get_cp_1hd(tracer, inv_cp, cp, dp_dry, active_species_idx_dycore)
+   subroutine get_cp_1hd(tracer, inv_cp, cp, factor, active_species_idx_dycore, cpdry)
       use cam_abortutils,  only: endrun
       use string_utils,    only: to_str
 
       ! Dummy arguments
       ! tracer: Tracer array
+      !
+      ! factor not present then tracer must be dry mixing ratio
+      ! if factor present tracer*factor must be dry mixing ratio
+      !
       real(kind_phys),           intent(in)  :: tracer(:,:,:)
-      real(kind_phys), optional, intent(in)  :: dp_dry(:,:)
       ! inv_cp: output inverse cp instead of cp
       logical,                   intent(in)  :: inv_cp
       real(kind_phys),           intent(out) :: cp(:,:)
+      ! dp: if provided then tracer is mass not mixing ratio
+      real(kind_phys), optional, intent(in)  :: factor(:,:)
       ! active_species_idx_dycore: array of indices for index of
       !    thermodynamic active species in dycore tracer array
       !    (if different from physics index)
       integer,         optional, intent(in)  :: active_species_idx_dycore(:)
+      real(kind_phys), optional, intent(in)  :: cpdry(:,:)
 
       ! Local variables
       integer  :: qdx, itrac
       real(kind_phys) :: sum_species(SIZE(cp, 1), SIZE(cp, 2))
       real(kind_phys) :: sum_cp(SIZE(cp, 1), SIZE(cp, 2))
-      real(kind_phys) :: factor(SIZE(cp, 1), SIZE(cp, 2))
+      real(kind_phys) :: factor_local(SIZE(cp, 1), SIZE(cp, 2))
       integer  :: idx_local(thermodynamic_active_species_num)
       character(len=*), parameter :: subname = 'get_cp_1hd: '
 
@@ -704,28 +724,38 @@ CONTAINS
          idx_local = thermodynamic_active_species_idx
       end if
 
-      if (present(dp_dry)) then
-         factor = 1.0_kind_phys / dp_dry
+      if (present(factor)) then
+         factor_local = factor
       else
-         factor = 1.0_kind_phys
+         factor_local = 1.0_kind_phys
       end if
+
       sum_species = 1.0_kind_phys ! all dry air species sum to 1
       do qdx = dry_air_species_num + 1, thermodynamic_active_species_num
          itrac = idx_local(qdx)
-         sum_species(:,:) = sum_species(:,:) +                            &
-              (tracer(:,:,itrac) * factor(:,:))
+         sum_species(:,:) = sum_species(:,:) + (tracer(:,:,itrac) * factor_local(:,:))
       end do
 
-      ! Get heat capacity at constant pressure (Cp) for dry air:
-      call get_cp_dry(tracer, idx_local, sum_cp, fact=factor)
+      if (dry_air_species_num == 0) then
+         ! FIXME hplin 9/13/24: this if-clause is always in CAM but was not in CAM-SIMA
+         sum_cp = thermodynamic_active_species_cp(0)
+      else if (present(cpdry)) then
+         !
+         ! if cpdry is known don't recompute
+         !
+         sum_cp = cpdry
+      else
+         ! Get heat capacity at constant pressure (Cp) for dry air:
+         call get_cp_dry(tracer, idx_local, sum_cp, fact=factor_local)
+      end if
 
       ! Add water species to Cp:
       do qdx = dry_air_species_num + 1, thermodynamic_active_species_num
          itrac = idx_local(qdx)
          sum_cp(:,:) = sum_cp(:,:) +                                      &
-              (thermodynamic_active_species_cp(qdx) * tracer(:,:,itrac) * &
-              factor(:,:))
+              (thermodynamic_active_species_cp(qdx) * tracer(:,:,itrac) * factor_local(:,:))
       end do
+
       if (inv_cp) then
          cp = sum_species / sum_cp
       else
@@ -736,7 +766,7 @@ CONTAINS
 
    !===========================================================================
 
-   subroutine get_cp_2hd(tracer, inv_cp, cp, dp_dry, active_species_idx_dycore)
+   subroutine get_cp_2hd(tracer, inv_cp, cp, factor, active_species_idx_dycore, cpdry)
       ! Version of get_cp for arrays that have a second horizontal index
       use cam_abortutils, only: endrun
       use string_utils,   only: to_str
@@ -744,14 +774,15 @@ CONTAINS
       ! Dummy arguments
       ! tracer: Tracer array
       real(kind_phys),           intent(in)  :: tracer(:,:,:,:)
-      real(kind_phys), optional, intent(in)  :: dp_dry(:,:,:)
       ! inv_cp: output inverse cp instead of cp
       logical,                   intent(in)  :: inv_cp
       real(kind_phys),           intent(out) :: cp(:,:,:)
+      real(kind_phys), optional, intent(in)  :: factor(:,:,:)
       ! active_species_idx_dycore: array of indicies for index of
       !    thermodynamic active species in dycore tracer array
       !    (if different from physics index)
       integer, optional,  intent(in)  :: active_species_idx_dycore(:)
+      real(kind_phys), optional, intent(in)  :: cpdry(:,:,:)
 
       ! Local variables
       integer  :: jdx
@@ -759,11 +790,17 @@ CONTAINS
       character(len=*), parameter :: subname = 'get_cp_2hd: '
 
       do jdx = 1, SIZE(cp, 2)
-         if (present(dp_dry)) then
-            call get_cp(tracer(:, jdx, :, :), inv_cp, cp(:, jdx, :),          &
-                 dp_dry=dp_dry(:, jdx, :), active_species_idx_dycore=active_species_idx_dycore)
+         if (present(factor).and.present(cpdry)) then
+            call get_cp(tracer(:, jdx, :, :), inv_cp, cp(:, jdx, :),&
+                 factor=factor(:, jdx, :), active_species_idx_dycore=active_species_idx_dycore, cpdry=cpdry(:,jdx,:))
+         else if (present(factor)) then
+            call get_cp(tracer(:, jdx, :, :), inv_cp, cp(:, jdx, :),&
+                 factor=factor(:, jdx, :), active_species_idx_dycore=active_species_idx_dycore)
+         else if (present(cpdry)) then
+            call get_cp(tracer(:, jdx, :, :), inv_cp, cp(:, jdx, :),&
+                 active_species_idx_dycore=active_species_idx_dycore, cpdry=cpdry(:,jdx,:))
          else
-            call get_cp(tracer(:, jdx, :, :), inv_cp, cp(:, jdx, :),          &
+            call get_cp(tracer(:, jdx, :, :), inv_cp, cp(:, jdx, :),&
                  active_species_idx_dycore=active_species_idx_dycore)
          end if
       end do
@@ -872,9 +909,10 @@ CONTAINS
    !
    !***************************************************************************
    !
-   subroutine get_R_1hd(tracer, active_species_idx, R, fact)
+   subroutine get_R_1hd(tracer, active_species_idx, R, fact, Rdry)
       use cam_abortutils,  only: endrun
       use string_utils,    only: to_str
+      use physconst,       only: rair
 
       ! Dummy arguments
       ! tracer: !tracer array
@@ -885,6 +923,7 @@ CONTAINS
       real(kind_phys), intent(out) :: R(:, :)
       ! fact: optional factor for converting tracer to dry mixing ratio
       real(kind_phys), optional, intent(in) :: fact(:, :)
+      real(kind_phys), optional, intent(in) :: Rdry(:, :)
 
       ! Local variables
       integer  :: qdx, itrac
@@ -903,12 +942,19 @@ CONTAINS
             call endrun(subname//"SIZE mismatch in dimension 2 "//            &
                  to_str(SIZE(fact, 2))//' /= '//to_str(SIZE(factor, 2)))
          end if
-         call get_R_dry(tracer, active_species_idx, R, fact=fact)
          factor = fact(:,:)
       else
-         call get_R_dry(tracer, active_species_idx, R)
          factor = 1.0_kind_phys
       end if
+
+      if (dry_air_species_num == 0) then
+         R = rair
+      else if (present(Rdry)) then
+         R = Rdry
+      else
+         call get_R_dry(tracer, active_species_idx, R, fact=factor)
+      end if
+
       idx_local = active_species_idx
       sum_species = 1.0_kind_phys ! all dry air species sum to 1
       do qdx = dry_air_species_num + 1, thermodynamic_active_species_num
@@ -963,7 +1009,7 @@ CONTAINS
    !*************************************************************************************************************************
    !
    subroutine get_mbarv_1hd(tracer, active_species_idx, mbarv_in, fact)
-     use physconst,        only: mwdry, rair, cpair
+     use physconst,        only: mwdry
      real(kind_phys), intent(in)  :: tracer(:,:,:)                      !tracer array
      integer,         intent(in)  :: active_species_idx(:)              !index of active species in tracer
      real(kind_phys), intent(out) :: mbarv_in(:,:)                      !molecular weight of dry air
