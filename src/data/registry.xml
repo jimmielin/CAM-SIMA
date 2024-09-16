@@ -251,6 +251,12 @@
       <dimensions>horizontal_dimension</dimensions>
       <ic_file_input_names>tw_cur state_tw_cur</ic_file_input_names>
     </variable>
+    <!-- Timestep properties -->
+    <variable local_name="is_first_timestep"
+              standard_name="is_first_timestep"
+              units="flag" type="logical" access="protected">
+      <long_name>flag indicating if is first timestep of initial run</long_name>
+    </variable>
     <!-- State tendencies -->
     <variable local_name="dTdt_total"
               standard_name="tendency_of_air_temperature_due_to_model_physics"
