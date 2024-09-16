@@ -16,6 +16,7 @@ module air_composition
    public  :: air_composition_init
    public  :: dry_air_composition_update
    public  :: water_composition_update
+
    ! get_cp_dry: (generalized) heat capacity for dry air
    public :: get_cp_dry
    ! get_cp: (generalized) heat capacity
@@ -533,7 +534,7 @@ CONTAINS
 
       cappav(:ncol,:) = rairv(:ncol,:) / cpairv(:ncol,:)
 
-   end subroutine air_composition_update
+   end subroutine dry_air_composition_update
 
    !===========================================================================
    !---------------------------------------------------------------------------
@@ -557,12 +558,19 @@ CONTAINS
          ! FV: moist pressure vertical coordinate does not need update.
       else if (vcoord == vc_dry_pressure) then
          ! SE
+
+         ! TODO hplin 9/17/24: for compatibility with CAM-SIMA that allocates thermodynamic_active_species_idx(0:num_advected)
+         ! (whereas CAM only allocates 1-indexed) I subset it here. But from the meaning of the code arguments
+         ! it is unknown where it was meant to be thermodynamic_active_species_idx_dycore.
+         ! This should be verified during code review.
          call get_cp(mmr(:ncol,:,:), .false., cp_or_cv_dycore(:ncol,:), &
-                     factor=to_dry_factor, active_species_idx_dycore=thermodynamic_active_species_idx, &
+                     factor=to_dry_factor, active_species_idx_dycore=thermodynamic_active_species_idx(1:), &
                      cpdry=cpairv(:ncol,:))
       else if (vcoord == vc_height) then
          ! MPAS
-         call get_R(mmr(:ncol,:,:), thermodynamic_active_species_idx, &
+
+         ! TODO hplin 9/17/24 same here.
+         call get_R(mmr(:ncol,:,:), thermodynamic_active_species_idx(1:), &
                     cp_or_cv_dycore(:ncol,:), fact=to_dry_factor, Rdry=rairv(:ncol,:))
 
          ! internal energy coefficient for MPAS
