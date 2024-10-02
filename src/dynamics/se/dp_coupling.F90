@@ -690,9 +690,16 @@ subroutine derived_phys_dry(cam_runtime_opts, phys_state, phys_tend)
    ! wet pressure variables (should be removed from physics!)
    factor_array(:,:) = 1.0_kind_phys
    !$omp parallel do num_threads(horz_num_threads) private (k, i, m_cnst)
+   ! **TEMP** TODO CHECK hplin: check indices to use here
+   ! in cam6_3_109 after fix in 6_3_127: loop from dry_air_species_num + 1, thermodynamic_active_species_num
+   ! in cam-sima: factor_array only contains m = ix_q
+   ! hplin -- to get same answers as CAM-SIMA ix_q would need to be used,
+   !          but the CAM version appears to be correct. this should be science checked
+   ! // **TEMP**
    do m_cnst = dry_air_species_num + 1, thermodynamic_active_species_num
       m = thermodynamic_active_species_idx(m_cnst)
-      ! for now m is just == ix_q (one entry)
+   !  write(6,*) "hplin dp_coupling m, m_cnst", m, m_cnst
+   ! m = ix_q
       do k = 1, nlev
          do i = 1, pcols
             ! at this point all q's are dry
@@ -784,6 +791,10 @@ subroutine derived_phys_dry(cam_runtime_opts, phys_state, phys_tend)
    ! Compute molecular viscosity(kmvis) and conductivity(kmcnd).
    ! Update zvirv registry variable; calculated for WACCM-X.
    !-----------------------------------------------------------------------------
+   ! **TEMP** TODO CHECK hplin: CAM has this if-clause for dry_air_species_num > 0
+   ! or otherwise uses zvirv = zvir. CAM-SIMA previously did not have this, and
+   ! instead has a switch for update_thermodynamic_variables. Check if we still want
+   ! this if-clause or change it to something else.
    if (dry_air_species_num > 0) then
       call cam_thermo_dry_air_update( &
            mmr                     = const_data_ptr, & ! dry MMR
@@ -808,6 +819,7 @@ subroutine derived_phys_dry(cam_runtime_opts, phys_state, phys_tend)
    !$omp parallel do num_threads(horz_num_threads) private (k, i)
    do k = 1, nlev
       do i = 1, pcols
+         ! **TEMP** TODO CHECK hplin: CAM and CAM-SIMA version differ
          ! CAM version:
          ! phys_state%exner(i,k) = (phys_state%pint(i,pver+1)/phys_state%pmid(i,k))**cappav(i,k)
 
@@ -839,7 +851,7 @@ subroutine derived_phys_dry(cam_runtime_opts, phys_state, phys_tend)
       end do
    end do
 
-   !Call geopotential_temp CCPP scheme:
+   ! Call geopotential_temp CCPP scheme:
    call geopotential_temp_run(pver, lagrangian_vertical, pver, 1,                        &
                               pverp, 1, num_advected, phys_state%lnpint,                 &
                               phys_state%pint, phys_state%pmid, phys_state%pdel,         &
