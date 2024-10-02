@@ -233,6 +233,10 @@ CONTAINS
       real(kind_phys) :: sponge_factor(SIZE(mmr, 2))
       character(len=*), parameter :: subname = 'cam_thermo_dry_air_update: '
 
+      if (.not. update_thermo_variables) then
+         return
+      end if
+
       if (present(to_dry_factor)) then
         if (SIZE(to_dry_factor, 1) /= ncol) then
           call endrun(subname//'DIM 1 of to_dry_factor is'//to_str(SIZE(to_dry_factor,1))//'but should be'//to_str(ncol))

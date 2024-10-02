@@ -559,17 +559,15 @@ CONTAINS
       else if (vcoord == vc_dry_pressure) then
          ! SE
 
-         ! TODO hplin 9/17/24: for compatibility with CAM-SIMA that allocates thermodynamic_active_species_idx(0:num_advected)
-         ! (whereas CAM only allocates 1-indexed) I subset it here. But from the meaning of the code arguments
-         ! it is unknown where it was meant to be thermodynamic_active_species_idx_dycore.
-         ! This should be verified during code review.
+         ! **TEMP** TODO hplin 9/17/24:
+         ! for compatibility with CAM-SIMA that allocates thermodynamic_active_species_idx(0:num_advected)
+         ! (whereas CAM only allocates 1-indexed) I subset it here. This should be verified during code
+         ! review.
          call get_cp(mmr(:ncol,:,:), .false., cp_or_cv_dycore(:ncol,:), &
                      factor=to_dry_factor, active_species_idx_dycore=thermodynamic_active_species_idx(1:), &
                      cpdry=cpairv(:ncol,:))
       else if (vcoord == vc_height) then
          ! MPAS
-
-         ! TODO hplin 9/17/24 same here.
          call get_R(mmr(:ncol,:,:), thermodynamic_active_species_idx(1:), &
                     cp_or_cv_dycore(:ncol,:), fact=to_dry_factor, Rdry=rairv(:ncol,:))
 
@@ -745,7 +743,10 @@ CONTAINS
       end do
 
       if (dry_air_species_num == 0) then
-         ! FIXME hplin 9/13/24: this if-clause is always in CAM but was not in CAM-SIMA
+         ! **TMP** TODO CHECK hplin 9/13/24: this if-clause is always in CAM but was not in CAM-SIMA
+         ! and dry_air_species_num is == 0 in CAM-SIMA as of 10/1/24 which means this clause will
+         ! change answers (?) -- previously in CAM-SIMA there was only a call to get_cp_dry
+         ! and not the two IF-clauses here.
          sum_cp = thermodynamic_active_species_cp(0)
       else if (present(cpdry)) then
          !
