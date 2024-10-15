@@ -1717,7 +1717,7 @@ CONTAINS
       case(vc_height)
          if (.not. present(phis)) then
             write(iulog, *) subname, ' phis must be present for ',     &
-                 'heigt-based vertical coordinate'
+                 'height-based vertical coordinate'
             call endrun(subname//':  phis must be present for '//      &
                  'height-based vertical coordinate')
          end if
