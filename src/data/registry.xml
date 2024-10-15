@@ -423,7 +423,7 @@
       <initial_value>zvir</initial_value>
     </variable>
     <variable local_name="cp_or_cv_dycore"
-              standard_name="enthalpy_or_internal_energy_scaling_factor_for_energy_consistency_tbd"
+              standard_name="specific_heat_for_air_used_in_dycore"
               units="J kg-1 K-1" type="real" kind="kind_phys"
               allocatable="allocatable">
       <long_name>Enthalpy or internal energy scaling factor for energy consistency</long_name>

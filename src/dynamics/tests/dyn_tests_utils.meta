@@ -6,12 +6,12 @@
   name  = dyn_tests_utils
   type  = module
 [ vc_dycore ]
-  standard_name = vertical_coordinate_for_dynamical_core_tbd
+  standard_name = total_energy_formula_for_dycore
   units = 1
   type = integer
   dimensions = ()
 [ vc_physics ]
-  standard_name = vertical_coordinate_for_physics_tbd
+  standard_name = total_energy_formula_for_physics
   units = 1
   type = integer
   dimensions = ()
