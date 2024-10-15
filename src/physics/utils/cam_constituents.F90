@@ -292,7 +292,11 @@ CONTAINS
       use cam_abortutils,       only: endrun
       use cam_logfile,          only: iulog
       use phys_vars_init_check, only: std_name_len
+<<<<<<< HEAD
       use string_utils,         only: stringify
+=======
+      use string_utils,         only: to_str
+>>>>>>> aa86287 (New const_get_index logic without cam_ccpp_cap dependency)
 
       ! Get the index of a constituent with standard name, <name>.
       ! Setting optional <abort> argument to .false. returns control to
@@ -319,7 +323,11 @@ CONTAINS
       call ccpp_const_get_idx(const_props, name, cindex, errmsg, errcode)
 
       if (errcode /= 0) then
+<<<<<<< HEAD
          call endrun(subname//"Error "//stringify((/errcode/))//": "//           &
+=======
+         call endrun(subname//"Error "//to_str(errcode)//": "//           &
+>>>>>>> aa86287 (New const_get_index logic without cam_ccpp_cap dependency)
                  trim(errmsg), file=__FILE__, line=__LINE__)
       endif
 

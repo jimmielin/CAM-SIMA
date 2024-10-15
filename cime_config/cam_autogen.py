@@ -614,6 +614,7 @@ def generate_physics_suites(build_cache, preproc_defs, host_name,
 
         # Copy to_be_ccppized utility modules to the build directory,
         # as SIMA cam_constituents depends on them.
+<<<<<<< HEAD
         # Note: to_be_ccppized utility modules to be removed once functionality is migrated
         # to SIMA or CCPPized in atmospheric_physics.
         atm_phys_to_be_ccppized_dir = os.path.join(atm_phys_top_dir, "to_be_ccppized")
@@ -630,6 +631,15 @@ def generate_physics_suites(build_cache, preproc_defs, host_name,
         for to_be_ccppized_file in atm_phys_to_be_ccppized_files:
            shutil.copy(to_be_ccppized_file, physics_blddir)
         # end for
+=======
+        atm_phys_to_be_ccppized_dir = os.path.join(atm_phys_top_dir, "to_be_ccppized")
+
+        # Check that the directory exists and copy to build directory
+        if os.path.isdir(atm_phys_to_be_ccppized_dir):
+             atm_phys_to_be_ccppized_files = glob.glob(os.path.join(atm_phys_to_be_ccppized_dir, "*.F90"))
+             for to_be_ccppized_file in atm_phys_to_be_ccppized_files:
+                shutil.copy(to_be_ccppized_file, physics_blddir)
+>>>>>>> aa86287 (New const_get_index logic without cam_ccpp_cap dependency)
     # end if
 
     if do_gen_ccpp or do_gen_nl:
