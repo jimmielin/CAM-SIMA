@@ -79,6 +79,7 @@ module cam_thermo
    ! mixing_ratio options
    integer, public, parameter :: DRY_MIXING_RATIO = 1
    integer, public, parameter :: MASS_MIXING_RATIO = 2
+
    !> \section arg_table_cam_thermo  Argument Table
    !! \htmlinclude cam_thermo.html
    !---------------  Variables below here are for WACCM-X ---------------------
@@ -87,7 +88,7 @@ module cam_thermo
    ! kmcnd: molecular conductivity   J m-1 s-1 K-1
    real(kind_phys), public, protected, allocatable :: kmcnd(:,:)
 
-   !------------- Variables for consistent themodynamics --------------------
+   !------------- Variables for consistent thermodynamics --------------------
    !
 
    !
@@ -262,7 +263,7 @@ CONTAINS
     !
     !***************************************************************************
     !
-    subroutine cam_thermo_water_update(mmr, ncol, vcoord, to_dry_factor)
+    subroutine cam_thermo_water_update(mmr, ncol, energy_formula, to_dry_factor)
       use air_composition, only: water_composition_update
       !-----------------------------------------------------------------------
       ! Update the physics "constants" that vary
@@ -270,10 +271,10 @@ CONTAINS
 
       real(kind_phys),           intent(in) :: mmr(:,:,:) ! constituents array
       integer,                   intent(in) :: ncol       ! number of columns
-      integer,                   intent(in) :: vcoord
+      integer,                   intent(in) :: energy_formula
       real(kind_phys), optional, intent(in) :: to_dry_factor(:,:)
 
-      call water_composition_update(mmr, ncol, vcoord, to_dry_factor=to_dry_factor)
+      call water_composition_update(mmr, ncol, energy_formula, to_dry_factor=to_dry_factor)
     end subroutine cam_thermo_water_update
 
    !===========================================================================
@@ -1580,8 +1581,8 @@ CONTAINS
         cp_or_cv, U, V, T, vcoord, ptop, phis, z_mid, dycore_idx, qidx,       &
         te, se, po, ke, wv, H2O, liq, ice)
 
+      use cam_thermo_formula, only: ENERGY_FORMULA_DYCORE_FV, ENERGY_FORMULA_DYCORE_SE, ENERGY_FORMULA_DYCORE_MPAS
       use cam_logfile,     only: iulog
-      use dyn_tests_utils, only: vc_height, vc_moist_pressure, vc_dry_pressure
       use air_composition, only: wv_idx
       use air_composition, only: dry_air_species_num
       use physconst,       only: rga, latvap, latice
@@ -1600,7 +1601,7 @@ CONTAINS
       real(kind_phys), intent(in)            :: U(:,:)
       real(kind_phys), intent(in)            :: V(:,:)
       real(kind_phys), intent(in)            :: T(:,:)
-      integer,         intent(in)            :: vcoord ! vertical coordinate
+      integer,         intent(in)            :: vcoord !REMOVECAM - vcoord or energy formula to use
       real(kind_phys), intent(in),  optional :: ptop(:)
       real(kind_phys), intent(in),  optional :: phis(:)
       real(kind_phys), intent(in),  optional :: z_mid(:,:)
@@ -1693,12 +1694,12 @@ CONTAINS
       ke_vint = 0._kind_phys
       se_vint = 0._kind_phys
       select case (vcoord)
-      case(vc_moist_pressure, vc_dry_pressure)
+      case(ENERGY_FORMULA_DYCORE_FV, ENERGY_FORMULA_DYCORE_SE)
          if (.not. present(ptop).or. (.not. present(phis))) then
             write(iulog, *) subname, ' ptop and phis must be present for ',     &
-                 'moist/dry pressure vertical coordinate'
+                 'FV/SE energy formula'
             call endrun(subname//':  ptop and phis must be present for '//      &
-                 'moist/dry pressure vertical coordinate')
+                 'FV/SE energy formula')
          end if
          po_vint = ptop
          do kdx = 1, SIZE(tracer, 2)
@@ -1714,12 +1715,12 @@ CONTAINS
          do idx = 1, SIZE(tracer, 1)
             po_vint(idx) =  (phis(idx) * po_vint(idx) * rga)
          end do
-      case(vc_height)
+      case(ENERGY_FORMULA_DYCORE_MPAS)
          if (.not. present(phis)) then
             write(iulog, *) subname, ' phis must be present for ',     &
-                 'height-based vertical coordinate'
+                 'MPAS energy formula'
             call endrun(subname//':  phis must be present for '//      &
-                 'height-based vertical coordinate')
+                 'MPAS energy formula')
          end if
          po_vint = 0._kind_phys
          do kdx = 1, SIZE(tracer, 2)
@@ -1734,8 +1735,8 @@ CONTAINS
             end do
          end do
       case default
-         write(iulog, *) subname, ' vertical coordinate not supported: ', vcoord
-         call endrun(subname//': vertical coordinate not supported')
+         write(iulog, *) subname, ' energy formula not supported: ', vcoord
+         call endrun(subname//': energy formula not supported')
       end select
       if (present(te)) then
          te  = se_vint + po_vint + ke_vint

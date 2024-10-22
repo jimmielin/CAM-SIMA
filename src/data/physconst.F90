@@ -114,7 +114,6 @@ CONTAINS
       use mpi,             only: mpi_real8
       use cam_logfile,     only: iulog
       use runtime_obj,     only: unset_real
-      use dyn_tests_utils, only: vc_physics, vc_moist_pressure
 
       ! Dummy argument: filepath for file containing namelist input
       character(len=*), intent(in) :: nlfile
@@ -287,9 +286,6 @@ CONTAINS
       end if
 
       ez = omega / sqrt(0.375_kind_phys)
-
-      ! set physics vertical coordinate info
-      vc_physics = vc_moist_pressure
 
    end subroutine physconst_readnl
 

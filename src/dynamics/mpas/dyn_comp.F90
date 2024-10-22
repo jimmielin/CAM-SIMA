@@ -184,6 +184,8 @@ contains
     !
     ! Called by `cam_init` in `src/control/cam_comp.F90`.
     subroutine dyn_init(cam_runtime_opts, dyn_in, dyn_out)
+        use cam_thermo_formula, only: energy_formula_dycore, ENERGY_FORMULA_DYCORE_MPAS
+
         type(runtime_options), intent(in) :: cam_runtime_opts
         type(dyn_import_t), intent(in) :: dyn_in
         type(dyn_export_t), intent(in) :: dyn_out
@@ -199,6 +201,9 @@ contains
 
         nullify(pio_init_file)
         nullify(pio_topo_file)
+
+        ! Set dynamical core energy formula for use in cam_thermo.
+        energy_formula_dycore = ENERGY_FORMULA_DYCORE_MPAS
 
         allocate(constituent_name(num_advected), stat=ierr)
         call check_allocate(ierr, subname, 'constituent_name(num_advected)', 'dyn_comp', __LINE__)

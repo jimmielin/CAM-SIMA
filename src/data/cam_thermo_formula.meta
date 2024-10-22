@@ -1,16 +1,16 @@
 [ccpp-table-properties]
-  name = dyn_tests_utils
+  name = cam_thermo_formula
   type = module
 
 [ccpp-arg-table]
-  name  = dyn_tests_utils
+  name  = cam_thermo_formula
   type  = module
-[ vc_dycore ]
+[ energy_formula_dycore ]
   standard_name = total_energy_formula_for_dycore
   units = 1
   type = integer
   dimensions = ()
-[ vc_physics ]
+[ energy_formula_physics ]
   standard_name = total_energy_formula_for_physics
   units = 1
   type = integer

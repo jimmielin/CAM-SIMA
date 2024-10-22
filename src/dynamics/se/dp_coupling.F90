@@ -582,12 +582,12 @@ subroutine derived_phys_dry(cam_runtime_opts, phys_state, phys_tend)
    use cam_constituents,  only: const_qmin
    use runtime_obj,       only: wv_stdname
    use physics_types,     only: lagrangian_vertical
-   use physconst,         only: cpair, gravit, zvir, cappa
+   use physconst,         only: cpair, gravit, zvir
    use cam_thermo,        only: cam_thermo_dry_air_update, cam_thermo_water_update
    use air_composition,   only: thermodynamic_active_species_num
    use air_composition,   only: thermodynamic_active_species_idx
    use air_composition,   only: dry_air_species_num
-   use physics_types,     only: cpairv, rairv, zvirv
+   use physics_types,     only: cpairv, rairv, zvirv, cappav
    use physics_grid,      only: columns_on_task
    use geopotential_temp, only: geopotential_temp_run
    use static_energy,     only: update_dry_static_energy_run
@@ -597,7 +597,7 @@ subroutine derived_phys_dry(cam_runtime_opts, phys_state, phys_tend)
    use shr_vmath_mod,     only: shr_vmath_log
    use shr_kind_mod,      only: shr_kind_cx
    use dyn_comp,          only: ixo, ixo2, ixh, ixh2
-   use dyn_tests_utils,   only: vc_dry_pressure
+   use cam_thermo_formula,only: ENERGY_FORMULA_DYCORE_SE
 
    ! arguments
    type(runtime_options), intent(in)    :: cam_runtime_opts ! Runtime settings object
@@ -690,16 +690,9 @@ subroutine derived_phys_dry(cam_runtime_opts, phys_state, phys_tend)
    ! wet pressure variables (should be removed from physics!)
    factor_array(:,:) = 1.0_kind_phys
    !$omp parallel do num_threads(horz_num_threads) private (k, i, m_cnst)
-   ! **TEMP** TODO CHECK hplin: check indices to use here
-   ! in cam6_3_109 after fix in 6_3_127: loop from dry_air_species_num + 1, thermodynamic_active_species_num
-   ! in cam-sima: factor_array only contains m = ix_q
-   ! hplin -- to get same answers as CAM-SIMA ix_q would need to be used,
-   !          but the CAM version appears to be correct. this should be science checked
-   ! // **TEMP**
    do m_cnst = dry_air_species_num + 1, thermodynamic_active_species_num
+      ! include all water species in the factor array.
       m = thermodynamic_active_species_idx(m_cnst)
-   !  write(6,*) "hplin dp_coupling m, m_cnst", m, m_cnst
-   ! m = ix_q
       do k = 1, nlev
          do i = 1, pcols
             ! at this point all q's are dry
@@ -746,7 +739,7 @@ subroutine derived_phys_dry(cam_runtime_opts, phys_state, phys_tend)
    end do
 
    !------------------------------------------------------------
-   ! Apply limiters to mixing ratios of major species (waccmx):
+   ! Apply limiters to mixing ratios of major species (WACCMX):
    ! Ensure N2 = 1 - (O2 + O + H) mmr is greater than 0
    ! Check for unusually large H2 values and set to lower value.
    !------------------------------------------------------------
@@ -811,20 +804,15 @@ subroutine derived_phys_dry(cam_runtime_opts, phys_state, phys_tend)
    ! (note: at this point q is dry)
    !
    call cam_thermo_water_update( &
-        mmr    = const_data_ptr, & ! dry MMR
-        ncol   = pcols,          &
-        vcoord = vc_dry_pressure &
+        mmr            = const_data_ptr,          & ! dry MMR
+        ncol           = pcols,                   &
+        energy_formula = ENERGY_FORMULA_DYCORE_SE &
    )
 
    !$omp parallel do num_threads(horz_num_threads) private (k, i)
    do k = 1, nlev
       do i = 1, pcols
-         ! **TEMP** TODO CHECK hplin: CAM and CAM-SIMA version differ
-         ! CAM version:
-         ! phys_state%exner(i,k) = (phys_state%pint(i,pver+1)/phys_state%pmid(i,k))**cappav(i,k)
-
-         ! CAM-SIMA version (uses constant cappa):
-         phys_state%exner(i,k) = (phys_state%pint(i,pver+1)/phys_state%pmid(i,k))**cappa
+         phys_state%exner(i,k) = (phys_state%pint(i,pver+1)/phys_state%pmid(i,k))**cappav(i,k)
       end do
    end do
 
