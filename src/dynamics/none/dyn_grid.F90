@@ -49,6 +49,7 @@ module dyn_grid
    ! Private module routines
    private :: find_units
    private :: find_dimension
+   private :: find_energy_formula
 
 !==============================================================================
 CONTAINS
@@ -61,6 +62,7 @@ CONTAINS
       use pio,              only: PIO_BCAST_ERROR, pio_seterrorhandling
       use pio,              only: pio_get_var, pio_freedecomp
       use pio,              only: pio_read_darray
+      use pio,              only: pio_inq_att
       use spmd_utils,       only: npes, iam
       use cam_pio_utils,    only: cam_pio_handle_error, cam_pio_find_var
       use cam_pio_utils,    only: cam_pio_var_info, pio_subsystem
@@ -126,6 +128,7 @@ CONTAINS
 
       ! We will handle errors for this routine
       call pio_seterrorhandling(fh_ini, PIO_BCAST_ERROR, oldmethod=err_handling)
+
       ! Find the latitude variable and dimension(s)
       call cam_pio_find_var(fh_ini, (/ 'lat     ', 'lat_d   ', 'latitude' /), lat_name,         &
            lat_vardesc, var_found)
@@ -159,6 +162,11 @@ CONTAINS
             write(iulog, *) subname, ': Grid is unstructured'
          end if
       end if
+
+      ! Find the dynamical core from which snapshot was saved to populate energy formula used
+      ! Some information about the grid is needed to determine this.
+      call find_energy_formula(fh_ini, grid_is_latlon)
+
       ! Find the longitude variable and dimension(s)
       call cam_pio_find_var(fh_ini, (/ 'lon      ', 'lon_d    ', 'longitude' /), lon_name,         &
            lon_vardesc, var_found)
@@ -625,5 +633,54 @@ CONTAINS
          call endrun(errmsg)
       end if
    end subroutine find_dimension
+
+   !===========================================================================
+
+   subroutine find_energy_formula(file, grid_is_latlon)
+      use pio,                only: file_desc_t, var_desc_t
+      use pio,                only: pio_inq_att, PIO_NOERR
+      use cam_thermo_formula, only: energy_formula_physics, energy_formula_dycore
+      use cam_thermo_formula, only: ENERGY_FORMULA_DYCORE_SE, ENERGY_FORMULA_DYCORE_FV, ENERGY_FORMULA_DYCORE_MPAS
+
+      ! Find which dynamical core is used in <file> and set the energy formulation
+      ! (also called vc_dycore in CAM)
+
+      type(file_desc_t), intent(inout) :: file
+      logical, intent(in)              :: grid_is_latlon
+
+      ! Local variables
+      type(var_desc_t)                 :: vardesc
+      integer                          :: ierr, xtype
+      character(len=*), parameter      :: subname = 'find_energy_formula'
+
+      energy_formula_dycore = -1
+
+      ! Is FV dycore? (has lat lon dimension)
+      if(grid_is_latlon) then
+         energy_formula_dycore = ENERGY_FORMULA_DYCORE_FV
+         if(masterproc) then
+            write(iulog, *) subname, ': Null dycore will use FV dycore energy formula'
+         endif
+      else
+         ! Is SE dycore?
+         ierr = pio_inq_att(file, vardesc, 'ne', xtype)
+         if (ierr == PIO_NOERR) then
+            ! Has ne property - is SE dycore.
+            ! if has fv_nphys then is physics grid (ne..pg..), but the energy formulation is the same.
+            energy_formula_dycore = ENERGY_FORMULA_DYCORE_SE
+            if(masterproc) then
+               write(iulog, *) subname, ': Null dycore will use SE dycore energy formula'
+            endif
+         else
+            ! Is unstructured and is MPAS dycore
+            ! there are no global attributes to identify MPAS dycore, so this has to do for now.
+            energy_formula_dycore = ENERGY_FORMULA_DYCORE_MPAS
+            if(masterproc) then
+               write(iulog, *) subname, ': Null dycore will use MPAS dycore energy formula'
+            endif
+         endif
+      endif
+
+   end subroutine
 
 end module dyn_grid

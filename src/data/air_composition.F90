@@ -541,12 +541,12 @@ CONTAINS
    ! water_composition_update: Update generalized cp or cv depending on dycore
    !---------------------------------------------------------------------------
    !===========================================================================
-   subroutine water_composition_update(mmr, ncol, vcoord, to_dry_factor)
-      use dyn_tests_utils, only: vc_height, vc_moist_pressure, vc_dry_pressure
+   subroutine water_composition_update(mmr, ncol, energy_formula, to_dry_factor)
+      use cam_thermo_formula, only: ENERGY_FORMULA_DYCORE_FV, ENERGY_FORMULA_DYCORE_SE, ENERGY_FORMULA_DYCORE_MPAS
 
-      real(kind_phys),           intent(in) :: mmr(:,:,:) ! constituents array
-      integer,                   intent(in) :: ncol       ! number of columns
-      integer,                   intent(in) :: vcoord     ! vertical coordinate specifier for dycore
+      real(kind_phys),           intent(in) :: mmr(:,:,:)     ! constituents array
+      integer,                   intent(in) :: ncol           ! number of columns
+      integer,                   intent(in) :: energy_formula ! energy formula for dynamical core
       real(kind_phys), optional, intent(in) :: to_dry_factor(:,:)
 
       character(len=*), parameter :: subname = 'water_composition_update'
@@ -554,9 +554,9 @@ CONTAINS
       ! update enthalpy or internal energy scaling factor for energy consistency with CAM physics
       ! cp_or_cv_dycore is now a registry variable (physics_types) in CAM-SIMA instead of in-module
 
-      if (vcoord == vc_moist_pressure) then
+      if (energy_formula == ENERGY_FORMULA_DYCORE_FV) then
          ! FV: moist pressure vertical coordinate does not need update.
-      else if (vcoord == vc_dry_pressure) then
+      else if (energy_formula == ENERGY_FORMULA_DYCORE_SE) then
          ! SE
 
          ! **TEMP** TODO hplin 9/17/24:
@@ -566,7 +566,7 @@ CONTAINS
          call get_cp(mmr(:ncol,:,:), .false., cp_or_cv_dycore(:ncol,:), &
                      factor=to_dry_factor, active_species_idx_dycore=thermodynamic_active_species_idx(1:), &
                      cpdry=cpairv(:ncol,:))
-      else if (vcoord == vc_height) then
+      else if (energy_formula == ENERGY_FORMULA_DYCORE_MPAS) then
          ! MPAS
          call get_R(mmr(:ncol,:,:), thermodynamic_active_species_idx(1:), &
                     cp_or_cv_dycore(:ncol,:), fact=to_dry_factor, Rdry=rairv(:ncol,:))
@@ -575,7 +575,7 @@ CONTAINS
          ! (equation 92 in Eldred et al. 2023; https://rmets.onlinelibrary.wiley.com/doi/epdf/10.1002/qj.4353)
          cp_or_cv_dycore(:ncol,:) = cp_or_cv_dycore(:ncol,:) * (cpairv(:ncol,:) - rairv(:ncol,:)) / rairv(:ncol,:)
       else
-         call endrun(subname//': dycore vcoord not supported')
+         call endrun(subname//': dycore energy formula not supported')
       end if
 
    end subroutine water_composition_update
