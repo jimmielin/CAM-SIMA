@@ -134,6 +134,7 @@ CONTAINS
       use physics_grid,         only: columns_on_task
       use vert_coord,           only: pver, pverp
       use cam_thermo,           only: cam_thermo_init
+      use cam_thermo_formula,   only: cam_thermo_formula_init
       use physics_types,        only: allocate_physics_types_fields
       use cam_ccpp_cap,         only: cam_ccpp_physics_initialize
       use cam_ccpp_cap,         only: ccpp_physics_suite_part_list
@@ -142,6 +143,7 @@ CONTAINS
       integer                    :: i_group
 
       call cam_thermo_init(columns_on_task, pver, pverp)
+      call cam_thermo_formula_init()
 
       call allocate_physics_types_fields(columns_on_task, pver, pverp,        &
            set_init_val_in=.true., reallocate_in=.false.)

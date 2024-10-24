@@ -21,4 +21,17 @@ module cam_thermo_formula
    ! energy_formula_physics: energy formula used for physics
    integer, public :: energy_formula_physics = ENERGY_FORMULA_DYCORE_FV
 
+   ! Public subroutines
+   public :: cam_thermo_formula_init
+
+contains
+   subroutine cam_thermo_formula_init()
+      use phys_vars_init_check, only: mark_as_initialized
+
+      ! Physics energy formulation is always FV (moist pressure coordinate)
+      energy_formula_physics = ENERGY_FORMULA_DYCORE_FV
+      call mark_as_initialized("total_energy_formula_for_physics")
+
+   end subroutine cam_thermo_formula_init
+
 end module cam_thermo_formula
