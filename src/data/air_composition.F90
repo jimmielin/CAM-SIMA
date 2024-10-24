@@ -229,7 +229,7 @@ CONTAINS
       !
       !************************************************************************
       !
-      ! add prognostic components of dry air
+      ! add prognostic components of air
       !
       !************************************************************************
       !
@@ -313,6 +313,7 @@ CONTAINS
             !
          case(wv_stdname) !water_vapor_mixing_ratio_wrt_moist_air_and_condensed_water
             call air_species_info(wv_stdname, ix, mw)
+            wv_idx = ix ! set water species index for use in get_hydrostatic_energy
             thermodynamic_active_species_idx(icnst) = ix
             thermodynamic_active_species_cp (icnst) = cpwv
             thermodynamic_active_species_cv (icnst) = cv3 / mw
