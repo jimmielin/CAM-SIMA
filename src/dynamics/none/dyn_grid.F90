@@ -637,10 +637,11 @@ CONTAINS
    !===========================================================================
 
    subroutine find_energy_formula(file, grid_is_latlon)
-      use pio,                only: file_desc_t, var_desc_t
-      use pio,                only: pio_inq_att, PIO_NOERR
-      use cam_thermo_formula, only: energy_formula_physics, energy_formula_dycore
-      use cam_thermo_formula, only: ENERGY_FORMULA_DYCORE_SE, ENERGY_FORMULA_DYCORE_FV, ENERGY_FORMULA_DYCORE_MPAS
+      use pio,                  only: file_desc_t
+      use pio,                  only: pio_inq_att, pio_global, PIO_NOERR
+      use cam_thermo_formula,   only: energy_formula_physics, energy_formula_dycore
+      use cam_thermo_formula,   only: ENERGY_FORMULA_DYCORE_SE, ENERGY_FORMULA_DYCORE_FV, ENERGY_FORMULA_DYCORE_MPAS
+      use phys_vars_init_check, only: mark_as_initialized
 
       ! Find which dynamical core is used in <file> and set the energy formulation
       ! (also called vc_dycore in CAM)
@@ -649,7 +650,6 @@ CONTAINS
       logical, intent(in)              :: grid_is_latlon
 
       ! Local variables
-      type(var_desc_t)                 :: vardesc
       integer                          :: ierr, xtype
       character(len=*), parameter      :: subname = 'find_energy_formula'
 
@@ -663,7 +663,7 @@ CONTAINS
          endif
       else
          ! Is SE dycore?
-         ierr = pio_inq_att(file, vardesc, 'ne', xtype)
+         ierr = pio_inq_att(file, pio_global, 'ne', xtype)
          if (ierr == PIO_NOERR) then
             ! Has ne property - is SE dycore.
             ! if has fv_nphys then is physics grid (ne..pg..), but the energy formulation is the same.
@@ -679,6 +679,10 @@ CONTAINS
                write(iulog, *) subname, ': Null dycore will use MPAS dycore energy formula'
             endif
          endif
+      endif
+
+      if(energy_formula_dycore /= -1) then
+         call mark_as_initialized("total_energy_formula_for_dycore")
       endif
 
    end subroutine
