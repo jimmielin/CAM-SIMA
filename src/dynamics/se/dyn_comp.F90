@@ -566,6 +566,7 @@ subroutine dyn_init(cam_runtime_opts, dyn_in, dyn_out)
    use dyn_thermo,         only: get_molecular_diff_coef_reference
    !use cam_history,        only: addfld, add_default, horiz_only, register_vector_field
    use gravity_waves_sources, only: gws_init
+   use cam_thermo_formula, only: energy_formula_dycore, ENERGY_FORMULA_DYCORE_SE
 
    !SE dycore:
    use prim_advance_mod,   only: prim_advance_init
@@ -642,6 +643,8 @@ subroutine dyn_init(cam_runtime_opts, dyn_in, dyn_out)
    real(r8) :: tau0, krange, otau0, scale
    real(r8) :: km_sponge_factor_local(nlev+1)
    !----------------------------------------------------------------------------
+   ! Set dynamical core energy formula for use in cam_thermo.
+   energy_formula_dycore = ENERGY_FORMULA_DYCORE_SE
 
    ! Now allocate and set condenstate vars
    allocate(cnst_name_gll(qsize), stat=iret) ! constituent names for gll tracers

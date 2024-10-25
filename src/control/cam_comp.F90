@@ -29,6 +29,7 @@ module cam_comp
    use physics_types,             only: phys_state, phys_tend
    use physics_types,             only: dtime_phys
    use physics_types,             only: calday
+   use physics_types,             only: is_first_timestep
    use dyn_comp,                  only: dyn_import_t, dyn_export_t
 
    use perf_mod,                  only: t_barrierf, t_startf, t_stopf
@@ -151,6 +152,9 @@ CONTAINS
       dtime_phys = 0.0_r8
       call mark_as_initialized('timestep_for_physics')
 
+      is_first_timestep = .true.
+      call mark_as_initialized('is_first_timestep')
+
       call init_pio_subsystem()
 
       ! Initializations using data passed from coupler.
@@ -262,6 +266,9 @@ CONTAINS
 
       use phys_comp, only: phys_timestep_init
       use stepon,    only: stepon_timestep_init
+
+      ! Update timestep flags in physics state
+      is_first_timestep = is_first_step()
 
       !----------------------------------------------------------
       ! First phase of dynamics (at least couple from dynamics to physics)
