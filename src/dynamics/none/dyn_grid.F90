@@ -685,6 +685,17 @@ CONTAINS
          call mark_as_initialized("total_energy_formula_for_dycore")
       endif
 
+      ! Mark other energy variables calculated by check_energy_timestep_init
+      ! here since it will always run when required
+      call mark_as_initialized("specific_heat_for_air_used_in_dycore")
+      call mark_as_initialized("vertically_integrated_total_energy_of_initial_state_using_physics_energy_formula")
+      call mark_as_initialized("vertically_integrated_total_energy_of_current_state_using_physics_energy_formula")
+      call mark_as_initialized("vertically_integrated_total_energy_of_initial_state_using_dycore_energy_formula")
+      call mark_as_initialized("vertically_integrated_total_energy_of_current_state_using_dycore_energy_formula")
+      call mark_as_initialized("vertically_integrated_water_vapor_and_condensed_water_of_initial_state")
+      call mark_as_initialized("vertically_integrated_water_vapor_and_condensed_water_of_current_state")
+      call mark_as_initialized("vertically_integrated_total_energy_at_end_of_physics")
+
    end subroutine
 
 end module dyn_grid
