@@ -1867,6 +1867,7 @@ subroutine read_inidat(dyn_in)
    call mark_as_initialized("vertically_integrated_total_energy_of_current_state_using_dycore_energy_formula")
    call mark_as_initialized("vertically_integrated_water_vapor_and_condensed_water_of_initial_state")
    call mark_as_initialized("vertically_integrated_water_vapor_and_condensed_water_of_current_state")
+   call mark_as_initialized("vertically_integrated_total_energy_at_end_of_physics")
 
 end subroutine read_inidat
 
