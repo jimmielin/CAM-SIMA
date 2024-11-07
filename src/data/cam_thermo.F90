@@ -1666,12 +1666,12 @@ CONTAINS
             species_liq_idx(:) = thermodynamic_active_species_liq_idx_dycore(:)
             species_ice_idx(:) = thermodynamic_active_species_ice_idx_dycore(:)
          else
-            species_idx(:) = thermodynamic_active_species_idx(:)
+            species_idx(:) = thermodynamic_active_species_idx(1:)
             species_liq_idx(:) = thermodynamic_active_species_liq_idx(:)
             species_ice_idx(:) = thermodynamic_active_species_ice_idx(:)
          end if
       else
-         species_idx(:) = thermodynamic_active_species_idx(:)
+         species_idx(:) = thermodynamic_active_species_idx(1:)
          species_liq_idx(:) = thermodynamic_active_species_liq_idx(:)
          species_ice_idx(:) = thermodynamic_active_species_ice_idx(:)
       end if

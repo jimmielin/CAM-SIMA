@@ -104,6 +104,10 @@
       <value hgrid="8x16" ic_ymd="10101" nlev="26">${DIN_LOC_ROOT}/atm/cam/inic/gaus/cami_0000-01-01_8x16_L26_c030228.nc</value>
       <value hgrid="8x16" ic_ymd="901" nlev="26">${DIN_LOC_ROOT}/atm/cam/inic/gaus/cami_0000-09-01_8x16_L26_c030918.nc</value>
       <value hgrid="8x16" ic_ymd="10101" nlev="30">${DIN_LOC_ROOT}/atm/cam/inic/gaus/cami_0000-01-01_8x16_L30_c090102.nc</value>
+      <value dyn="se" hgrid="ne3np4" ic_ymd="10101" nlev="32">${DIN_LOC_ROOT}/atm/cam/inic/se/cam6_QPC6_topo_ne3pg3_mg37_L32_01-01-31_c221214.nc</value>
+      <value dyn="se" hgrid="ne3np4" ic_ymd="901" nlev="32">${DIN_LOC_ROOT}/atm/cam/inic/se/CESM2.F2000climo.ne3np4.cam.i.0003-09-01-00000.nc</value>
+      <value dyn="se" hgrid="ne3np4" ic_ymd="10101" nlev="30">${DIN_LOC_ROOT}/atm/cam/inic/se/cami_0000-01-01_ne3np4_L30_c120315.nc</value>
+      <value dyn="se" hgrid="ne3np4" ic_ymd="10101" nlev="26">${DIN_LOC_ROOT}/atm/cam/inic/se/cami_0000-01-01_ne3np4_L26_c120525.nc</value>
       <value dyn="se" hgrid="ne5np4" ic_ymd="10101" nlev="30">${DIN_LOC_ROOT}/atm/cam/inic/homme/cami-mam3_0000-01_ne5np4_L30.140707.nc</value>
       <value dyn="se" hgrid="ne16np4" ic_ymd="10101" nlev="26">${DIN_LOC_ROOT}/atm/cam/inic/se/ape_topo_cam4_ne16np4_L26_c171020.nc</value>
       <value dyn="se" hgrid="ne16np4" ic_ymd="10101" nlev="30">${DIN_LOC_ROOT}/atm/cam/inic/se/ape_topo_cam4_ne16np4_L30_c171020.nc</value>
