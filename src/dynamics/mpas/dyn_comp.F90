@@ -839,6 +839,20 @@ contains
         do i = 1, num_advected
             call mark_as_initialized(trim(adjustl(const_name(i))))
         end do
+
+        call mark_as_initialized('specific_heat_of_dry_air_used_in_dycore')
+
+        ! These energy variables are calculated by check_energy_timestep_init
+        ! but need to be marked here
+        call mark_as_initialized('vertically_integrated_total_energy_of_initial_state_using_physics_energy_formula')
+        call mark_as_initialized('vertically_integrated_total_energy_of_current_state_using_physics_energy_formula')
+        call mark_as_initialized('vertically_integrated_total_energy_of_initial_state_using_dycore_energy_formula')
+        call mark_as_initialized('vertically_integrated_total_energy_of_current_state_using_dycore_energy_formula')
+        call mark_as_initialized('vertically_integrated_water_vapor_and_condensed_water_of_initial_state')
+        call mark_as_initialized('vertically_integrated_water_vapor_and_condensed_water_of_current_state')
+        call mark_as_initialized('vertically_integrated_total_energy_at_end_of_physics_timestep')
+
+
     end subroutine mark_variable_as_initialized
 
     ! Not used for now. Intended to be called by `stepon_run*` in `src/dynamics/mpas/stepon.F90`.

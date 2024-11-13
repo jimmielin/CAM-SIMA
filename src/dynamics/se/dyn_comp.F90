@@ -1857,7 +1857,7 @@ subroutine read_inidat(dyn_in)
    call mark_as_initialized("tendency_of_air_temperature_due_to_model_physics")
    call mark_as_initialized("tendency_of_eastward_wind_due_to_model_physics")
    call mark_as_initialized("tendency_of_northward_wind_due_to_model_physics")
-   call mark_as_initialized("specific_heat_for_air_used_in_dycore")
+   call mark_as_initialized("specific_heat_of_dry_air_used_in_dycore")
 
    ! These energy variables are calculated by check_energy_timestep_init
    ! but need to be marked here
@@ -1867,7 +1867,7 @@ subroutine read_inidat(dyn_in)
    call mark_as_initialized("vertically_integrated_total_energy_of_current_state_using_dycore_energy_formula")
    call mark_as_initialized("vertically_integrated_water_vapor_and_condensed_water_of_initial_state")
    call mark_as_initialized("vertically_integrated_water_vapor_and_condensed_water_of_current_state")
-   call mark_as_initialized("vertically_integrated_total_energy_at_end_of_physics")
+   call mark_as_initialized("vertically_integrated_total_energy_at_end_of_physics_timestep")
 
 end subroutine read_inidat
 

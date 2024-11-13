@@ -196,7 +196,7 @@
       <ic_file_input_name>state_tw_cur</ic_file_input_name>
     </ic_file_input_names>
   </entry>
-  <entry stdname="specific_heat_for_air_used_in_dycore">
+  <entry stdname="specific_heat_of_dry_air_used_in_dycore">
     <ic_file_input_names>
       <ic_file_input_name>cp_or_cv_dycore</ic_file_input_name>
     </ic_file_input_names>
