@@ -205,7 +205,7 @@
       <ic_file_input_names>zi state_zi</ic_file_input_names>
     </variable>
     <variable local_name="te_ini_phys"
-              standard_name="vertically_integrated_total_energy_of_initial_state_using_physics_energy_formula"
+              standard_name="vertically_integrated_total_energy_using_physics_energy_formula_at_start_of_physics_timestep"
               units="J m-2"
               type="real" kind="kind_phys"
               allocatable="pointer">
@@ -213,7 +213,7 @@
       <ic_file_input_names>te_ini_phys state_te_ini_phys</ic_file_input_names>
     </variable>
     <variable local_name="te_cur_phys"
-              standard_name="vertically_integrated_total_energy_of_current_state_using_physics_energy_formula"
+              standard_name="vertically_integrated_total_energy_using_physics_energy_formula"
               units="J m-2"
               type="real" kind="kind_phys"
               allocatable="pointer">
@@ -221,7 +221,7 @@
       <ic_file_input_names>te_cur_phys state_te_cur_phys</ic_file_input_names>
     </variable>
     <variable local_name="te_ini_dyn"
-              standard_name="vertically_integrated_total_energy_of_initial_state_using_dycore_energy_formula"
+              standard_name="vertically_integrated_total_energy_using_dycore_energy_formula_at_start_of_physics_timestep"
               units="J m-2"
               type="real" kind="kind_phys"
               allocatable="pointer">
@@ -229,7 +229,7 @@
       <ic_file_input_names>te_ini_dyn state_te_ini_dyn</ic_file_input_names>
     </variable>
     <variable local_name="te_cur_dyn"
-              standard_name="vertically_integrated_total_energy_of_current_state_using_dycore_energy_formula"
+              standard_name="vertically_integrated_total_energy_using_dycore_energy_formula"
               units="J m-2"
               type="real" kind="kind_phys"
               allocatable="pointer">
@@ -237,7 +237,7 @@
       <ic_file_input_names>te_cur_dyn state_te_cur_dyn</ic_file_input_names>
     </variable>
     <variable local_name="tw_ini"
-              standard_name="vertically_integrated_water_vapor_and_condensed_water_of_initial_state"
+              standard_name="vertically_integrated_total_water_at_start_of_physics_timestep"
               units="kg m-2"
               type="real" kind="kind_phys"
               allocatable="pointer">
@@ -245,7 +245,7 @@
       <ic_file_input_names>tw_ini state_tw_ini</ic_file_input_names>
     </variable>
     <variable local_name="tw_cur"
-              standard_name="vertically_integrated_water_vapor_and_condensed_water_of_current_state"
+              standard_name="vertically_integrated_total_water"
               units="kg m-2"
               type="real" kind="kind_phys"
               allocatable="pointer">
@@ -259,6 +259,13 @@
       <long_name>Total energy using dynamical core formula at the end of physics timestep</long_name>
       <dimensions>horizontal_dimension</dimensions>
       <initial_value>0.0</initial_value>
+    </variable>
+    <variable local_name="dycore_energy_consistency_adjust"
+              standard_name="flag_for_dycore_energy_consistency_adjustment"
+              units="flag" type="logical">
+      <long_name>flag indicating if dynamical core energy not consistent with CAM physics and to perform adjustment of temperature and temperature tendency</long_name>
+      <initial_value>.false.</initial_value>
+      <initial_value dycore="SE,MPAS">.true.</initial_value>
     </variable>
     <!-- Timestep properties -->
     <variable local_name="is_first_timestep"
@@ -329,10 +336,10 @@
       <data>reciprocal_of_dimensionless_exner_function_wrt_surface_air_pressure</data>
       <data>frontogenesis_function</data>
       <data>frontogenesis_angle</data>
-      <data>vertically_integrated_total_energy_of_initial_state_using_dycore_energy_formula</data>
-      <data>vertically_integrated_total_energy_of_current_state_using_dycore_energy_formula</data>
-      <data>vertically_integrated_water_vapor_and_condensed_water_of_initial_state</data>
-      <data>vertically_integrated_water_vapor_and_condensed_water_of_current_state</data>
+      <data>vertically_integrated_total_energy_using_dycore_energy_formula_at_start_of_physics_timestep</data>
+      <data>vertically_integrated_total_energy_using_dycore_energy_formula</data>
+      <data>vertically_integrated_total_water_at_start_of_physics_timestep</data>
+      <data>vertically_integrated_total_water</data>
       <data>vertically_integrated_total_energy_at_end_of_physics_timestep</data>
     </ddt>
     <ddt type="physics_tend">
@@ -432,7 +439,7 @@
       <initial_value>zvir</initial_value>
     </variable>
     <variable local_name="cp_or_cv_dycore"
-              standard_name="specific_heat_of_dry_air_used_in_dycore"
+              standard_name="specific_heat_of_air_used_in_dycore"
               units="J kg-1 K-1" type="real" kind="kind_phys"
               allocatable="allocatable">
       <long_name>Enthalpy or internal energy scaling factor for energy consistency</long_name>

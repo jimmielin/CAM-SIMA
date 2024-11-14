@@ -641,6 +641,7 @@ CONTAINS
       use pio,                  only: pio_inq_att, pio_global, PIO_NOERR
       use cam_thermo_formula,   only: energy_formula_physics, energy_formula_dycore
       use cam_thermo_formula,   only: ENERGY_FORMULA_DYCORE_SE, ENERGY_FORMULA_DYCORE_FV, ENERGY_FORMULA_DYCORE_MPAS
+      use physics_types,        only: dycore_energy_consistency_adjust
       use phys_vars_init_check, only: mark_as_initialized
 
       ! Find which dynamical core is used in <file> and set the energy formulation
@@ -658,6 +659,7 @@ CONTAINS
       ! Is FV dycore? (has lat lon dimension)
       if(grid_is_latlon) then
          energy_formula_dycore = ENERGY_FORMULA_DYCORE_FV
+         dycore_energy_consistency_adjust = .false.
          if(masterproc) then
             write(iulog, *) subname, ': Null dycore will use FV dycore energy formula'
          endif
@@ -668,6 +670,7 @@ CONTAINS
             ! Has ne property - is SE dycore.
             ! if has fv_nphys then is physics grid (ne..pg..), but the energy formulation is the same.
             energy_formula_dycore = ENERGY_FORMULA_DYCORE_SE
+            dycore_energy_consistency_adjust = .true.
             if(masterproc) then
                write(iulog, *) subname, ': Null dycore will use SE dycore energy formula'
             endif
@@ -675,6 +678,7 @@ CONTAINS
             ! Is unstructured and is MPAS dycore
             ! there are no global attributes to identify MPAS dycore, so this has to do for now.
             energy_formula_dycore = ENERGY_FORMULA_DYCORE_MPAS
+            dycore_energy_consistency_adjust = .true.
             if(masterproc) then
                write(iulog, *) subname, ': Null dycore will use MPAS dycore energy formula'
             endif
@@ -687,13 +691,13 @@ CONTAINS
 
       ! Mark other energy variables calculated by check_energy_timestep_init
       ! here since it will always run when required
-      call mark_as_initialized("specific_heat_of_dry_air_used_in_dycore")
-      call mark_as_initialized("vertically_integrated_total_energy_of_initial_state_using_physics_energy_formula")
-      call mark_as_initialized("vertically_integrated_total_energy_of_current_state_using_physics_energy_formula")
-      call mark_as_initialized("vertically_integrated_total_energy_of_initial_state_using_dycore_energy_formula")
-      call mark_as_initialized("vertically_integrated_total_energy_of_current_state_using_dycore_energy_formula")
-      call mark_as_initialized("vertically_integrated_water_vapor_and_condensed_water_of_initial_state")
-      call mark_as_initialized("vertically_integrated_water_vapor_and_condensed_water_of_current_state")
+      call mark_as_initialized("specific_heat_of_air_used_in_dycore")
+      call mark_as_initialized("vertically_integrated_total_energy_using_physics_energy_formula_at_start_of_physics_timestep")
+      call mark_as_initialized("vertically_integrated_total_energy_using_physics_energy_formula")
+      call mark_as_initialized("vertically_integrated_total_energy_using_dycore_energy_formula_at_start_of_physics_timestep")
+      call mark_as_initialized("vertically_integrated_total_energy_using_dycore_energy_formula")
+      call mark_as_initialized("vertically_integrated_total_water_at_start_of_physics_timestep")
+      call mark_as_initialized("vertically_integrated_total_water")
       call mark_as_initialized("vertically_integrated_total_energy_at_end_of_physics_timestep")
 
    end subroutine find_energy_formula

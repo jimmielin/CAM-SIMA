@@ -1595,8 +1595,8 @@ CONTAINS
       logical, intent(in)             :: moist_mixing_ratio
       ! pdel: pressure level thickness
       real(kind_phys), intent(in)            :: pdel_in(:,:)
-      ! cp_or_cv: dry air heat capacity under constant pressure or
-      !           constant volume (depends on vcoord)
+      ! cp_or_cv: air heat capacity under constant pressure or
+      !           constant volume (depends on energy formula)
       real(kind_phys), intent(in)            :: cp_or_cv(:,:)
       real(kind_phys), intent(in)            :: U(:,:)
       real(kind_phys), intent(in)            :: V(:,:)
