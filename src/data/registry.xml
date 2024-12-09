@@ -135,6 +135,58 @@
       <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
       <ic_file_input_names>frontga pbuf_frontga</ic_file_input_names>
     </variable>
+    <variable local_name="pblh"
+              standard_name="atmosphere_boundary_layer_thickness"
+              units="m" type="real" kind="kind_phys"
+              allocatable="pointer">
+      <dimensions>horizontal_dimension</dimensions>
+      <ic_file_input_names>pblh pbuf_pblh</ic_file_input_names>
+    </variable>
+    <variable local_name="qpert"
+              standard_name="convective_water_vapor_wrt_moist_air_and_condensed_water_perturbation_due_to_pbl_eddies"
+              units="kg kg-1" type="real" kind="kind_phys"
+              allocatable="pointer">
+      <dimensions>horizontal_dimension</dimensions>
+      <ic_file_input_names>qpert pbuf_qpert</ic_file_input_names>
+    </variable>
+    <variable local_name="cmfmc"
+              standard_name="atmosphere_convective_mass_flux_due_to_all_convection"
+              units="kg m-2 s-1" type="real" kind="kind_phys"
+              allocatable="pointer">
+      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <ic_file_input_names>cmfmc tphysbc_cmfmc</ic_file_input_names>
+    </variable>
+    <variable local_name="dlf"
+              standard_name="detrainment_of_water_due_to_all_convection"
+              units="kg kg-1 s-1" type="real" kind="kind_phys"
+              allocatable="pointer">
+      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <ic_file_input_names>dlf tphysbc_dlf</ic_file_input_names>
+    </variable>
+    <variable local_name="dlf2"
+              standard_name="detrainment_of_water_due_to_shallow_convection"
+              units="kg kg-1 s-1" type="real" kind="kind_phys"
+              allocatable="pointer">
+      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <ic_file_input_names>dlf2 tphysbc_dlf2</ic_file_input_names>
+    </variable>
+    <!-- note: rliq and rliq2 from CAM snapshot appear to be in m s-1 (precip) units.
+         the CCPP standard names table claim that it should be in kg m-2 s-1 units.
+         this probably has to be reconciled in the cmfmca scheme -->
+    <variable local_name="rliq"
+              standard_name="vertically_integrated_liquid_water_tendency_due_to_all_convection_to_be_applied_later_in_time_loop"
+              units="m s-1" type="real" kind="kind_phys"
+              allocatable="pointer">
+      <dimensions>horizontal_dimension</dimensions>
+      <ic_file_input_names>rliq tphysbc_rliq</ic_file_input_names>
+    </variable>
+    <variable local_name="rliq2"
+              standard_name="vertically_integrated_liquid_water_tendency_due_to_shallow_convection_to_be_applied_later_in_time_loop"
+              units="m s-1" type="real" kind="kind_phys"
+              allocatable="pointer">
+      <dimensions>horizontal_dimension</dimensions>
+      <ic_file_input_names>rliq2 tphysbc_rliq2</ic_file_input_names>
+    </variable>
     <!-- State helper values -->
     <variable local_name="lnpmid" standard_name="ln_air_pressure"
               units="1" type="real" kind="kind_phys"
