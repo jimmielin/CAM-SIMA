@@ -1,9 +1,15 @@
 [submodule "ccpp-framework"]
         path          = ccpp_framework
         url           = https://github.com/NCAR/ccpp-framework
-        fxtag         = 2024-07-19-dev
+        fxtag         = 2024-11-07-dev
         fxrequired    = AlwaysRequired
-        fxDONOTUSEurl = https://github.com/NCAR/ccpp-framework
+	fxDONOTUSEurl = https://github.com/NCAR/ccpp-framework
+[submodule "history"]
+	path = src/history/buffers
+	url = https://github.com/ESMCI/history_output
+	fxtag         = history01_00
+	fxrequired    = AlwaysRequired
+	fxDONOTUSEurl = https://github.com/ESMCI/history_output
 [submodule "mpas"]
         path          = src/dynamics/mpas/dycore
         url           = https://github.com/MPAS-Dev/MPAS-Model.git
@@ -13,8 +19,8 @@
         fxDONOTUSEurl = https://github.com/MPAS-Dev/MPAS-Model.git
 [submodule "ncar-physics"]
         path          = src/physics/ncar_ccpp
-        url           = https://github.com/ESCOMP/atmospheric_physics
-        fxtag         = atmos_phys0_05_000
+	url           = https://github.com/ESCOMP/atmospheric_physics
+	fxtag         = 0ecfcc155ac0387ef9db3304611c6f3ef055ac1d
         fxrequired    = AlwaysRequired
         fxDONOTUSEurl = https://github.com/ESCOMP/atmospheric_physics
 [submodule "ccs_config"]

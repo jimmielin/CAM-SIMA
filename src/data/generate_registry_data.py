@@ -1735,6 +1735,31 @@ def _create_ic_name_dict(registry):
     return ic_name_dict
 
 ###############################################################################
+def _create_constituent_list(registry):
+###############################################################################
+    """
+    Create a list of all constituents found in the registry.
+    To be used by write_init_files.py - need to keep track
+    of all constituent variables, not just ones required by
+    CCPP metadata, to handle runtime constituents
+    """
+    constituent_list = []
+    for section in registry:
+        if section.tag == 'file':
+            for obj in section:
+                if obj.tag == 'variable':
+                    if obj.get('constituent'):
+                        stdname = obj.get('standard_name')
+                        constituent_list.append(stdname)
+                    # end if (ignore non-constituents)
+                # end if (ignore other node types)
+            # end for
+        # end if (ignore other node types)
+    # end for
+    return constituent_list
+
+
+###############################################################################
 def gen_registry(registry_file, dycore, outdir, indent,
                  src_mod, src_root, loglevel=None, logger=None,
                  schema_paths=None, error_on_no_validate=False):
@@ -1783,16 +1808,7 @@ def gen_registry(registry_file, dycore, outdir, indent,
                                     logger, schema_path=schema_dir,
                                     error_on_noxmllint=error_on_no_validate)
     except CCPPError as ccpperr:
-        cemsg = f"{ccpperr}".split('\n', maxsplit=1)[0]
-        if cemsg[0:12] == 'Execution of':
-            xstart = cemsg.find("'")
-            if xstart >= 0:
-                xend = cemsg[xstart + 1:].find("'") + xstart + 1
-                emsg += '\n' + cemsg[xstart + 1:xend]
-            # end if (else, just keep original message)
-        elif cemsg[0:18] == 'validate_xml_file:':
-            emsg += "\n" + cemsg
-        # end if
+        emsg += f"\n{ccpperr}"
         file_ok = False
     # end try
     if not file_ok:
@@ -1803,6 +1819,7 @@ def gen_registry(registry_file, dycore, outdir, indent,
         retcode = 1
         files = None
         ic_names = None
+        constituents = None
     else:
         library_name = registry.get('name')
         emsg = f"Parsing registry, {library_name}"
@@ -1812,9 +1829,10 @@ def gen_registry(registry_file, dycore, outdir, indent,
                                      src_root, reg_dir, indent, logger)
         # See comment in _create_ic_name_dict
         ic_names = _create_ic_name_dict(registry)
+        registry_constituents = _create_constituent_list(registry)
         retcode = 0 # Throw exception on error
     # end if
-    return retcode, files, ic_names
+    return retcode, files, ic_names, registry_constituents
 
 def main():
     """Function to execute when module called as a script"""

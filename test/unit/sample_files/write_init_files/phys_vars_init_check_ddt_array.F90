@@ -34,13 +34,13 @@ module phys_vars_init_check_ddt_array
    integer, public, parameter :: READ_FROM_FILE = 3
    ! Total number of physics-related variables:
    integer, public, parameter :: phys_var_num = 2
-   integer, public, parameter :: phys_const_num = 15
+   integer, public, parameter :: phys_const_num = 16
 
    !Max length of physics-related variable standard names:
    integer, public, parameter :: std_name_len = 25
 
    ! Max length of input (IC) file variable names:
-   integer, public, parameter :: ic_name_len = 39
+   integer, public, parameter :: ic_name_len = 12
 
    ! Physics-related input variable standard names:
    character(len=25), public, protected :: phys_var_stdnames(phys_var_num) = (/ &
@@ -50,6 +50,7 @@ module phys_vars_init_check_ddt_array
    character(len=36), public, protected :: phys_const_stdnames(phys_const_num) = (/ &
       "ccpp_constituent_minimum_values     ", &
       "ccpp_constituent_properties         ", &
+      "ccpp_constituent_tendencies         ", &
       "ccpp_constituents                   ", &
       "ccpp_error_code                     ", &
       "ccpp_error_message                  ", &
@@ -64,9 +65,9 @@ module phys_vars_init_check_ddt_array
       "suite_name                          ", &
       "suite_part                          " /)
    !Array storing all registered IC file input names for each variable:
-   character(len=39), public, protected :: input_var_names(1, phys_var_num) = reshape((/ &
-      'T(:, :, index_of_potential_temperature)', &
-      'slp                                    ' /), (/1, phys_var_num/))
+   character(len=12), public, protected :: input_var_names(2, phys_var_num) = reshape((/ &
+      'theta       ', 'pot_temp    ', &
+      'slp         ', 'sea_lev_pres' /), (/2, phys_var_num/))
 
    ! Array indicating whether or not variable is protected:
    logical, public, protected :: protected_vars(phys_var_num)= (/ &

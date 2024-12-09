@@ -392,7 +392,7 @@ def generate_registry(data_search, build_cache, atm_root, bldroot,
                                    gen_fort_indent, source_mods_dir, atm_root,
                                    logger=_LOGGER, schema_paths=data_search,
                                    error_on_no_validate=True)
-            retcode, reg_file_list, ic_names = retvals
+            retcode, reg_file_list, ic_names, registry_constituents = retvals
             # Raise error if gen_registry failed:
             if retcode != 0:
                 emsg = "ERROR:Unable to generate CAM data structures from {}, err = {}"
@@ -406,14 +406,15 @@ def generate_registry(data_search, build_cache, atm_root, bldroot,
         # Save build details in the build cache
         reg_file_paths = [x.file_path for x in reg_file_list if x.file_path]
         build_cache.update_registry(gen_reg_file, registry_files, dycore,
-                                    reg_file_paths, ic_names)
+                                    reg_file_paths, ic_names, registry_constituents)
     else:
         # If we did not run the registry generator, retrieve info from cache
         reg_file_paths = build_cache.reg_file_list()
         ic_names = build_cache.ic_names()
+        registry_constituents = build_cache.constituents()
     # End if
 
-    return genreg_dir, do_gen_registry, reg_file_paths, ic_names
+    return genreg_dir, do_gen_registry, reg_file_paths, ic_names, registry_constituents
 
 ###############################################################################
 def generate_physics_suites(build_cache, preproc_defs, host_name,
@@ -435,10 +436,16 @@ def generate_physics_suites(build_cache, preproc_defs, host_name,
     if not os.path.exists(physics_blddir):
         os.makedirs(physics_blddir)
     # End if
-    # Collect all source directories
-    atm_phys_src_dir = os.path.join(atm_root, "src", "physics", "ncar_ccpp")
-    source_search = [source_mods_dir, atm_phys_src_dir]
-    # Find all metadata files, organize by scheme name
+    # Set top-level CCPP physics directory
+    atm_phys_top_dir = os.path.join(atm_root, "src", "physics", "ncar_ccpp")
+    # Collect all possible Suite Definition File (SDF) locations
+    atm_suites_path      = os.path.join(atm_phys_top_dir, "suites")
+    atm_test_suites_path = os.path.join(atm_phys_top_dir, "test", "test_suites")
+    suite_search         = [source_mods_dir, atm_suites_path, atm_test_suites_path]
+    # Find all scheme metadata files, organized by scheme name
+    atm_schemes_path = os.path.join(atm_phys_top_dir, "schemes")
+    atm_test_schemes_path = os.path.join(atm_phys_top_dir, "test", "test_schemes")
+    source_search    = [source_mods_dir, atm_schemes_path, atm_test_schemes_path]
     all_scheme_files = _find_metadata_files(source_search, find_scheme_names)
 
     # Find the SDFs specified for this model build
@@ -446,10 +453,14 @@ def generate_physics_suites(build_cache, preproc_defs, host_name,
     scheme_files = []
     xml_files = {} # key is scheme, value is xml file path
     for sdf in phys_suites_str.split(';'):
-        sdf_path = _find_file(f"suite_{sdf}.xml", source_search)
+        sdf_path = _find_file(f"suite_{sdf}.xml", suite_search)
         if not sdf_path:
             emsg = f"ERROR: Unable to find SDF for suite '{sdf}'"
             raise CamAutoGenError(emsg)
+        # End if
+        if os.path.dirname(os.path.abspath(sdf_path)) == atm_test_suites_path:
+          #Notify user that a test suite is being used
+          _LOGGER.info("Using non-standard test suite: %s", sdf)
         # End if
         sdfs.append(sdf_path)
         # Given an SDF, find all the schemes it calls
@@ -587,13 +598,13 @@ def generate_physics_suites(build_cache, preproc_defs, host_name,
     # there to the bld directory:
     if do_gen_ccpp:
         # Set CCPP physics "utilities" path
-        atm_phys_util_dir = os.path.join(atm_phys_src_dir, "utilities")
+        atm_phys_util_dir = os.path.join(atm_schemes_path, "utilities")
 
         # Check that directory exists
         if not os.path.isdir(atm_phys_util_dir):
-            #CAM-SIMA will likely not run without this, so raise an error
+            # CAM-SIMA will likely not run without this, so raise an error
             emsg = "ERROR: Unable to find CCPP physics utilities directory:\n"
-            emsg += f" {atm_phys_util_dir}\n Have you run 'checkout_externals'?"
+            emsg += f" {atm_phys_util_dir}\n Have you run 'git-fleximod'?"
             raise CamAutoGenError(emsg)
         # end if
 
@@ -601,6 +612,25 @@ def generate_physics_suites(build_cache, preproc_defs, host_name,
         atm_phys_util_files = glob.glob(os.path.join(atm_phys_util_dir, "*.F90"))
         for util_file in atm_phys_util_files:
             shutil.copy(util_file, physics_blddir)
+        # end for
+
+        # Copy to_be_ccppized utility modules to the build directory,
+        # as SIMA cam_constituents depends on them.
+        # Note: to_be_ccppized utility modules to be removed once functionality is migrated
+        # to SIMA or CCPPized in atmospheric_physics.
+        atm_phys_to_be_ccppized_dir = os.path.join(atm_phys_top_dir, "to_be_ccppized")
+
+        # Check that the directory exists
+        if not os.path.isdir(atm_phys_to_be_ccppized_dir):
+            # CAM-SIMA will likely not run without this, so raise an error
+            emsg = "ERROR: Unable to find CCPP physics to_be_ccppized directory:\n"
+            emsg += f" {atm_phys_to_be_ccppized_dir}\n Have you run 'git-fleximod'?"
+            raise CamAutoGenError(emsg)
+        # end if
+
+        atm_phys_to_be_ccppized_files = glob.glob(os.path.join(atm_phys_to_be_ccppized_dir, "*.F90"))
+        for to_be_ccppized_file in atm_phys_to_be_ccppized_files:
+           shutil.copy(to_be_ccppized_file, physics_blddir)
         # end for
     # end if
 
@@ -629,7 +659,7 @@ def generate_physics_suites(build_cache, preproc_defs, host_name,
 ###############################################################################
 def generate_init_routines(build_cache, bldroot, force_ccpp, force_init,
                            source_mods_dir, gen_fort_indent,
-                           cap_database, ic_names):
+                           cap_database, ic_names, registry_constituents):
 ###############################################################################
     """
     Generate the host model initialization source code files
@@ -667,8 +697,8 @@ def generate_init_routines(build_cache, bldroot, force_ccpp, force_init,
         #   within write_init_files (so that write_init_files can be the place
         #   where the source include files are stored).
         source_paths = [source_mods_dir, _REG_GEN_DIR]
-        retmsg = write_init_files(cap_database, ic_names, init_dir,
-                                  _find_file, source_paths,
+        retmsg = write_init_files(cap_database, ic_names, registry_constituents,
+                                  init_dir, _find_file, source_paths,
                                   gen_fort_indent, _LOGGER)
 
         #Check that script ran properly:

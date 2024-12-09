@@ -10,6 +10,7 @@ module phys_comp
    private
 
    public :: phys_readnl
+   public :: phys_register
    public :: phys_init
    public :: phys_timestep_init
    public :: phys_run1
@@ -26,6 +27,7 @@ module phys_comp
    character(len=SHR_KIND_CS) :: suite_parts_expect(2) = (/"physics_before_coupler", "physics_after_coupler "/)
    character(len=SHR_KIND_CS), allocatable :: suite_parts(:)
    character(len=SHR_KIND_CL)              :: ncdata_check = unset_str
+   logical                                 :: ncdata_check_err = .false.
    character(len=SHR_KIND_CL)              :: cam_physics_mesh = unset_str
    character(len=SHR_KIND_CS)              :: cam_take_snapshot_before = unset_str
    character(len=SHR_KIND_CS)              :: cam_take_snapshot_after = unset_str
@@ -39,7 +41,7 @@ CONTAINS
    subroutine phys_readnl(nlfilename)
       ! Read physics options, such as suite to run
       use shr_nl_mod,      only: find_group_name => shr_nl_find_group_name
-      use mpi,             only: mpi_character, mpi_real8
+      use mpi,             only: mpi_character, mpi_real8, mpi_logical
       use spmd_utils,      only: masterproc, masterprocid, mpicom
       use cam_logfile,     only: iulog
       use cam_abortutils,  only: endrun
@@ -57,7 +59,7 @@ CONTAINS
 
       namelist /physics_nl/ ncdata_check, min_difference, min_relative_value,&
          cam_take_snapshot_before, cam_take_snapshot_after, cam_physics_mesh,&
-         physics_suite
+         physics_suite, ncdata_check_err
 
       ! Initialize namelist variables to invalid values
       min_difference           = HUGE(1.0_kind_phys)
@@ -67,6 +69,7 @@ CONTAINS
       cam_physics_mesh         = unset_path_str
       ncdata_check             = unset_path_str
       physics_suite            = unset_str
+      ncdata_check_err         = .false.
 
       ! Read namelist
       if (masterproc) then
@@ -96,6 +99,8 @@ CONTAINS
         mpi_character, masterprocid, mpicom, ierr)
       call mpi_bcast(physics_suite, len(physics_suite),&
         mpi_character, masterprocid, mpicom, ierr)
+      call mpi_bcast(ncdata_check_err, 1, mpi_logical, masterprocid,       &
+        mpicom, ierr)
 
       ! Check that the listed physics suite is actually present
       ! in the CCPP physics suite list:
@@ -117,6 +122,11 @@ CONTAINS
          if (trim(ncdata_check) /= trim(unset_path_str)) then
             write(iulog,*) '  Physics data check will be performed against: ',&
                trim(ncdata_check)
+            if (ncdata_check_err) then
+               write(iulog,*) '    Model will endrun if the physics data check fails'
+            else
+               write(iulog,*) '    Model will NOT endrun if the physics data check fails'
+            end if
             write(iulog,*) 'Minimum Difference considered significant: ',     &
                min_difference
             write(iulog,*) 'Value Under Which Absolute Difference Calculated: ', &
@@ -129,26 +139,14 @@ CONTAINS
 
    end subroutine phys_readnl
 
-   subroutine phys_init()
-      use cam_abortutils,       only: endrun
-      use physics_grid,         only: columns_on_task
-      use vert_coord,           only: pver, pverp
-      use cam_thermo,           only: cam_thermo_init
-      use physics_types,        only: allocate_physics_types_fields
-      use cam_ccpp_cap,         only: cam_ccpp_physics_initialize
+   subroutine phys_register()
+      use cam_ccpp_cap,         only: cam_ccpp_physics_register
       use cam_ccpp_cap,         only: ccpp_physics_suite_part_list
+      use cam_abortutils,       only: endrun
 
       ! Local variables
       integer                    :: i_group
 
-      call cam_thermo_init(columns_on_task, pver, pverp)
-
-      call allocate_physics_types_fields(columns_on_task, pver, pverp,        &
-           set_init_val_in=.true., reallocate_in=.false.)
-      call cam_ccpp_physics_initialize(phys_suite_name)
-      if (errcode /= 0) then
-         call endrun('cam_ccpp_physics_initialize: '//trim(errmsg))
-      end if
       call ccpp_physics_suite_part_list(phys_suite_name, suite_parts,         &
            errmsg, errcode)
       if (errcode /= 0) then
@@ -158,11 +156,35 @@ CONTAINS
       ! Confirm that the suite parts are as expected
       do i_group = 1, size(suite_parts)
          if (.not. any(suite_parts(i_group) == suite_parts_expect)) then
-            write(errmsg, *) 'phys_init: SDF suite groups MUST be ',             &
+            write(errmsg, *) 'phys_register: SDF suite groups MUST be ',      &
                 'ONLY `physics_before_coupler` and/or `physics_after_coupler`'
             call endrun(errmsg)
          end if
       end do
+      ! Call CCPP register phase
+      call cam_ccpp_physics_register(phys_suite_name)
+      if (errcode /= 0) then
+         call endrun('cam_ccpp_physics_register: '//trim(errmsg))
+      end if
+
+   end subroutine phys_register
+
+   subroutine phys_init()
+      use cam_abortutils,       only: endrun
+      use physics_grid,         only: columns_on_task
+      use vert_coord,           only: pver, pverp
+      use cam_thermo,           only: cam_thermo_init
+      use physics_types,        only: allocate_physics_types_fields
+      use cam_ccpp_cap,         only: cam_ccpp_physics_initialize
+
+      call cam_thermo_init(columns_on_task, pver, pverp)
+
+      call allocate_physics_types_fields(columns_on_task, pver, pverp,        &
+           set_init_val_in=.true., reallocate_in=.false.)
+      call cam_ccpp_physics_initialize(phys_suite_name)
+      if (errcode /= 0) then
+         call endrun('cam_ccpp_physics_initialize: '//trim(errmsg))
+      end if
 
    end subroutine phys_init
 
@@ -262,7 +284,8 @@ CONTAINS
       if (trim(ncdata_check) /= trim(unset_path_str)) then
          if (do_ncdata_check) then
             call physics_check_data(ncdata_check, suite_names, data_frame,  &
-                                    min_difference, min_relative_value)
+                                    min_difference, min_relative_value,     &
+                                    ncdata_check_err)
          end if
       end if
 
