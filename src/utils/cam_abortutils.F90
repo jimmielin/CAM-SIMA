@@ -50,7 +50,7 @@ CONTAINS
 
          ! Write error message with memory stats
          write(abort_msg, '(4a,i0,a,f10.2,a,f10.2,a)') &
-              trim(subname), ": Allocate of '",  &
+              trim(subname), ": Allocation of '",  &
               trim(fieldname), "' failed with code ", errcode, &
               ". Memory highwater is ", mem_hw_val, &
               " mb, current memory usage is ", mem_val, " mb"
