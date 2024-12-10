@@ -744,10 +744,6 @@ CONTAINS
       end do
 
       if (dry_air_species_num == 0) then
-         ! **TMP** TODO CHECK hplin 9/13/24: this if-clause is always in CAM but was not in CAM-SIMA
-         ! and dry_air_species_num is == 0 in CAM-SIMA as of 10/1/24 which means this clause will
-         ! change answers (?) -- previously in CAM-SIMA there was only a call to get_cp_dry
-         ! and not the two IF-clauses here.
          sum_cp = thermodynamic_active_species_cp(0)
       else if (present(cpdry)) then
          !

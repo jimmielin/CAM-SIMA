@@ -443,7 +443,7 @@
               standard_name="specific_heat_of_air_used_in_dycore"
               units="J kg-1 K-1" type="real" kind="kind_phys"
               allocatable="allocatable">
-      <long_name>Enthalpy or internal energy scaling factor for energy consistency</long_name>
+      <long_name>specific heat of air used in the dynamical core (enthalpy for pressure-based dynamical cores and internal energy for z-based dynamical cores)</long_name>
       <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
       <ic_file_input_names>cp_or_cv_dycore</ic_file_input_names>
     </variable>
