@@ -80,25 +80,31 @@ CONTAINS
       end do
       ! If we get here, go ahead and register the file
       if (associated(open_files_pool)) then
+         ! Reuse pooled structure and point to the next pool entry
          of_new => open_files_pool
+         open_files_pool => open_files_pool%next
          allocate(of_new%file_desc, stat=ierr)
          call check_allocate(ierr, subname, 'of_file%file_desc', file=__FILE__, &
              line=__LINE__)
          of_new%file_desc = file
          of_new%file_name = file_name
-         allocate(open_files_pool%next)
-         open_files_pool%next => open_files_pool
+         nullify(of_new%next)
       else
          allocate(of_new)
          allocate(of_new%file_desc)
          of_new%file_desc = file
          of_new%file_name = file_name
-         open_files_pool => of_new
+         nullify(of_new%next)
       end if
-      open_files_tail => of_new
-      if (.not. associated(open_files_head)) then
-         open_files_head => of_new
-      end if
+
+      ! Add the registered file to the tail of the open files list
+      if(associated(open_files_tail)) then
+         open_files_tail%next => of_new
+         open_files_tail      => of_new
+      else
+         open_files_head      => of_new
+         open_files_tail      => of_new
+      endif
    end subroutine cam_register_open_file
 
    subroutine cam_register_close_file(file, log_shutdown_in)
