@@ -592,7 +592,6 @@ subroutine derived_phys_dry(cam_runtime_opts, phys_state, phys_tend)
    use geopotential_temp, only: geopotential_temp_run
    use static_energy,     only: update_dry_static_energy_run
    use qneg,              only: qneg_run
-!   use check_energy_chng,   only: check_energy_chng_timestep_init
    use hycoef,            only: hyai, ps0
    use shr_vmath_mod,     only: shr_vmath_log
    use shr_kind_mod,      only: shr_kind_cx
@@ -853,12 +852,6 @@ subroutine derived_phys_dry(cam_runtime_opts, phys_state, phys_tend)
    call update_dry_static_energy_run(pver, gravit, phys_state%t, phys_state%zm,          &
                                      phys_state%phis, phys_state%dse, cpairv,            &
                                      errflg, errmsg)
-
-!Remove once check_energy scheme exists in CAMDEN:
-#if 0
-      ! Compute energy and water integrals of input state
-      ! call check_energy_chng_timestep_init(...)
-#endif
 
 end subroutine derived_phys_dry
 
