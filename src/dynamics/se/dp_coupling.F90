@@ -792,6 +792,7 @@ subroutine derived_phys_dry(cam_runtime_opts, phys_state, phys_tend)
            mmr                     = const_data_ptr, & ! dry MMR
            T                       = phys_state%t,   &
            ncol                    = pcols,          &
+           pver                    = pver,           &
            update_thermo_variables = cam_runtime_opts%update_thermodynamic_variables() &
       )
    else

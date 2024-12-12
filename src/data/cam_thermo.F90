@@ -218,17 +218,18 @@ CONTAINS
    !
    !***************************************************************************
    !
-   subroutine cam_thermo_dry_air_update(mmr, T, ncol, update_thermo_variables, to_dry_factor)
+   subroutine cam_thermo_dry_air_update(mmr, T, ncol, pver, update_thermo_variables, to_dry_factor)
       use air_composition, only: dry_air_composition_update
       use air_composition, only: update_zvirv
       use string_utils,    only: stringify
 
       real(kind_phys),    intent(in) :: mmr(:,:,:) ! constituents array (mmr = dry mixing ratio, if not use to_dry_factor to convert)
       real(kind_phys),    intent(in) :: T(:,:)     ! temperature
+      integer,            intent(in) :: pver       ! number of vertical levels
       integer,            intent(in) :: ncol       ! number of columns
       logical,            intent(in) :: update_thermo_variables ! true: calculate composition-dependent thermo variables
                                                                 ! false: do not calculate composition-dependent thermo variables
-      real(kind_phys), optional, intent(in) :: to_dry_factor(:,:) ! if mmr wet or moist convert
+      real(kind_phys), optional, intent(in) :: to_dry_factor(:,:) ! conversion factor to dry if mmr is wet or moist
 
       ! Local vars
       real(kind_phys) :: sponge_factor(SIZE(mmr, 2))
@@ -241,6 +242,9 @@ CONTAINS
       if (present(to_dry_factor)) then
         if (SIZE(to_dry_factor, 1) /= ncol) then
           call endrun(subname//'DIM 1 of to_dry_factor is'//stringify((/SIZE(to_dry_factor,1)/))//'but should be'//stringify((/ncol/)))
+        end if
+        if (SIZE(to_dry_factor, 2) /= pver) then
+          call endrun(subname//'DIM 2 of to_dry_factor is'//stringify((/SIZE(to_dry_factor,2)/))//'but should be'//stringify((/pver/)))
         end if
       end if
 
@@ -270,7 +274,7 @@ CONTAINS
       ! Update the physics "constants" that vary
       !-------------------------------------------------------------------------
 
-      real(kind_phys),           intent(in) :: mmr(:,:,:) ! constituents array
+      real(kind_phys),           intent(in) :: mmr(:,:,:) ! constituents array (mmr = dry mixing ratio, if not use to_dry_factor to convert)
       integer,                   intent(in) :: ncol       ! number of columns
       integer,                   intent(in) :: pver       ! number of vertical levels
       integer,                   intent(in) :: energy_formula
