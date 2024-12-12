@@ -265,6 +265,7 @@ CONTAINS
     !
     subroutine cam_thermo_water_update(mmr, ncol, pver, energy_formula, to_dry_factor)
       use air_composition, only: water_composition_update
+      use string_utils,    only: stringify
       !-----------------------------------------------------------------------
       ! Update the physics "constants" that vary
       !-------------------------------------------------------------------------
