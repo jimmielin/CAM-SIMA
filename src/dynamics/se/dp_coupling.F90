@@ -801,7 +801,7 @@ subroutine derived_phys_dry(cam_runtime_opts, phys_state, phys_tend)
    end if
 
    !
-   ! update cp_or_cv_dycore in module air_composition.
+   ! update cp_or_cv_dycore in SIMA state.
    ! (note: at this point q is dry)
    !
    call cam_thermo_water_update( &
