@@ -784,10 +784,6 @@ subroutine derived_phys_dry(cam_runtime_opts, phys_state, phys_tend)
    ! Compute molecular viscosity(kmvis) and conductivity(kmcnd).
    ! Update zvirv registry variable; calculated for WACCM-X.
    !-----------------------------------------------------------------------------
-   ! **TEMP** TODO CHECK hplin: CAM has this if-clause for dry_air_species_num > 0
-   ! or otherwise uses zvirv = zvir. CAM-SIMA previously did not have this, and
-   ! instead has a switch for update_thermodynamic_variables. Check if we still want
-   ! this if-clause or change it to something else.
    if (dry_air_species_num > 0) then
       call cam_thermo_dry_air_update( &
            mmr                     = const_data_ptr, & ! dry MMR

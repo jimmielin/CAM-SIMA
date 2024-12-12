@@ -241,10 +241,10 @@ CONTAINS
 
       if (present(to_dry_factor)) then
         if (SIZE(to_dry_factor, 1) /= ncol) then
-          call endrun(subname//'DIM 1 of to_dry_factor is'//stringify((/SIZE(to_dry_factor,1)/))//'but should be'//stringify((/ncol/)))
+          call endrun(subname//'DIM 1 of to_dry_factor is '//stringify((/SIZE(to_dry_factor,1)/))//' but should be '//stringify((/ncol/)))
         end if
         if (SIZE(to_dry_factor, 2) /= pver) then
-          call endrun(subname//'DIM 2 of to_dry_factor is'//stringify((/SIZE(to_dry_factor,2)/))//'but should be'//stringify((/pver/)))
+          call endrun(subname//'DIM 2 of to_dry_factor is '//stringify((/SIZE(to_dry_factor,2)/))//' but should be '//stringify((/pver/)))
         end if
       end if
 
@@ -285,10 +285,10 @@ CONTAINS
 
       if (present(to_dry_factor)) then
         if (SIZE(to_dry_factor, 1) /= ncol) then
-          call endrun(subname//'DIM 1 of to_dry_factor is'//stringify((/SIZE(to_dry_factor,1)/))//'but should be'//stringify((/ncol/)))
+          call endrun(subname//'DIM 1 of to_dry_factor is '//stringify((/SIZE(to_dry_factor,1)/))//' but should be '//stringify((/ncol/)))
         end if
         if (SIZE(to_dry_factor, 2) /= pver) then
-          call endrun(subname//'DIM 2 of to_dry_factor is'//stringify((/SIZE(to_dry_factor,2)/))//'but should be'//stringify((/pver/)))
+          call endrun(subname//'DIM 2 of to_dry_factor is '//stringify((/SIZE(to_dry_factor,2)/))//' but should be '//stringify((/pver/)))
         end if
       end if
 

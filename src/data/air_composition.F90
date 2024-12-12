@@ -559,13 +559,13 @@ CONTAINS
          ! FV: moist pressure vertical coordinate does not need update.
       else if (energy_formula == ENERGY_FORMULA_DYCORE_SE) then
          ! SE
-         ! Note: species index subset to 1: because SIMA currently uses index 0. See #334.
+         ! Note: species index subset to 1: because SIMA currently uses index 0. See GitHub issue #334 in ESCOMP/CAM-SIMA.
          call get_cp(mmr(:ncol,:,:), .false., cp_or_cv_dycore(:ncol,:), &
                      factor=to_dry_factor, active_species_idx_dycore=thermodynamic_active_species_idx(1:), &
                      cpdry=cpairv(:ncol,:))
       else if (energy_formula == ENERGY_FORMULA_DYCORE_MPAS) then
          ! MPAS
-         ! Note: species index subset to 1: because SIMA currently uses index 0. See #334.
+         ! Note: species index subset to 1: because SIMA currently uses index 0. See GitHub issue #334 in ESCOMP/CAM-SIMA.
          call get_R(mmr(:ncol,:,:), thermodynamic_active_species_idx(1:), &
                     cp_or_cv_dycore(:ncol,:), fact=to_dry_factor, Rdry=rairv(:ncol,:))
 
@@ -699,7 +699,8 @@ CONTAINS
       ! inv_cp: output inverse cp instead of cp
       logical,                   intent(in)  :: inv_cp
       real(kind_phys),           intent(out) :: cp(:,:)
-      ! if provided then tracer is not a mass mixing ratio
+      ! factor: to convert tracer to dry mixing ratio
+      ! if provided, then tracer is not a dry mass mixing ratio
       real(kind_phys), optional, intent(in)  :: factor(:,:)
       ! active_species_idx_dycore: array of indices for index of
       !    thermodynamic active species in dycore tracer array

@@ -645,6 +645,11 @@ CONTAINS
 
       ! Find which dynamical core is used in <file> and set the energy formulation
       ! (also called vc_dycore in CAM)
+      !
+      ! This functionality is only used to recognize the originating dynamical core
+      ! from the snapshot file in order to set the energy formulation when running
+      ! with the null dycore. Other dynamical cores set energy_formula_dycore at their
+      ! initialization.
 
       type(file_desc_t), intent(inout) :: file
       logical, intent(in)              :: grid_is_latlon
