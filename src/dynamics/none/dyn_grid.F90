@@ -687,6 +687,7 @@ CONTAINS
       if(energy_formula_dycore /= -1) then
          call mark_as_initialized("total_energy_formula_for_dycore")
       endif
+      call mark_as_initialized("flag_for_dycore_energy_consistency_adjustment")
 
       ! Mark other energy variables calculated by check_energy_timestep_init
       ! here since it will always run when required
