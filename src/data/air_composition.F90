@@ -7,7 +7,6 @@ module air_composition
    use runtime_obj,          only: unset_real, unset_int
    use phys_vars_init_check, only: std_name_len
    use physics_types,        only: cpairv, rairv, cappav, mbarv, zvirv
-   use physics_types,        only: cp_or_cv_dycore
 
    implicit none
    private
@@ -540,22 +539,22 @@ CONTAINS
    !===========================================================================
    !---------------------------------------------------------------------------
    ! water_composition_update: Update generalized cp or cv depending on dycore
+   ! (enthalpy for pressure-based dynamical cores and internal energy for z-based dynamical cores)
    !---------------------------------------------------------------------------
    !===========================================================================
-   subroutine water_composition_update(mmr, ncol, energy_formula, to_dry_factor)
+   subroutine water_composition_update(mmr, ncol, energy_formula, cp_or_cv_dycore, to_dry_factor)
       use cam_thermo_formula, only: ENERGY_FORMULA_DYCORE_FV, ENERGY_FORMULA_DYCORE_SE, ENERGY_FORMULA_DYCORE_MPAS
       use string_utils,       only: stringify
 
-      real(kind_phys),           intent(in) :: mmr(:,:,:)     ! constituents array
-      integer,                   intent(in) :: ncol           ! number of columns
-      integer,                   intent(in) :: energy_formula ! energy formula for dynamical core
-      real(kind_phys), optional, intent(in) :: to_dry_factor(:,:)
+      real(kind_phys),           intent(in)  :: mmr(:,:,:)           ! constituents array
+      integer,                   intent(in)  :: ncol                 ! number of columns
+      integer,                   intent(in)  :: energy_formula       ! energy formula for dynamical core
+      real(kind_phys),           intent(out) :: cp_or_cv_dycore(:,:) ! enthalpy or heat capacity, dycore dependent [J K-1 kg-1]
+      real(kind_phys), optional, intent(in)  :: to_dry_factor(:,:)
 
       character(len=*), parameter :: subname = 'water_composition_update'
 
       ! update enthalpy or internal energy scaling factor for energy consistency with CAM physics
-      ! cp_or_cv_dycore is now a registry variable (physics_types) in CAM-SIMA instead of in-module
-
       if (energy_formula == ENERGY_FORMULA_DYCORE_FV) then
          ! FV: moist pressure vertical coordinate does not need update.
       else if (energy_formula == ENERGY_FORMULA_DYCORE_SE) then
@@ -576,7 +575,6 @@ CONTAINS
       else
          call endrun(subname//': dycore energy formula (value = '//stringify((/energy_formula/))//') not supported')
       end if
-
    end subroutine water_composition_update
 
    !===========================================================================

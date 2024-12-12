@@ -267,18 +267,19 @@ CONTAINS
     !
     !***************************************************************************
     !
-    subroutine cam_thermo_water_update(mmr, ncol, pver, energy_formula, to_dry_factor)
+    subroutine cam_thermo_water_update(mmr, ncol, pver, energy_formula, cp_or_cv_dycore, to_dry_factor)
       use air_composition, only: water_composition_update
       use string_utils,    only: stringify
       !-----------------------------------------------------------------------
       ! Update the physics "constants" that vary
       !-------------------------------------------------------------------------
 
-      real(kind_phys),           intent(in) :: mmr(:,:,:) ! constituents array (mmr = dry mixing ratio, if not use to_dry_factor to convert)
-      integer,                   intent(in) :: ncol       ! number of columns
-      integer,                   intent(in) :: pver       ! number of vertical levels
-      integer,                   intent(in) :: energy_formula
-      real(kind_phys), optional, intent(in) :: to_dry_factor(:,:)
+      real(kind_phys),           intent(in)  :: mmr(:,:,:)            ! constituents array (mmr = dry mixing ratio, if not use to_dry_factor to convert)
+      integer,                   intent(in)  :: ncol                  ! number of columns
+      integer,                   intent(in)  :: pver                  ! number of vertical levels
+      integer,                   intent(in)  :: energy_formula
+      real(kind_phys),           intent(out) :: cp_or_cv_dycore(:,:)  ! enthalpy or heat capacity, dycore dependent [J K-1 kg-1]
+      real(kind_phys), optional, intent(in)  :: to_dry_factor(:,:)
 
       character(len=*), parameter :: subname = 'cam_thermo_water_update: '
 
@@ -291,7 +292,7 @@ CONTAINS
         end if
       end if
 
-      call water_composition_update(mmr, ncol, energy_formula, to_dry_factor=to_dry_factor)
+      call water_composition_update(mmr, ncol, energy_formula, cp_or_cv_dycore, to_dry_factor=to_dry_factor)
     end subroutine cam_thermo_water_update
 
    !===========================================================================
