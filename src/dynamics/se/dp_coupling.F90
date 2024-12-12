@@ -806,6 +806,7 @@ subroutine derived_phys_dry(cam_runtime_opts, phys_state, phys_tend)
    call cam_thermo_water_update( &
         mmr            = const_data_ptr,          & ! dry MMR
         ncol           = pcols,                   &
+        pver           = pver,                    &
         energy_formula = ENERGY_FORMULA_DYCORE_SE &
    )
 

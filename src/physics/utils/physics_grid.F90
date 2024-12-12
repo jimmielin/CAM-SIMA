@@ -378,8 +378,6 @@ CONTAINS
    !========================================================================
 
    real(r8) function get_dlat_p(index)
-      use cam_logfile,    only: iulog
-      use cam_abortutils, only: endrun
       ! latitude of a physics column in degrees
 
       ! Dummy argument
@@ -398,8 +396,6 @@ CONTAINS
    !========================================================================
 
    real(r8) function get_dlon_p(index)
-      use cam_logfile,    only: iulog
-      use cam_abortutils, only: endrun
       ! longitude of a physics column in degrees
 
       ! Dummy argument
@@ -418,8 +414,6 @@ CONTAINS
    !========================================================================
 
    real(r8) function get_rlat_p(index)
-      use cam_logfile,    only: iulog
-      use cam_abortutils, only: endrun
       ! latitude of a physics column in radians
 
       ! Dummy argument
@@ -438,8 +432,6 @@ CONTAINS
    !========================================================================
 
    real(r8) function get_rlon_p(index)
-      use cam_logfile,    only: iulog
-      use cam_abortutils, only: endrun
       ! longitude of a physics column in radians
 
       ! Dummy argument
@@ -458,8 +450,6 @@ CONTAINS
    !========================================================================
 
    real(r8) function get_area_p(index)
-      use cam_logfile,    only: iulog
-      use cam_abortutils, only: endrun
       ! area of a physics column in radians squared
 
       ! Dummy argument
@@ -478,8 +468,6 @@ CONTAINS
    !========================================================================
 
    real(r8) function get_wght_p(index)
-      use cam_logfile,    only: iulog
-      use cam_abortutils, only: endrun
       ! weight of a physics column in radians squared
 
       ! Dummy argument
@@ -498,8 +486,6 @@ CONTAINS
    !========================================================================
 
    subroutine get_rlat_all_p(rlatdim, rlats)
-      use cam_logfile,    only: iulog
-      use cam_abortutils, only: endrun
       !-----------------------------------------------------------------------
       !
       ! get_rlat_all_p: Return all latitudes (in radians) on task.
@@ -528,8 +514,6 @@ CONTAINS
    !========================================================================
 
    subroutine get_rlon_all_p(rlondim, rlons)
-      use cam_logfile,    only: iulog
-      use cam_abortutils, only: endrun
       !-----------------------------------------------------------------------
       !
       ! get_rlon_all_p: Return all longitudes (in radians) on task.
@@ -558,8 +542,6 @@ CONTAINS
    !========================================================================
 
    subroutine get_wght_all_p(wghtdim, wghts)
-      use cam_logfile,    only: iulog
-      use cam_abortutils, only: endrun
       !-----------------------------------------------------------------------
       !
       ! get_wght_all_p: Return all weights on task.
@@ -588,7 +570,6 @@ CONTAINS
    !========================================================================
 
    subroutine get_dyn_col_p(index, blk_num, blk_ind)
-      use cam_logfile,    only: iulog
       use cam_abortutils, only: endrun
       ! Return the dynamics local block number and block offset(s) for
       ! the physics column indicated by <index>.
@@ -620,8 +601,6 @@ CONTAINS
    !========================================================================
 
    integer function global_index_p(index)
-      use cam_logfile,    only: iulog
-      use cam_abortutils, only: endrun
       ! global column index of a physics column
 
       ! Dummy argument
@@ -638,8 +617,6 @@ CONTAINS
    end function global_index_p
 
    integer function local_index_p(index)
-      use cam_logfile,    only: iulog
-      use cam_abortutils, only: endrun
       ! global column index of a physics column
 
       ! Dummy argument

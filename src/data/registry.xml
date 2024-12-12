@@ -264,7 +264,7 @@
     <variable local_name="dycore_energy_consistency_adjust"
               standard_name="flag_for_dycore_energy_consistency_adjustment"
               units="flag" type="logical">
-      <long_name>flag indicating if dynamical core energy not consistent with CAM physics and to perform adjustment of temperature and temperature tendency</long_name>
+      <long_name>flag indicating if dynamical core energy is not consistent with CAM physics and to perform adjustment of temperature and temperature tendency</long_name>
       <initial_value>.false.</initial_value>
       <initial_value dycore="SE,MPAS">.true.</initial_value>
     </variable>
@@ -272,7 +272,7 @@
     <variable local_name="is_first_timestep"
               standard_name="is_first_timestep"
               units="flag" type="logical">
-      <long_name>flag indicating if is first timestep of initial run</long_name>
+      <long_name>flag indicating if it is the first timestep of an initial run</long_name>
     </variable>
     <!-- State tendencies -->
     <variable local_name="dTdt_total"

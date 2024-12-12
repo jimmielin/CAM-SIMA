@@ -1,5 +1,7 @@
 module cam_thermo_formula
 
+   use runtime_obj, only: unset_int
+
    implicit none
    private
    save
@@ -17,9 +19,9 @@ module cam_thermo_formula
    !! \htmlinclude cam_thermo_formula.html
    ! energy_formula_dycore: energy formula used for dynamical core
    ! written by the dynamical core
-   integer, public :: energy_formula_dycore
+   integer, public :: energy_formula_dycore  = unset_int
    ! energy_formula_physics: energy formula used for physics
-   integer, public :: energy_formula_physics = ENERGY_FORMULA_DYCORE_FV
+   integer, public :: energy_formula_physics = unset_int
 
    ! Public subroutines
    public :: cam_thermo_formula_init

@@ -544,6 +544,7 @@ CONTAINS
    !===========================================================================
    subroutine water_composition_update(mmr, ncol, energy_formula, to_dry_factor)
       use cam_thermo_formula, only: ENERGY_FORMULA_DYCORE_FV, ENERGY_FORMULA_DYCORE_SE, ENERGY_FORMULA_DYCORE_MPAS
+      use string_utils,       only: stringify
 
       real(kind_phys),           intent(in) :: mmr(:,:,:)     ! constituents array
       integer,                   intent(in) :: ncol           ! number of columns
@@ -559,24 +560,21 @@ CONTAINS
          ! FV: moist pressure vertical coordinate does not need update.
       else if (energy_formula == ENERGY_FORMULA_DYCORE_SE) then
          ! SE
-
-         ! **TEMP** TODO hplin 9/17/24:
-         ! for compatibility with CAM-SIMA that allocates thermodynamic_active_species_idx(0:num_advected)
-         ! (whereas CAM only allocates 1-indexed) I subset it here. This should be verified during code
-         ! review.
+         ! Note: species index subset to 1: because SIMA currently uses index 0. See #334.
          call get_cp(mmr(:ncol,:,:), .false., cp_or_cv_dycore(:ncol,:), &
                      factor=to_dry_factor, active_species_idx_dycore=thermodynamic_active_species_idx(1:), &
                      cpdry=cpairv(:ncol,:))
       else if (energy_formula == ENERGY_FORMULA_DYCORE_MPAS) then
          ! MPAS
+         ! Note: species index subset to 1: because SIMA currently uses index 0. See #334.
          call get_R(mmr(:ncol,:,:), thermodynamic_active_species_idx(1:), &
                     cp_or_cv_dycore(:ncol,:), fact=to_dry_factor, Rdry=rairv(:ncol,:))
 
          ! internal energy coefficient for MPAS
-         ! (equation 92 in Eldred et al. 2023; https://rmets.onlinelibrary.wiley.com/doi/epdf/10.1002/qj.4353)
+         ! (equation 92 in Eldred et al. 2023; doi:10.1002/qj.4353)
          cp_or_cv_dycore(:ncol,:) = cp_or_cv_dycore(:ncol,:) * (cpairv(:ncol,:) - rairv(:ncol,:)) / rairv(:ncol,:)
       else
-         call endrun(subname//': dycore energy formula not supported')
+         call endrun(subname//': dycore energy formula (value = '//stringify((/energy_formula/))//') not supported')
       end if
 
    end subroutine water_composition_update
@@ -696,14 +694,14 @@ CONTAINS
       ! Dummy arguments
       ! tracer: Tracer array
       !
-      ! factor not present then tracer must be dry mixing ratio
-      ! if factor present tracer*factor must be dry mixing ratio
+      ! if factor not present then tracer must be a dry mixing ratio
+      ! if factor present tracer*factor must be a dry mixing ratio
       !
       real(kind_phys),           intent(in)  :: tracer(:,:,:)
       ! inv_cp: output inverse cp instead of cp
       logical,                   intent(in)  :: inv_cp
       real(kind_phys),           intent(out) :: cp(:,:)
-      ! dp: if provided then tracer is mass not mixing ratio
+      ! if provided then tracer is not a mass mixing ratio
       real(kind_phys), optional, intent(in)  :: factor(:,:)
       ! active_species_idx_dycore: array of indices for index of
       !    thermodynamic active species in dycore tracer array

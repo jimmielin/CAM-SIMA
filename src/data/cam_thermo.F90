@@ -221,14 +221,14 @@ CONTAINS
    subroutine cam_thermo_dry_air_update(mmr, T, ncol, update_thermo_variables, to_dry_factor)
       use air_composition, only: dry_air_composition_update
       use air_composition, only: update_zvirv
-      use string_utils,    only: to_str
+      use string_utils,    only: stringify
 
       real(kind_phys),    intent(in) :: mmr(:,:,:) ! constituents array (mmr = dry mixing ratio, if not use to_dry_factor to convert)
       real(kind_phys),    intent(in) :: T(:,:)     ! temperature
       integer,            intent(in) :: ncol       ! number of columns
       logical,            intent(in) :: update_thermo_variables ! true: calculate composition-dependent thermo variables
                                                                 ! false: do not calculate composition-dependent thermo variables
-      real(kind_phys), optional, intent(in) :: to_dry_factor(:,:) ! if mmr moist convert
+      real(kind_phys), optional, intent(in) :: to_dry_factor(:,:) ! if mmr wet or moist convert
 
       ! Local vars
       real(kind_phys) :: sponge_factor(SIZE(mmr, 2))
@@ -240,7 +240,7 @@ CONTAINS
 
       if (present(to_dry_factor)) then
         if (SIZE(to_dry_factor, 1) /= ncol) then
-          call endrun(subname//'DIM 1 of to_dry_factor is'//to_str(SIZE(to_dry_factor,1))//'but should be'//to_str(ncol))
+          call endrun(subname//'DIM 1 of to_dry_factor is'//stringify((/SIZE(to_dry_factor,1)/))//'but should be'//stringify((/ncol/)))
         end if
       end if
 
@@ -263,7 +263,7 @@ CONTAINS
     !
     !***************************************************************************
     !
-    subroutine cam_thermo_water_update(mmr, ncol, energy_formula, to_dry_factor)
+    subroutine cam_thermo_water_update(mmr, ncol, pver, energy_formula, to_dry_factor)
       use air_composition, only: water_composition_update
       !-----------------------------------------------------------------------
       ! Update the physics "constants" that vary
@@ -271,8 +271,20 @@ CONTAINS
 
       real(kind_phys),           intent(in) :: mmr(:,:,:) ! constituents array
       integer,                   intent(in) :: ncol       ! number of columns
+      integer,                   intent(in) :: pver       ! number of vertical levels
       integer,                   intent(in) :: energy_formula
       real(kind_phys), optional, intent(in) :: to_dry_factor(:,:)
+
+      character(len=*), parameter :: subname = 'cam_thermo_water_update: '
+
+      if (present(to_dry_factor)) then
+        if (SIZE(to_dry_factor, 1) /= ncol) then
+          call endrun(subname//'DIM 1 of to_dry_factor is'//stringify((/SIZE(to_dry_factor,1)/))//'but should be'//stringify((/ncol/)))
+        end if
+        if (SIZE(to_dry_factor, 2) /= pver) then
+          call endrun(subname//'DIM 2 of to_dry_factor is'//stringify((/SIZE(to_dry_factor,2)/))//'but should be'//stringify((/pver/)))
+        end if
+      end if
 
       call water_composition_update(mmr, ncol, energy_formula, to_dry_factor=to_dry_factor)
     end subroutine cam_thermo_water_update

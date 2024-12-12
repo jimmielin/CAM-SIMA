@@ -115,16 +115,16 @@ CONTAINS
       !
       ! Arguments
       !
-      real(r8), intent(in) :: arr(pcols)
-      ! Input array, chunked
-      real(r8), intent(out):: gmean      ! global means
+      real(r8), intent(in)  :: arr(pcols)
+      ! Input array
+      real(r8), intent(out) :: gmean      ! global means
       !
       ! Local workspace
       !
-      integer, parameter :: nflds = 1
-      real(r8)           :: gmean_array(nflds)
-      real(r8)           :: array(pcols, nflds)
-      integer            :: ncols, lchnk
+      integer, parameter    :: nflds = 1
+      real(r8)              :: gmean_array(nflds)
+      real(r8)              :: array(pcols, nflds)
+      integer               :: ncols, lchnk
 
       array(:ncols, 1) = arr(:ncols)
       call gmean_arr(array, gmean_array, nflds)
@@ -192,7 +192,7 @@ CONTAINS
    !
    !========================================================================
    !
-   subroutine gmean_fixed_repro (arr, arr_gmean, rel_diff, nflds)
+   subroutine gmean_fixed_repro(arr, arr_gmean, rel_diff, nflds)
       !-----------------------------------------------------------------------
       !
       ! Purpose:
@@ -206,6 +206,7 @@ CONTAINS
       use physics_grid,     only: ngcols_p => num_global_phys_cols
       use physconst,        only: pi
       use shr_reprosum_mod, only: shr_reprosum_calc
+      use cam_abortutils,   only: check_allocate
       !
       ! Arguments
       !
@@ -218,14 +219,20 @@ CONTAINS
       !
       ! Local workspace
       !
-      integer               :: icol, ifld ! column, field indices
+      real(r8),         parameter :: pi4 = 4.0_r8 * pi
+      character(len=*), parameter :: subname = 'gmean_fixed_repro: '
+
+      integer               :: icol, ifld        ! column, field indices
+      integer               :: errflg
 
       real(r8)              :: wght(pcols)       ! integration weights
       real(r8), allocatable :: xfld(:,:)         ! weighted summands
-      !
-      !-----------------------------------------------------------------------
-      !
-      allocate(xfld(pcols, nflds))
+
+      errflg = 0
+
+      allocate(xfld(pcols, nflds), stat=errflg)
+      call check_allocate(errflg, subname, 'xfld(pcols, nflds)', &
+                          file=__FILE__, line=__LINE__)
 
       ! pre-weight summands
       call get_wght_all_p(pcols, wght)
@@ -249,7 +256,7 @@ CONTAINS
 
       deallocate(xfld)
       ! final normalization
-      arr_gmean(:) = arr_gmean(:) / (4.0_r8 * pi)
+      arr_gmean(:) = arr_gmean(:) / pi4
 
    end subroutine gmean_fixed_repro
 
