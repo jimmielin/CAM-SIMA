@@ -188,8 +188,8 @@ contains
     ! Called by `cam_init` in `src/control/cam_comp.F90`.
     subroutine dyn_init(cam_runtime_opts, dyn_in, dyn_out)
         use cam_thermo_formula,   only: energy_formula_dycore, ENERGY_FORMULA_DYCORE_MPAS
-        use physics_types,        only: dycore_energy_consistency_adjust
         use phys_vars_init_check, only: mark_as_initialized
+        use physics_types,        only: dycore_energy_consistency_adjust
 
         type(runtime_options), intent(in) :: cam_runtime_opts
         type(dyn_import_t), intent(in) :: dyn_in
