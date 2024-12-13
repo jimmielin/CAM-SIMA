@@ -209,7 +209,7 @@ contains
 
         ! Set dynamical core energy formula for use in cam_thermo.
         energy_formula_dycore = ENERGY_FORMULA_DYCORE_MPAS
-        call mark_as_initialized("total_energy_formula_for_dycore")
+        call mark_as_initialized('total_energy_formula_for_dycore')
 
         ! Dynamical core energy is not consistent with CAM physics and requires
         ! temperature and temperature tendency adjustment at end of physics.
