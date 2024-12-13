@@ -214,7 +214,7 @@ contains
         ! Dynamical core energy is not consistent with CAM physics and requires
         ! temperature and temperature tendency adjustment at end of physics.
         dycore_energy_consistency_adjust = .true.
-        call mark_as_initialized("flag_for_dycore_energy_consistency_adjustment")
+        call mark_as_initialized('flag_for_dycore_energy_consistency_adjustment')
 
         allocate(constituent_name(num_advected), stat=ierr)
         call check_allocate(ierr, subname, 'constituent_name(num_advected)', 'dyn_comp', __LINE__)
