@@ -233,8 +233,8 @@ contains
     !--------------------------------------------------------
     ! Mark variables as initialized so they are not read from initial conditions
     !--------------------------------------------------------
-    call mark_as_initialized('tropopause_air_pressure_from_climatology_dataset')
-    call mark_as_initialized('tropopause_calendar_days_from_climatology')
+    call mark_as_initialized('tropopause_air_pressure_from_tropopause_climatology_dataset')
+    call mark_as_initialized('tropopause_calendar_days_from_tropopause_climatology')
 
   end subroutine tropopause_climo_read_file
 end module tropopause_climo_read
