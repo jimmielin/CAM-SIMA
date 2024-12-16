@@ -29,6 +29,7 @@ module cam_comp
    use physics_types,             only: phys_state, phys_tend
    use physics_types,             only: dtime_phys
    use physics_types,             only: calday
+   use physics_types,             only: is_first_timestep, nstep
    use dyn_comp,                  only: dyn_import_t, dyn_export_t
 
    use perf_mod,                  only: t_barrierf, t_startf, t_stopf
@@ -149,9 +150,6 @@ CONTAINS
       character(len=cx)        :: errmsg
       !-----------------------------------------------------------------------
 
-      dtime_phys = 0.0_r8
-      call mark_as_initialized('timestep_for_physics')
-
       call init_pio_subsystem()
 
       ! Initializations using data passed from coupler.
@@ -167,11 +165,19 @@ CONTAINS
 
       call cam_ctrl_set_orbit(eccen, obliqr, lambm0, mvelpp)
 
-
       call timemgr_init(                                                      &
            dtime, calendar, start_ymd, start_tod, ref_ymd,                    &
            ref_tod, stop_ymd, stop_tod, curr_ymd, curr_tod,                   &
            perpetual_run, perpetual_ymd, initial_run_in)
+
+      dtime_phys = 0.0_r8
+      call mark_as_initialized('timestep_for_physics')
+
+      is_first_timestep = .true.
+      call mark_as_initialized('is_first_timestep')
+
+      nstep = get_nstep()
+      call mark_as_initialized('current_timestep_number')
 
       ! Get current fractional calendar day. Needs to be updated at every timestep.
       calday = get_curr_calday()
@@ -267,6 +273,10 @@ CONTAINS
 
       use phys_comp, only: phys_timestep_init
       use stepon,    only: stepon_timestep_init
+
+      ! Update timestep flags in physics state
+      is_first_timestep = is_first_step()
+      nstep = get_nstep()
 
       !----------------------------------------------------------
       ! First phase of dynamics (at least couple from dynamics to physics)
@@ -514,10 +524,6 @@ CONTAINS
       type(cam_out_t), pointer :: cam_out ! Output from CAM to surface
       type(cam_in_t),  pointer :: cam_in  ! Input from merged surface to CAM
 
-      !
-      ! Local variable
-      !
-      integer                  :: nstep   ! Current timestep number.
       !-----------------------------------------------------------------------
 
       call phys_final()
@@ -540,7 +546,6 @@ CONTAINS
       call shr_sys_flush( iulog )   ! Flush all output to the CAM log file
 
       if (masterproc) then
-         nstep = get_nstep()
          write(iulog,9300) nstep-1,nstep
 9300     format (//'Number of completed timesteps:',i6,/,'Time step ',i6,     &
               ' partially done to provide convectively adjusted and ',        &
