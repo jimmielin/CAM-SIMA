@@ -976,8 +976,8 @@ contains
 
         ! These energy variables are calculated by check_energy_timestep_init
         ! but need to be marked here
-        call mark_as_initialized('vertically_integrated_total_energy_at_end_of_physics_timestep')
         call mark_as_initialized('vertically_integrated_total_energy_using_dycore_energy_formula')
+        call mark_as_initialized('vertically_integrated_total_energy_using_dycore_energy_formula_at_end_of_physics_timestep')
         call mark_as_initialized('vertically_integrated_total_energy_using_dycore_energy_formula_at_start_of_physics_timestep')
         call mark_as_initialized('vertically_integrated_total_energy_using_physics_energy_formula')
         call mark_as_initialized('vertically_integrated_total_energy_using_physics_energy_formula_at_start_of_physics_timestep')
