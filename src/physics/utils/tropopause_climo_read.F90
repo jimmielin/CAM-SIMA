@@ -121,7 +121,7 @@ contains
     real(kind_phys) :: to_lats(pcols), to_lons(pcols)
     real(kind_phys), parameter :: d2r=pi/180._kind_phys, zero=0._kind_phys, twopi=pi*2._kind_phys
     character(len=shr_kind_cl) :: locfn
-    character(len=shr_kind_cm) :: errmsg
+    character(len=shr_kind_cl) :: errmsg
     character(len=*), parameter :: subname = "tropopause_climo_read_file"
 
     errmsg = ''
