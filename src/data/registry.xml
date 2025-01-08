@@ -137,13 +137,6 @@
       <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
       <ic_file_input_names>frontga pbuf_frontga</ic_file_input_names>
     </variable>
-    <variable local_name="pblh"
-              standard_name="atmosphere_boundary_layer_thickness"
-              units="m" type="real" kind="kind_phys"
-              allocatable="pointer">
-      <dimensions>horizontal_dimension</dimensions>
-      <ic_file_input_names>pblh pbuf_pblh</ic_file_input_names>
-    </variable>
     <variable local_name="qpert"
               standard_name="convective_water_vapor_wrt_moist_air_and_condensed_water_perturbation_due_to_pbl_eddies"
               units="kg kg-1" type="real" kind="kind_phys"
