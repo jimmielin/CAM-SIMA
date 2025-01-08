@@ -1495,11 +1495,21 @@ class AtmInParamGen(ParamGen):
                 # Write all variables within that group (sorted alphabetically):
                 for var in sorted(self._data[nml_group], key=var_sort_key):
                     #Extract variable value(s):
-                    val = self._data[nml_group][var]["values"].strip()
+                    val = self._data[nml_group][var]["values"] #.strip()
+
+                    #Raise error if no value found:
+                    if val is None:
+                        emsg = f"Namelist entry '{var}' is missing a "
+                        emsg += "valid/default 'value' element."
+                        raise AtmInParamGenError(emsg)
+                    else:
+                        #If value found then strip white space:
+                        val = val.strip()
+                    #End if
 
                     #If no value is set then move to the next variable:
-                    if val is None:
-                        continue
+                    #if val is None:
+                    #    continue
                     #End if
 
                     #Extract variable type:
