@@ -151,6 +151,13 @@
       <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
       <ic_file_input_names>cmfmc tphysbc_cmfmc</ic_file_input_names>
     </variable>
+    <variable local_name="dlfzm"
+              standard_name="detrainment_of_cloud_liquid_due_to_deep_convection"
+              units="kg kg-1 s-1" type="real" kind="kind_phys"
+              allocatable="pointer">
+      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <ic_file_input_names>dlfzm pbuf_dlfzm</ic_file_input_names>
+    </variable>
     <variable local_name="dlf"
               standard_name="detrainment_of_water_due_to_all_convection"
               units="kg kg-1 s-1" type="real" kind="kind_phys"
@@ -166,8 +173,7 @@
       <ic_file_input_names>dlf2 tphysbc_dlf2</ic_file_input_names>
     </variable>
     <!-- note: rliq and rliq2 from CAM snapshot appear to be in m s-1 (precip) units.
-         the CCPP standard names table claim that it should be in kg m-2 s-1 units.
-         this probably has to be reconciled in the cmfmca scheme -->
+         the CCPP standard names table claim that it should be in kg m-2 s-1 units. -->
     <variable local_name="rliq"
               standard_name="vertically_integrated_liquid_water_tendency_due_to_all_convection_to_be_applied_later_in_time_loop"
               units="m s-1" type="real" kind="kind_phys"
