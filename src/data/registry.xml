@@ -148,15 +148,29 @@
               standard_name="atmosphere_convective_mass_flux_due_to_all_convection"
               units="kg m-2 s-1" type="real" kind="kind_phys"
               allocatable="pointer">
-      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <dimensions>horizontal_dimension vertical_interface_dimension</dimensions>
       <ic_file_input_names>cmfmc tphysbc_cmfmc</ic_file_input_names>
+    </variable>
+    <variable local_name="cmfmc_dp"
+              standard_name="atmosphere_convective_mass_flux_due_to_deep_convection"
+              units="kg m-2 s-1" type="real" kind="kind_phys"
+              allocatable="pointer">
+      <dimensions>horizontal_dimension vertical_interface_dimension</dimensions>
+      <ic_file_input_names>cmfmc_dp pbuf_CMFMC_DP</ic_file_input_names>
+    </variable>
+    <variable local_name="cmfmc_sh"
+              standard_name="atmosphere_convective_mass_flux_due_to_shallow_convection"
+              units="kg m-2 s-1" type="real" kind="kind_phys"
+              allocatable="pointer">
+      <dimensions>horizontal_dimension vertical_interface_dimension</dimensions>
+      <ic_file_input_names>cmfmc_sh pbuf_CMFMC_SH</ic_file_input_names>
     </variable>
     <variable local_name="dlfzm"
               standard_name="detrainment_of_cloud_liquid_due_to_deep_convection"
               units="kg kg-1 s-1" type="real" kind="kind_phys"
               allocatable="pointer">
       <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
-      <ic_file_input_names>dlfzm pbuf_dlfzm</ic_file_input_names>
+      <ic_file_input_names>dlfzm pbuf_DLFZM</ic_file_input_names>
     </variable>
     <variable local_name="dlf"
               standard_name="detrainment_of_water_due_to_all_convection"
@@ -172,17 +186,38 @@
       <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
       <ic_file_input_names>dlf2 tphysbc_dlf2</ic_file_input_names>
     </variable>
+    <variable local_name="zm_jt"
+              standard_name="vertical_index_at_top_of_deep_convection_for_convective_columns"
+              units="index" type="real" kind="kind_phys"
+              allocatable="pointer">
+      <dimensions>horizontal_dimension</dimensions>
+      <ic_file_input_names>pbuf_ZM_JT</ic_file_input_names>
+    </variable>
+    <variable local_name="zm_maxg"
+              standard_name="vertical_index_of_deep_convection_launch_level_for_convective_columns"
+              units="index" type="real" kind="kind_phys"
+              allocatable="pointer">
+      <dimensions>horizontal_dimension</dimensions>
+      <ic_file_input_names>pbuf_ZM_MAXG</ic_file_input_names>
+    </variable>
+    <variable local_name="rprddp"
+              standard_name="tendency_of_precipitation_wrt_moist_air_and_condensed_water_due_to_deep_convection_excluding_subcloud_evaporation"
+              units="kg kg-1 s-1" type="real" kind="kind_phys"
+              allocatable="pointer">
+      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <ic_file_input_names>pbuf_RPRDDP</ic_file_input_names>
+    </variable>
     <!-- note: rliq and rliq2 from CAM snapshot appear to be in m s-1 (precip) units.
          the CCPP standard names table claim that it should be in kg m-2 s-1 units. -->
     <variable local_name="rliq"
-              standard_name="vertically_integrated_liquid_water_tendency_due_to_all_convection_to_be_applied_later_in_time_loop"
+              standard_name="vertically_integrated_cloud_liquid_tendency_due_to_all_convection_to_be_applied_later_in_time_loop"
               units="m s-1" type="real" kind="kind_phys"
               allocatable="pointer">
       <dimensions>horizontal_dimension</dimensions>
       <ic_file_input_names>rliq tphysbc_rliq</ic_file_input_names>
     </variable>
     <variable local_name="rliq2"
-              standard_name="vertically_integrated_liquid_water_tendency_due_to_shallow_convection_to_be_applied_later_in_time_loop"
+              standard_name="vertically_integrated_cloud_liquid_tendency_due_to_shallow_convection_to_be_applied_later_in_time_loop"
               units="m s-1" type="real" kind="kind_phys"
               allocatable="pointer">
       <dimensions>horizontal_dimension</dimensions>

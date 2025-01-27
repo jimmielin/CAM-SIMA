@@ -101,4 +101,16 @@
       <option name="comment">CAM7 test with SE-CSLAM dycore</option>
     </options>
   </test>
+
+  <!-- CAM4 physics tests -->
+  <test compset="FCAM4" grid="ne5pg3_ne5pg3_mg37" name="SMS_Ln9" testmods="cam/outfrq_se_cslam_analy_ic">
+    <machines>
+      <machine name="derecho" compiler="intel" category="aux_sima"/>
+      <machine name="derecho" compiler="gnu" category="aux_sima"/>
+    </machines>
+    <options>
+      <option name="wallclock">00:10:00</option>
+      <option name="comment">CAM4 test with SE-CSLAM dycore</option>
+    </options>
+  </test>
 </testlist>
