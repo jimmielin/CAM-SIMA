@@ -186,20 +186,6 @@
       <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
       <ic_file_input_names>dlf2 tphysbc_dlf2</ic_file_input_names>
     </variable>
-    <variable local_name="zm_jt"
-              standard_name="vertical_index_at_top_of_deep_convection_for_convective_columns"
-              units="index" type="real" kind="kind_phys"
-              allocatable="pointer">
-      <dimensions>horizontal_dimension</dimensions>
-      <ic_file_input_names>pbuf_ZM_JT</ic_file_input_names>
-    </variable>
-    <variable local_name="zm_maxg"
-              standard_name="vertical_index_of_deep_convection_launch_level_for_convective_columns"
-              units="index" type="real" kind="kind_phys"
-              allocatable="pointer">
-      <dimensions>horizontal_dimension</dimensions>
-      <ic_file_input_names>pbuf_ZM_MAXG</ic_file_input_names>
-    </variable>
     <variable local_name="rprddp"
               standard_name="tendency_of_precipitation_wrt_moist_air_and_condensed_water_due_to_deep_convection_excluding_subcloud_evaporation"
               units="kg kg-1 s-1" type="real" kind="kind_phys"
