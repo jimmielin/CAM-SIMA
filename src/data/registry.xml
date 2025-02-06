@@ -573,6 +573,23 @@
       <ic_file_input_names>landfrac cam_in_landfrac</ic_file_input_names>
     </variable>
 
+    <!-- Shallow convection variables -->
+    <variable local_name="convect_shallow_use_shfrc"
+              standard_name="flag_for_cloud_fraction_use_shallow_convection_calculated_clouds_tbd"
+              units="flag" type="logical">
+      <long_name>should cloud fraction use shallow convection calculated convective clouds</long_name>
+      <!-- only true for UW and UNICON shallow schemes. set by scheme init. -->
+      <initial_value>.false.</initial_value>
+    </variable>
+    <variable local_name="shfrc"
+              standard_name="convective_cloud_fraction_due_to_shallow_convection_tbd"
+              units="fraction" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <!-- only used if use_shfrc is .true. -->
+      <initial_value>0.0_kind_phys</initial_value>
+    </variable>
+
     <!-- Zhang McFarlane (ZM) Variables -->
     <!-- Note that no_deep_pbl defaults to false, but needs to be set to true for diag_TKE or UW schemes -->
     <variable local_name="pblh"
