@@ -190,34 +190,70 @@ def _find_scheme_source(source_dirs, metadata_file_name):
             # End for
         # End for
     # End for
-    # Look for an associated XML file
-    test_file = metadata_file_name + "_namelist.xml"
 
-    # Search through all physics source directories,
-    # starting with SourceMods:
+    # Look for an associated XML file with scheme names
+    meta_path = None
     for direc in source_dirs:
-
-        # Break loop if source file is found:
-        if xml_file:
+        test_path = os.path.join(direc, metadata_file_name + ".meta")
+        if os.path.exists(test_path):
+            meta_path = test_path
             break
+        # End if
+    # End for
 
-        # Loop over all files in all relevant
-        # sub-directories:
-        for root, _, files in os.walk(direc):
+    if meta_path:
+        schemes = find_scheme_names(meta_path)
+
+        # Try to find XML file for each specific scheme name
+        for scheme_name in schemes:
+            test_file = scheme_name + "_namelist.xml"
+            for direc in source_dirs:
+                for root, _, files in os.walk(direc):
+                    if test_file in files:
+                        xml_file = os.path.join(root, test_file)
+                        # First match is returned here.
+                        break
+                    # End if
+                # End for
+                if xml_file:
+                    break
+                # End if
+            # End for
+            if xml_file:
+                break
+            # End if
+        # End for
+
+    # If there are no scheme-specific XML files, use module-level naming
+    if not xml_file:
+        test_file = metadata_file_name + "_namelist.xml"
+
+        # Search through all physics source directories,
+        # starting with SourceMods:
+        for direc in source_dirs:
 
             # Break loop if source file is found:
             if xml_file:
                 break
 
-            for fname in files:
-                # If file name matches what is expected, then
-                # set it as the associated source file name:
-                if fname == test_file:
-                    xml_file = os.path.join(root, test_file)
+            # Loop over all files in all relevant
+            # sub-directories:
+            for root, _, files in os.walk(direc):
+
+                # Break loop if source file is found:
+                if xml_file:
                     break
-                # End if
+
+                for fname in files:
+                    # If file name matches what is expected, then
+                    # set it as the associated source file name:
+                    if fname == test_file:
+                        xml_file = os.path.join(root, test_file)
+                        break
+                    # End if
+                # End for
             # End for
-        # End for
+        # End if
 
     return source_file, xml_file
 
@@ -273,7 +309,6 @@ def _find_metadata_files(source_dirs, scheme_finder):
 
     meta_files = {}
     missing_source_files = []
-    bad_xml_sources = []
 
     for direc in source_dirs:
         for root, _, files in os.walk(direc):
@@ -288,13 +323,26 @@ def _find_metadata_files(source_dirs, scheme_finder):
                         if source_file:
                             # Find all the schemes in the file
                             schemes = scheme_finder(path)
+
+                            # If we found a scheme-specific XML, only associate it with this scheme
                             if (len(schemes) > 1) and xml_file:
-                                bad_xml_sources.append(xml_file)
+                                # Determine which scheme the XML belongs to by filename
+                                xml_basename = os.path.splitext(os.path.basename(xml_file))[0]
+                                xml_scheme = xml_basename.replace('_namelist', '')
+
+                                for scheme in schemes:
+                                    if scheme == xml_scheme:
+                                        meta_files[scheme] = (path, source_file, xml_file)
+                                    else:
+                                        meta_files[scheme] = (path, source_file, None)
+                                    # End if
+                                # End for
+                            else:
+                                # Single scheme associated with XML - associate with all
+                                for scheme in schemes:
+                                    meta_files[scheme] = (path, source_file, xml_file)
+                                # End for
                             # end if
-                            for scheme in schemes:
-                                meta_files[scheme] = (path, source_file,
-                                                      xml_file)
-                            # End for
                         else:
                             # Add meta file to list of files
                             # with missing source files:
@@ -313,16 +361,6 @@ def _find_metadata_files(source_dirs, scheme_finder):
         emsg += "ERROR: No Fortran files were found for the following "      \
                 f"meta file{ess}:\n"
         emsg += "\n".join(sorted(missing_source_files))
-    # end if
-    if bad_xml_sources:
-        if len(bad_xml_sources) > 1:
-            emsg += "ERROR: These XML files were associated with more than " \
-                    "one scheme\n"
-        else:
-            emsg += "ERROR: This XML file was associated with more than " \
-                    "one scheme\n"
-        # end if
-        emsg += "\n".join(bad_xml_sources)
     # end if
     if emsg:
         raise CamAutoGenError(emsg)
