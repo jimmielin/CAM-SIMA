@@ -19,6 +19,7 @@ module pio_reader
    integer, parameter :: not_char_type_err       = 8
    integer, parameter :: file_not_open_err       = 9
    integer, parameter :: pio_get_msg_err         = 10
+   integer, parameter :: pio_get_att_err         = 11
 
    type :: file_handle_t
       logical            :: is_file_open = .false.  !Is NetCDF file currently open?
@@ -57,6 +58,9 @@ module pio_reader
       procedure :: get_var_char_3d => get_netcdf_var_char_3d
       procedure :: get_var_char_4d => get_netcdf_var_char_4d
       procedure :: get_var_char_5d => get_netcdf_var_char_5d
+
+      !Attribute interfaces
+      procedure :: get_att_char    => get_netcdf_att_char
    end type pio_reader_t
 
 contains
@@ -2018,6 +2022,105 @@ contains
       errcode = 0
       errmsg = ''
    end subroutine get_netcdf_var_char_5d
+
+   ! ------------------------------------------------------------------
+   ! Attribute interfaces
+   ! ------------------------------------------------------------------
+   subroutine get_netcdf_att_char(this, varname, attname, attvalue, errmsg, errcode)
+      use pio,        only: pio_inq_varid
+      use pio,        only: pio_inquire_variable
+      use pio,        only: pio_inq_attlen
+      use pio,        only: pio_seterrorhandling
+      use pio,        only: pio_get_att
+      use pio,        only: PIO_NOERR
+      use pio,        only: PIO_BCAST_ERROR
+      use pio,        only: PIO_GLOBAL
+
+      class(pio_reader_t),           intent(in)  :: this
+      character(len=*),              intent(in)  :: varname   ! Variable name (use 'PIO_GLOBAL' for global attributes)
+      character(len=*),              intent(in)  :: attname   ! Attribute name
+      character(len=:), allocatable, intent(out) :: attvalue  ! Attribute value
+      character(len=*),              intent(out) :: errmsg    ! Error message
+      integer,                       intent(out) :: errcode   ! Error code
+
+      !Local variables:
+      type(file_desc_t)    :: pio_file_handle  ! File handle type used by PIO
+      character(len=cl)    :: file_path        ! Path to NetCDF file
+      integer              :: err_handling     ! PIO error handling code
+      integer              :: var_id           ! NetCDF variable ID
+      integer              :: att_len          ! Attribute length
+      !----------------------
+
+      !Check if file is open:
+      if(.not.this%sima_pio_fh%is_file_open) then
+         !File isn't actually open, so throw an error
+         errcode = file_not_open_err
+         errmsg = "File '"//trim(this%sima_pio_fh%file_path)//"' is not open, need to call 'open_file' first."
+         return
+      end if
+
+      !Extract open file information:
+      pio_file_handle = this%sima_pio_fh%pio_fh
+      file_path       = this%sima_pio_fh%file_path
+
+      !Force PIO to send an error code instead of dying:
+      call pio_seterrorhandling(pio_file_handle, PIO_BCAST_ERROR, oldmethod=err_handling)
+
+      !Magic string: If specified as GLOBAL, then read global attribute.
+      if (trim(varname) == 'GLOBAL') then
+         var_id = PIO_GLOBAL
+      else !Regular variable:
+         !Look for variable on file:
+         errcode = pio_inq_varid(pio_file_handle, varname, var_id)
+         if(errcode /= PIO_NOERR) then
+            !Extract error message from PIO:
+            call get_pio_errmsg(pio_inq_var_id_err, varname, errcode, errmsg)
+
+            !Reset PIO back to original error handling method:
+            call pio_seterrorhandling(pio_file_handle, err_handling)
+            return
+         end if
+      end if
+
+      !Get attribute length
+      errcode = pio_inq_attlen(pio_file_handle, var_id, attname, att_len)
+      if(errcode /= PIO_NOERR) then
+         !Extract error message from PIO:
+         call get_pio_errmsg(pio_get_att_err, attname, errcode, errmsg)
+
+         !Reset PIO back to original error handling method:
+         call pio_seterrorhandling(pio_file_handle, err_handling)
+         return
+      end if
+
+      !Allocate attribute value to correct length:
+      allocate(character(len=att_len) :: attvalue, stat=errcode, errmsg=errmsg)
+      if(errcode /= 0) then
+         !Reset PIO back to original error handling method:
+         call pio_seterrorhandling(pio_file_handle, err_handling)
+         return
+      end if
+
+      !Read attribute into buffer:
+      att_buffer = ''
+      errcode = pio_get_att(pio_file_handle, var_id, attname, attvalue)
+      if(errcode /= PIO_NOERR) then
+         !Extract error message from PIO:
+         call get_pio_errmsg(pio_get_att_err, attname, errcode, errmsg)
+
+         !Reset PIO back to original error handling method:
+         call pio_seterrorhandling(pio_file_handle, err_handling)
+         return
+      end if
+
+      !Reset PIO back to original error handling method:
+      call pio_seterrorhandling(pio_file_handle, err_handling)
+
+      !Attribute was successfully read, so properly set the error
+      !code and message:
+      errcode = 0
+      errmsg = ''
+   end subroutine get_netcdf_att_char
 
    ! ------------------------------------------------------------------
    ! Helper routines (not externally accessible)
