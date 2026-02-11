@@ -13,8 +13,8 @@ module bulk_aerosol_properties_mod
 
   use aerosol_properties_mod, only: aerosol_properties, aero_name_len
 
-  use rad_constituents, only: rad_cnst_get_info, rad_cnst_get_aer_props, rad_cnst_get_aer_mmr
-  use infnan, only: nan, assignment(=)
+  !use rad_constituents, only: rad_cnst_get_info, rad_cnst_get_aer_props, rad_cnst_get_aer_mmr
+  use shr_infnan_mod, only: nan => shr_infnan_nan, assignment(=)
 
   implicit none
 
@@ -81,7 +81,8 @@ contains
        return
     end if
 
-    call rad_cnst_get_info(0, naero=naero)
+    ! TODO
+    !call rad_cnst_get_info(0, naero=naero)
 
     ! Here treat each aerosol as a separate bin
     allocate( nspecies(naero),stat=ierr )
@@ -175,15 +176,18 @@ contains
     end if
 
     if (present(density)) then
-       call rad_cnst_get_aer_props(ilist, bin_ndx,  density_aer=density)
+       !TODO
+       !call rad_cnst_get_aer_props(ilist, bin_ndx,  density_aer=density)
     end if
 
     if (present(hygro)) then
-       call rad_cnst_get_aer_props(ilist, bin_ndx,  hygro_aer=hygro)
+       !TODO
+       !call rad_cnst_get_aer_props(ilist, bin_ndx,  hygro_aer=hygro)
     end if
     if (present(spectype)) then
 
-       call rad_cnst_get_aer_props(ilist, bin_ndx,  aername=aername)
+       !TODO
+       !call rad_cnst_get_aer_props(ilist, bin_ndx,  aername=aername)
 
        select case ( to_lower( aername(:4) ) )
        case('dust')
@@ -206,13 +210,13 @@ contains
       call endrun('ERROR: bulk_aerosol_properties_mod%get specmorph not yet implemented')
     end if
     if (present(specname)) then
-       call rad_cnst_get_aer_props(ilist, bin_ndx,  aername=specname)
+       !TODO: call rad_cnst_get_aer_props(ilist, bin_ndx,  aername=specname)
     end if
     if (present(refindex_sw)) then
-       call rad_cnst_get_aer_props(ilist, bin_ndx,  refindex_aer_sw=refindex_sw)
+       !TODO: call rad_cnst_get_aer_props(ilist, bin_ndx,  refindex_aer_sw=refindex_sw)
     end if
     if (present(refindex_lw)) then
-       call rad_cnst_get_aer_props(ilist, bin_ndx,  refindex_aer_lw=refindex_lw)
+       !TODO: call rad_cnst_get_aer_props(ilist, bin_ndx,  refindex_aer_lw=refindex_lw)
     end if
 
   end subroutine get
@@ -291,18 +295,19 @@ contains
     real(r8),  optional, pointer :: r_lw_abs(:,:)
 
     ! refactive index table parameters
-    call rad_cnst_get_aer_props(list_ndx, bin_ndx, &
-         opticstype=opticstype, &
-         sw_hygro_ext=sw_hygroscopic_ext, &
-         sw_hygro_ssa=sw_hygroscopic_ssa, &
-         sw_hygro_asm=sw_hygroscopic_asm, &
-         lw_hygro_ext=lw_hygroscopic_ext, &
-         sw_nonhygro_ext=sw_insoluble_ext, &
-         sw_nonhygro_ssa=sw_insoluble_ssa, &
-         sw_nonhygro_asm=sw_insoluble_asm, &
-         lw_ext=lw_insoluble_ext, &
-         r_sw_ext=r_sw_ext, r_sw_scat=r_sw_scat, r_sw_ascat=r_sw_ascat, &
-         r_lw_abs=r_lw_abs, mu=r_mu )
+    !TODO:
+    ! call rad_cnst_get_aer_props(list_ndx, bin_ndx, &
+    !      opticstype=opticstype, &
+    !      sw_hygro_ext=sw_hygroscopic_ext, &
+    !      sw_hygro_ssa=sw_hygroscopic_ssa, &
+    !      sw_hygro_asm=sw_hygroscopic_asm, &
+    !      lw_hygro_ext=lw_hygroscopic_ext, &
+    !      sw_nonhygro_ext=sw_insoluble_ext, &
+    !      sw_nonhygro_ssa=sw_insoluble_ssa, &
+    !      sw_nonhygro_asm=sw_insoluble_asm, &
+    !      lw_ext=lw_insoluble_ext, &
+    !      r_sw_ext=r_sw_ext, r_sw_scat=r_sw_scat, r_sw_ascat=r_sw_ascat, &
+    !      r_lw_abs=r_lw_abs, mu=r_mu )
 
     if (present(extpsw)) then
        nullify(extpsw)
@@ -563,7 +568,7 @@ contains
     character(len=20) :: aername
     logical :: primary_carbon ! primary carbons (CB1 and OC1) are hydrophobic
 
-    call rad_cnst_get_aer_props(0, bin_ndx, aername=aername)
+    !TODO: call rad_cnst_get_aer_props(0, bin_ndx, aername=aername)
 
     aername = to_lower(aername)
 
@@ -595,7 +600,7 @@ contains
 
     integer :: res
 
-    call rad_cnst_get_info(list_ndx, naero=res)
+    !TODO: call rad_cnst_get_info(list_ndx, naero=res)
 
   end function nbins_rlist
 
@@ -642,12 +647,12 @@ contains
     integer :: naer, astat
 
 
-    call rad_cnst_get_info(list_ndx, naero=naer)
+    !TODO: call rad_cnst_get_info(list_ndx, naero=naer)
 
     allocate( names(naer), stat=astat)
     if( astat/= 0 ) call endrun('bulk_aerosol_properties_mod%bin_name: names allocate error')
 
-    call rad_cnst_get_info(list_ndx, aernames=names)
+    !TODO: call rad_cnst_get_info(list_ndx, aernames=names)
 
     name = names(bin_ndx)
 

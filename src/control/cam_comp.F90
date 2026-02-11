@@ -103,6 +103,7 @@ CONTAINS
       use phys_vars_init_check,      only: mark_as_initialized
       use tropopause_climo_read,     only: tropopause_climo_read_file
       use gravity_wave_drag_ridge_read, only: gravity_wave_drag_ridge_read_file
+      use radiative_aerosols,           only: radiative_aerosols_init
       use orbital_data,              only: orbital_data_init
       use ccpp_kinds,                only: kind_phys
       use ccpp_constituent_prop_mod, only: ccpp_constituent_prop_ptr_t
@@ -256,6 +257,10 @@ CONTAINS
 
       ! Read gravity wave drag data for ridge parameterization
       call gravity_wave_drag_ridge_read_file()
+
+      ! Initialize radiative aerosols module including physical properties for
+      ! radiatively active aerosol.
+      call radiative_aerosols_init()
 
       ! TEMPORARY:  Prescribe realistic but inaccurate physical quantities
       ! necessary for MUSICA that are currently unavailable in CAM-SIMA.

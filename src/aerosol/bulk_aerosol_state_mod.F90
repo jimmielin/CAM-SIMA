@@ -10,7 +10,6 @@
 !
 module bulk_aerosol_state_mod
   use shr_kind_mod, only: r8 => shr_kind_r8
-  use rad_constituents, only: rad_cnst_get_aer_mmr
   use cam_abortutils,   only: endrun
 
   use aerosol_state_mod, only: aerosol_state, ptr2d_t
@@ -141,6 +140,8 @@ contains
   ! list index, species index and bin index
   !------------------------------------------------------------------------------
   subroutine get_ambient_mmr_rlist(self, list_ndx, species_ndx, bin_ndx, mmr)
+    !use rad_constituents, only: rad_cnst_get_aer_mmr
+
     class(bulk_aerosol_state), intent(in) :: self
     integer, intent(in) :: list_ndx     ! rad climate list index
     integer, intent(in) :: species_ndx  ! species index
@@ -148,7 +149,7 @@ contains
     real(r8), pointer :: mmr(:,:)       ! mass mixing ratios (ncol,nlev)
 
     ! indev hplin need to change to sima-compatible rad_constituents call:
-    call rad_cnst_get_aer_mmr(list_ndx, bin_ndx, self%state, self%pbuf, mmr)
+    !TODO: call rad_cnst_get_aer_mmr(list_ndx, bin_ndx, self%state, self%pbuf, mmr)
 
   end subroutine get_ambient_mmr_rlist
 
