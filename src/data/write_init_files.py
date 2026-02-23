@@ -1508,7 +1508,7 @@ def write_phys_check_subroutine(outfile, host_dict, host_vars, host_imports,
     outfile.write("nullify(file)", 2)
 
     # Check if no differences were found
-    outfile.write("if (is_first) then", 2)
+    outfile.write("if (.not. overall_diff_found) then", 2)
     outfile.write("if (masterproc) then", 3)
     outfile.write("write(iulog,*) ''", 4)
     outfile.write("write(iulog,*) 'No differences found!'", 4)

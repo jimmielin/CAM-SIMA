@@ -8,7 +8,7 @@ module physics_data
    public :: read_constituent_dimensioned_field
    public :: check_field
 
-   !Non-standard variable indices:
+   ! Non-standard variable indices:
    integer, public, parameter :: no_exist_idx     = -1
    integer, public, parameter :: init_mark_idx    = -2
    integer, public, parameter :: prot_no_init_idx = -3
@@ -638,7 +638,9 @@ CONTAINS
       use cam_field_read, only: cam_read_field
       use mpi,            only: mpi_maxloc, mpi_sum, mpi_status_size
       use mpi,            only: mpi_2double_precision, mpi_integer
+      use mpi,            only: mpi_double_precision
       use shr_infnan_mod, only: shr_infnan_isnan
+      use cam_logfile,    only: debug_output, DEBUGOUT_VERBOSE
 
       !Max possible length of variable name in file:
       use phys_vars_init_check, only: std_name_len
@@ -674,6 +676,16 @@ CONTAINS
       integer                          :: nan_count_gl   ! Global count of NaNs
       logical                          :: has_nan        ! Flag indicating NaN was found
 
+      ! Variables for verbose mode global averages
+      real(kind_phys)                  :: local_sum_model    ! Local sum of model values
+      real(kind_phys)                  :: local_sum_snapshot ! Local sum of snapshot values
+      integer                          :: local_count        ! Local count of valid (non-NaN) values
+      real(kind_phys)                  :: global_sum_model   ! Global sum of model values
+      real(kind_phys)                  :: global_sum_snapshot! Global sum of snapshot values
+      integer                          :: global_count       ! Global count of valid values
+      real(kind_phys)                  :: global_avg_model   ! Global average of model state
+      real(kind_phys)                  :: global_avg_snapshot! Global average of snapshot
+
       !Initialize output variables
       ierr = 0
       allocate(buffer(size(current_value)), stat=ierr)
@@ -698,6 +710,11 @@ CONTAINS
             nan_count = 0
             has_nan   = .false.
 
+            ! Initialize verbose mode accumulators
+            local_sum_model    = 0._kind_phys
+            local_sum_snapshot = 0._kind_phys
+            local_count        = 0
+
             do col = 1, size(buffer)
                ! First, check if there are NaNs anywhere in the state
                if (shr_infnan_isnan(current_value(col))) then
@@ -711,6 +728,11 @@ CONTAINS
                      max_diff_col = col
                   end if
                else
+                  ! Accumulate for global average (verbose mode)
+                  local_sum_model    = local_sum_model + current_value(col)
+                  local_sum_snapshot = local_sum_snapshot + buffer(col)
+                  local_count        = local_count + 1
+
                   ! Calculate actual diffs for non-NaN values:
                   if (abs(current_value(col)) < min_relative_value) then
                      !Calculate absolute difference:
@@ -744,6 +766,23 @@ CONTAINS
                                MPI_2DOUBLE_PRECISION,                         &
                                mpi_maxloc, mpicom, ierr)
 
+            ! Gather global averages for verbose mode
+            if (debug_output >= DEBUGOUT_VERBOSE) then
+               call mpi_reduce(local_sum_model, global_sum_model, 1,          &
+                               mpi_double_precision, mpi_sum, masterprocid,   &
+                               mpicom, ierr)
+               call mpi_reduce(local_sum_snapshot, global_sum_snapshot, 1,    &
+                               mpi_double_precision, mpi_sum, masterprocid,   &
+                               mpicom, ierr)
+               call mpi_reduce(local_count, global_count, 1, mpi_integer,     &
+                               mpi_sum, masterprocid, mpicom, ierr)
+
+               if (masterproc .and. global_count > 0) then
+                  global_avg_model    = global_sum_model / real(global_count, kind_phys)
+                  global_avg_snapshot = global_sum_snapshot / real(global_count, kind_phys)
+               end if
+            end if
+
             if (iam == int(max_diff_gl(2)) .and. .not. masterproc) then
                !The largest diff happened on this task, so the local max is
                !the global max. So send the local max value's dimension
@@ -772,6 +811,13 @@ CONTAINS
                                                max_diff_gl_col, is_first)
                   is_first = .false.
                   diff_found = .true.
+               else if ((debug_output >= DEBUGOUT_VERBOSE) .and. global_count > 0) then
+                  ! No differences found, but verbose mode enabled
+                  call write_check_field_verbose(stdname, global_count,     &
+                                                 global_avg_model,          &
+                                                 global_avg_snapshot,       &
+                                                 is_first)
+                  is_first = .false.
                end if
             end if
          end if
@@ -792,8 +838,10 @@ CONTAINS
       use cam_field_read, only: cam_read_field
       use mpi,            only: mpi_maxloc, mpi_sum, mpi_status_size
       use mpi,            only: mpi_2double_precision, mpi_integer
+      use mpi,            only: mpi_double_precision
       use vert_coord,     only: pver, pverp
       use shr_infnan_mod, only: shr_infnan_isnan
+      use cam_logfile,    only: debug_output, DEBUGOUT_VERBOSE
 
       !Max possible length of variable name in file:
       use phys_vars_init_check, only: std_name_len
@@ -834,6 +882,16 @@ CONTAINS
       integer                          :: nan_count_gl   ! Global count of NaNs
       logical                          :: has_nan        ! Flag indicating NaN was found
 
+      ! Variables for verbose mode global averages
+      real(kind_phys)                  :: local_sum_model    ! Local sum of model values
+      real(kind_phys)                  :: local_sum_snapshot ! Local sum of snapshot values
+      integer                          :: local_count        ! Local count of valid (non-NaN) values
+      real(kind_phys)                  :: global_sum_model   ! Global sum of model values
+      real(kind_phys)                  :: global_sum_snapshot! Global sum of snapshot values
+      integer                          :: global_count       ! Global count of valid values
+      real(kind_phys)                  :: global_avg_model   ! Global average of model state
+      real(kind_phys)                  :: global_avg_snapshot! Global average of snapshot
+
       !Initialize output variables
       ierr = 0
       allocate(buffer(size(current_value, 1), size(current_value, 2)),        &
@@ -868,6 +926,11 @@ CONTAINS
             nan_count = 0
             has_nan = .false.
 
+            ! Initialize verbose mode accumulators
+            local_sum_model    = 0._kind_phys
+            local_sum_snapshot = 0._kind_phys
+            local_count        = 0
+
             do lev = 1, num_levs
                do col = 1, size(buffer(:,lev))
                   ! First, check if there are NaNs anywhere in the state
@@ -883,6 +946,11 @@ CONTAINS
                         max_diff_lev = lev
                      end if
                   else
+                     ! Accumulate for global average (verbose mode)
+                     local_sum_model    = local_sum_model + current_value(col, lev)
+                     local_sum_snapshot = local_sum_snapshot + buffer(col, lev)
+                     local_count        = local_count + 1
+
                      ! Calculate actual diffs for non-NaN values:
                      if (abs(current_value(col, lev)) < min_relative_value) then
                         !Calculate absolute difference:
@@ -917,6 +985,23 @@ CONTAINS
             call mpi_allreduce(max_diff, max_diff_gl, 1,                      &
                                MPI_2DOUBLE_PRECISION,                         &
                                mpi_maxloc, mpicom, ierr)
+
+            ! Gather global averages for verbose mode
+            if (debug_output >= DEBUGOUT_VERBOSE) then
+               call mpi_reduce(local_sum_model, global_sum_model, 1,          &
+                               mpi_double_precision, mpi_sum, masterprocid,   &
+                               mpicom, ierr)
+               call mpi_reduce(local_sum_snapshot, global_sum_snapshot, 1,    &
+                               mpi_double_precision, mpi_sum, masterprocid,   &
+                               mpicom, ierr)
+               call mpi_reduce(local_count, global_count, 1, mpi_integer,     &
+                               mpi_sum, masterprocid, mpicom, ierr)
+
+               if (masterproc .and. global_count > 0) then
+                  global_avg_model    = global_sum_model / real(global_count, kind_phys)
+                  global_avg_snapshot = global_sum_snapshot / real(global_count, kind_phys)
+               end if
+            end if
 
             if (iam == int(max_diff_gl(2)) .and. .not. masterproc) then
                !The largest diff happened on this task, so the local max is
@@ -954,6 +1039,13 @@ CONTAINS
                                                max_diff_lev=max_diff_gl_lev)
                   is_first = .false.
                   diff_found = .true.
+               else if ((debug_output >= DEBUGOUT_VERBOSE) .and. global_count > 0) then
+                  ! No differences found, but verbose mode enabled
+                  call write_check_field_verbose(stdname, global_count,     &
+                                                 global_avg_model,          &
+                                                 global_avg_snapshot,       &
+                                                 is_first)
+                  is_first = .false.
                end if
             end if
          end if
@@ -1198,5 +1290,54 @@ CONTAINS
       end if
 
    end subroutine write_check_field_entry
+
+   subroutine write_check_field_verbose(stdname, global_count,                &
+                                        global_avg_model, global_avg_snapshot,&
+                                        is_first)
+
+      use ccpp_kinds, only: kind_phys
+      use cam_logfile, only: iulog
+      use shr_kind_mod, only: cs=>shr_kind_cs
+
+      !Dummy variables:
+      character(len=*),  intent(in) :: stdname
+      integer,           intent(in) :: global_count       ! Total number of valid values checked
+      real(kind_phys),   intent(in) :: global_avg_model   ! Global average of model state
+      real(kind_phys),   intent(in) :: global_avg_snapshot! Global average of snapshot
+      logical,           intent(in) :: is_first
+
+      !Local variables:
+      character(len=cs)            :: fmt_str
+      integer                      :: slen
+      integer, parameter           :: indent_level = 50
+
+      slen = len_trim(stdname)
+
+      !Write verbose check_field log header:
+      if (is_first) then
+         write(iulog, *) ''
+         write(iulog, *) 'No differences found for all the variables below:'
+         write(iulog, *) 'Note: If a variable is not in the registry, '
+         write(iulog, *) '      or if a constituent is not registered,'
+         write(iulog, *) '      it is not checked against the snapshot.'
+         write(iulog, *) '      Verify all model state variables are enumerated below:'
+         write(iulog, *) ''
+         write(fmt_str, '(a,i0,a)') "(1x,a,t",indent_level+1,",1x,a,3x,a,3x,a)"
+         write(iulog, fmt_str) 'Variable Checked', '# Values', 'Avg (model)', 'Avg (snapshot)'
+         write(fmt_str, '(a,i0,a)') "(1x,a,t",indent_level+1,",1x,a,3x,a,3x,a)"
+         write(iulog, fmt_str) '--------', '--------', '------------', '--------------'
+      end if
+
+      !Write standard name separately if longer than the indent level:
+      if (slen > indent_level) then
+         write(iulog, '(a)') trim(stdname)
+         slen = 0
+      end if
+
+      !Write out verbose entry with global averages:
+      write(fmt_str, '(a,i0,a)') "(1x,a,t",indent_level+1,",1x,i8,3x,es12.5,3x,es12.5)"
+      write(iulog, fmt_str) stdname(1:slen), global_count, global_avg_model, global_avg_snapshot
+
+   end subroutine write_check_field_verbose
 
 end module physics_data
