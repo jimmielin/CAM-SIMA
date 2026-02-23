@@ -7,6 +7,7 @@ module physics_data
    public :: read_field
    public :: read_constituent_dimensioned_field
    public :: check_field
+   public :: flush_check_field_verbose
 
    ! Non-standard variable indices:
    integer, public, parameter :: no_exist_idx     = -1
@@ -29,6 +30,18 @@ module physics_data
    interface read_constituent_dimensioned_field
       module procedure read_constituent_dimensioned_field_2d
    end interface read_constituent_dimensioned_field
+
+   ! Module-level storage for verbose check_field entries.
+   ! These are accumulated during check_field calls and flushed
+   ! at the end via flush_check_field_verbose, so that the verbose
+   ! "OK" list is printed after any diff entries.
+   integer, parameter :: max_verbose_entries = 1000
+   integer, parameter :: verbose_name_len    = 256
+   integer, save      :: num_verbose_entries = 0
+   character(len=verbose_name_len), save :: verbose_stdnames(max_verbose_entries)
+   integer,            save :: verbose_global_count(max_verbose_entries)
+   real(8),            save :: verbose_avg_model(max_verbose_entries)
+   real(8),            save :: verbose_avg_snapshot(max_verbose_entries)
 
 !==============================================================================
 CONTAINS
@@ -811,13 +824,13 @@ CONTAINS
                                                max_diff_gl_col, is_first)
                   is_first = .false.
                   diff_found = .true.
-               else if ((debug_output >= DEBUGOUT_VERBOSE) .and. global_count > 0) then
-                  ! No differences found, but verbose mode enabled
-                  call write_check_field_verbose(stdname, global_count,     &
-                                                 global_avg_model,          &
-                                                 global_avg_snapshot,       &
-                                                 is_first)
-                  is_first = .false.
+               end if
+               ! Store verbose entry for later printing (after all diffs)
+               if ((debug_output >= DEBUGOUT_VERBOSE) .and.                 &
+                   diff_count_gl == 0 .and. global_count > 0) then
+                  call store_verbose_entry(stdname, global_count,           &
+                                           global_avg_model,               &
+                                           global_avg_snapshot)
                end if
             end if
          end if
@@ -1039,13 +1052,13 @@ CONTAINS
                                                max_diff_lev=max_diff_gl_lev)
                   is_first = .false.
                   diff_found = .true.
-               else if ((debug_output >= DEBUGOUT_VERBOSE) .and. global_count > 0) then
-                  ! No differences found, but verbose mode enabled
-                  call write_check_field_verbose(stdname, global_count,     &
-                                                 global_avg_model,          &
-                                                 global_avg_snapshot,       &
-                                                 is_first)
-                  is_first = .false.
+               end if
+               ! Store verbose entry for later printing (after all diffs)
+               if ((debug_output >= DEBUGOUT_VERBOSE) .and.                 &
+                   diff_count_gl == 0 .and. global_count > 0) then
+                  call store_verbose_entry(stdname, global_count,           &
+                                           global_avg_model,               &
+                                           global_avg_snapshot)
                end if
             end if
          end if
@@ -1322,53 +1335,77 @@ CONTAINS
 
    end subroutine write_check_field_entry
 
-   subroutine write_check_field_verbose(stdname, global_count,                &
-                                        global_avg_model, global_avg_snapshot,&
-                                        is_first)
-
+   subroutine store_verbose_entry(stdname, global_count,                      &
+                                   global_avg_model, global_avg_snapshot)
       use ccpp_kinds, only: kind_phys
-      use cam_logfile, only: iulog
-      use shr_kind_mod, only: cs=>shr_kind_cs
 
       !Dummy variables:
       character(len=*),  intent(in) :: stdname
-      integer,           intent(in) :: global_count       ! Total number of valid values checked
-      real(kind_phys),   intent(in) :: global_avg_model   ! Global average of model state
-      real(kind_phys),   intent(in) :: global_avg_snapshot! Global average of snapshot
-      logical,           intent(in) :: is_first
+      integer,           intent(in) :: global_count
+      real(kind_phys),   intent(in) :: global_avg_model
+      real(kind_phys),   intent(in) :: global_avg_snapshot
+
+      if (num_verbose_entries < max_verbose_entries) then
+         num_verbose_entries = num_verbose_entries + 1
+         verbose_stdnames(num_verbose_entries)    = stdname
+         verbose_global_count(num_verbose_entries) = global_count
+         verbose_avg_model(num_verbose_entries)    = global_avg_model
+         verbose_avg_snapshot(num_verbose_entries)  = global_avg_snapshot
+      end if
+
+   end subroutine store_verbose_entry
+
+   subroutine flush_check_field_verbose()
+      !
+      ! Writes all buffered verbose check_field entries to the log.
+      ! This should be called after all check_field calls are complete,
+      ! so that the verbose "OK" list appears after any diff entries.
+      !
+
+      use cam_logfile,  only: iulog
+      use spmd_utils,   only: masterproc
+      use shr_kind_mod, only: cs=>shr_kind_cs
 
       !Local variables:
-      character(len=cs)            :: fmt_str
-      integer                      :: slen
-      integer, parameter           :: indent_level = 50
+      character(len=cs)  :: fmt_str
+      integer            :: i, slen
+      integer, parameter :: indent_level = 50
 
-      slen = len_trim(stdname)
+      if (num_verbose_entries == 0) return
+      if (.not. masterproc) return
 
       !Write verbose check_field log header:
-      if (is_first) then
-         write(iulog, *) ''
-         write(iulog, *) 'No differences found for all the variables below:'
-         write(iulog, *) 'Note: If a variable is not in the registry, '
-         write(iulog, *) '      or if a constituent is not registered,'
-         write(iulog, *) '      it is not checked against the snapshot.'
-         write(iulog, *) '      Verify all model state variables are enumerated below:'
-         write(iulog, *) ''
-         write(fmt_str, '(a,i0,a)') "(1x,a,t",indent_level+1,",1x,a,3x,a,3x,a)"
-         write(iulog, fmt_str) 'Variable Checked', '# Values', 'Avg (model)', 'Avg (snapshot)'
-         write(fmt_str, '(a,i0,a)') "(1x,a,t",indent_level+1,",1x,a,3x,a,3x,a)"
-         write(iulog, fmt_str) '--------', '--------', '------------', '--------------'
-      end if
+      write(iulog, *) ''
+      write(iulog, *) 'No differences found for all the variables below:'
+      write(iulog, *) 'Note: If a variable is not in the registry, '
+      write(iulog, *) '      or if a constituent is not registered,'
+      write(iulog, *) '      it is not checked against the snapshot.'
+      write(iulog, *) '      Verify all model state variables are enumerated below:'
+      write(iulog, *) ''
+      write(fmt_str, '(a,i0,a)') "(1x,a,t",indent_level+1,",1x,a,3x,a,3x,a)"
+      write(iulog, fmt_str) 'Variable Checked', '# Values', 'Avg (model)', 'Avg (snapshot)'
+      write(fmt_str, '(a,i0,a)') "(1x,a,t",indent_level+1,",1x,a,3x,a,3x,a)"
+      write(iulog, fmt_str) '--------', '--------', '------------', '--------------'
 
-      !Write standard name separately if longer than the indent level:
-      if (slen > indent_level) then
-         write(iulog, '(a)') trim(stdname)
-         slen = 0
-      end if
+      do i = 1, num_verbose_entries
+         slen = len_trim(verbose_stdnames(i))
 
-      !Write out verbose entry with global averages:
-      write(fmt_str, '(a,i0,a)') "(1x,a,t",indent_level+1,",1x,i8,3x,es12.5,3x,es12.5)"
-      write(iulog, fmt_str) stdname(1:slen), global_count, global_avg_model, global_avg_snapshot
+         !Write standard name separately if longer than the indent level:
+         if (slen > indent_level) then
+            write(iulog, '(a)') trim(verbose_stdnames(i))
+            slen = 0
+         end if
 
-   end subroutine write_check_field_verbose
+         !Write out verbose entry with global averages:
+         write(fmt_str, '(a,i0,a)') "(1x,a,t",indent_level+1,",1x,i8,3x,es12.5,3x,es12.5)"
+         write(iulog, fmt_str) verbose_stdnames(i)(1:slen),                  &
+            verbose_global_count(i), verbose_avg_model(i),                   &
+            verbose_avg_snapshot(i)
+      end do
+
+      !Reset the buffer for the next check_data call:
+      num_verbose_entries = 0
+
+   end subroutine flush_check_field_verbose
 
 end module physics_data
