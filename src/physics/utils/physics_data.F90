@@ -653,7 +653,7 @@ CONTAINS
       use mpi,            only: mpi_2double_precision, mpi_integer
       use mpi,            only: mpi_double_precision
       use shr_infnan_mod, only: shr_infnan_isnan
-      use cam_logfile,    only: debug_output, DEBUGOUT_VERBOSE
+      use cam_logfile,    only: debug_output, DEBUGOUT_INFO
 
       !Max possible length of variable name in file:
       use phys_vars_init_check, only: std_name_len
@@ -780,7 +780,7 @@ CONTAINS
                                mpi_maxloc, mpicom, ierr)
 
             ! Gather global averages for verbose mode
-            if (debug_output >= DEBUGOUT_VERBOSE) then
+            if (debug_output >= DEBUGOUT_INFO) then
                call mpi_reduce(local_sum_model, global_sum_model, 1,          &
                                mpi_double_precision, mpi_sum, masterprocid,   &
                                mpicom, ierr)
@@ -826,7 +826,7 @@ CONTAINS
                   diff_found = .true.
                end if
                ! Store verbose entry for later printing (after all diffs)
-               if ((debug_output >= DEBUGOUT_VERBOSE) .and.                 &
+               if ((debug_output >= DEBUGOUT_INFO) .and.                 &
                    diff_count_gl == 0 .and. global_count > 0) then
                   call store_verbose_entry(stdname, global_count,           &
                                            global_avg_model,               &
@@ -854,7 +854,7 @@ CONTAINS
       use mpi,            only: mpi_double_precision
       use vert_coord,     only: pver, pverp
       use shr_infnan_mod, only: shr_infnan_isnan
-      use cam_logfile,    only: debug_output, DEBUGOUT_VERBOSE
+      use cam_logfile,    only: debug_output, DEBUGOUT_INFO
 
       !Max possible length of variable name in file:
       use phys_vars_init_check, only: std_name_len
@@ -1000,7 +1000,7 @@ CONTAINS
                                mpi_maxloc, mpicom, ierr)
 
             ! Gather global averages for verbose mode
-            if (debug_output >= DEBUGOUT_VERBOSE) then
+            if (debug_output >= DEBUGOUT_INFO) then
                call mpi_reduce(local_sum_model, global_sum_model, 1,          &
                                mpi_double_precision, mpi_sum, masterprocid,   &
                                mpicom, ierr)
@@ -1054,7 +1054,7 @@ CONTAINS
                   diff_found = .true.
                end if
                ! Store verbose entry for later printing (after all diffs)
-               if ((debug_output >= DEBUGOUT_VERBOSE) .and.                 &
+               if ((debug_output >= DEBUGOUT_INFO) .and.                 &
                    diff_count_gl == 0 .and. global_count > 0) then
                   call store_verbose_entry(stdname, global_count,           &
                                            global_avg_model,               &
