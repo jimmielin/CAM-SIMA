@@ -1,6 +1,11 @@
 [workspace]
 resolver = "2"
-members = ["ccpp_rs"]
+# Schemes are workspace members so a single `cargo build` produces
+# every staticlib at once. Per-scheme convention: one directory under
+# `schemes/`, with `<name>.meta` + `<name>.rs` + `Cargo.toml`. The
+# scheme location is the D-P1-2 fallback; see CP-F preflight notes
+# in PROGRESS.md for why the cross-submodule layout did not work.
+members = ["ccpp_rs", "schemes/rust_demo"]
 
 [profile.release]
 opt-level = 3

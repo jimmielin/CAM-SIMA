@@ -286,6 +286,17 @@ def _find_metadata_files(source_dirs, scheme_finder):
                         base_name = os.path.splitext(file)[0]
                         source_file, xml_file = _find_scheme_source(source_dirs,
                                                                     base_name)
+                        # Rust schemes are .meta + .rs (no Fortran source);
+                        # cargo builds them into a staticlib and capgen
+                        # emits the bind(C) glue. The .rs file is read by
+                        # cargo, not by the Fortran build, so source_file
+                        # stays None here -- the downstream Fortran-source
+                        # copy loop checks for None and skips Rust schemes.
+                        if not source_file and _meta_declares_rust(path):
+                            schemes = scheme_finder(path)
+                            for scheme in schemes:
+                                meta_files[scheme] = (path, None, xml_file)
+                            continue
                         if source_file:
                             # Find all the schemes in the file
                             schemes = scheme_finder(path)
@@ -553,7 +564,15 @@ def generate_physics_suites(build_cache, preproc_defs, host_name,
     # Find all scheme metadata files, organized by scheme name
     atm_schemes_path = os.path.join(atm_phys_top_dir, "schemes")
     atm_test_schemes_path = os.path.join(atm_phys_top_dir, "test", "test_schemes")
-    source_search    = [source_mods_dir, atm_schemes_path, atm_test_schemes_path]
+    # Rust schemes live under CAM-SIMA's rust_physics workspace (D-P1-2
+    # fallback; cargo refuses workspace members outside the workspace
+    # root, so they cannot live in the atmospheric_physics submodule).
+    # The directory may not exist on a Fortran-only checkout -- that is
+    # fine, _find_metadata_files just skips missing dirs.
+    rust_schemes_path = os.path.join(atm_root, "src", "physics",
+                                     "rust_physics", "schemes")
+    source_search    = [source_mods_dir, atm_schemes_path,
+                        atm_test_schemes_path, rust_schemes_path]
     all_scheme_files = _find_metadata_files(source_search, find_scheme_names)
 
     # Find the SDFs specified for this model build
@@ -584,8 +603,11 @@ def generate_physics_suites(build_cache, preproc_defs, host_name,
                 if scheme_file not in scheme_files:
                     scheme_files.append(scheme_file)
                     scheme_src = all_scheme_files[scheme][1]
-                    _update_file(os.path.basename(scheme_src),
-                                 scheme_src, physics_blddir)
+                    # Rust schemes have no Fortran source to copy into
+                    # the Make build dir -- cargo builds them directly.
+                    if scheme_src is not None:
+                        _update_file(os.path.basename(scheme_src),
+                                     scheme_src, physics_blddir)
                 # End if (else, it is already in the list)
                 if all_scheme_files[scheme][2]:
                     xml_files[scheme] = all_scheme_files[scheme][2]

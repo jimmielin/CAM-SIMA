@@ -223,9 +223,11 @@ def _build_cam():
         # test/unit/fortran/src/rust_ffi_sandbox/.
         if rust_scheme_names:
             _gen_rust_kinds_for_case(case, atm_root, bldroot)
-            rust_lib_dir = _build_rust_physics(case, atm_root, bldroot)
+            rust_lib_dir = _build_rust_physics(case, atm_root, bldroot,
+                                               rust_scheme_names)
             native_libs = _capture_rust_native_libs(case, atm_root, bldroot)
-            _set_rust_lib_path(rust_lib_dir, native_libs, case, caseroot)
+            _set_rust_lib_path(rust_lib_dir, rust_scheme_names, native_libs,
+                               case, caseroot)
 
         retcode, out, err = run_cmd(cmd)
         _LOGGER.info("Command %s:\n\nstdout:\n%s\n\nstderr:\n%s\n", cmd, out, err)
@@ -575,10 +577,16 @@ def _find_cargo(case: Case) -> str:
     return cargo_resolved
 
 ###############################################################################
-def _build_rust_physics(case: Case, atm_root: str, bldroot: str) -> str:
+def _build_rust_physics(case: Case, atm_root: str, bldroot: str,
+                        rust_scheme_names) -> str:
 ###############################################################################
     """Build the rust_physics workspace via cargo. Returns the directory
-    containing the resulting libccpp_rs.a (and any scheme staticlibs).
+    containing the resulting libccpp_rs.a + each scheme's staticlib
+    (lib<scheme>.a, one per cargo workspace member with crate-type
+    ["staticlib"]). Verifies each expected staticlib exists post-build so
+    a misconfigured Cargo.toml (e.g. missing `crate-type = ["staticlib"]`)
+    surfaces as a buildlib error rather than as a late link-time
+    `undefined reference` (CP-G2 of RUST_DESIGN.md §11.2).
     """
     cargo = _find_cargo(case)
     workspace = _rust_workspace_dir(atm_root)
@@ -596,6 +604,14 @@ def _build_rust_physics(case: Case, atm_root: str, bldroot: str) -> str:
     rust_lib_dir = os.path.join(target_dir, "release")
     expect(os.path.isfile(os.path.join(rust_lib_dir, "libccpp_rs.a")),
            f"cargo build did not produce libccpp_rs.a in {rust_lib_dir}.")
+    for scheme in sorted(rust_scheme_names):
+        lib = os.path.join(rust_lib_dir, f"lib{scheme}.a")
+        expect(os.path.isfile(lib),
+               f"cargo build did not produce {lib}. Check that the "
+               f"`{scheme}` crate's Cargo.toml sets "
+               f'`crate-type = ["staticlib"]` and that the crate is a '
+               f"workspace member of "
+               f"{os.path.join(workspace, 'Cargo.toml')}.")
     return rust_lib_dir
 
 ###############################################################################
@@ -633,15 +649,24 @@ def _capture_rust_native_libs(case: Case, atm_root: str,
     return ""  # unreachable; for type-checkers
 
 ###############################################################################
-def _set_rust_lib_path(rust_lib_dir: str, native_libs: str,
+def _set_rust_lib_path(rust_lib_dir: str, rust_scheme_names, native_libs: str,
                        case: Case, caseroot: str) -> None:
 ###############################################################################
-    """Append `-L<rust_lib_dir> -lccpp_rs <native-static-libs>` to
-    CAM_LINKED_LIBS via xmlchange so the executable link picks up both the
-    Rust staticlib and the system libraries it needs. No-op on a re-run if
-    the same libs are already present (mirrors _set_musica_lib_path)."""
+    """Append `-L<rust_lib_dir> -lccpp_rs -l<scheme>... <native-static-libs>`
+    to CAM_LINKED_LIBS via xmlchange so the executable link picks up the
+    ccpp_rs support staticlib, each Rust scheme's own staticlib (one per
+    cargo workspace member, e.g. librust_demo.a), and the system libraries
+    they need. No-op on a re-run if the same libs are already present
+    (mirrors _set_musica_lib_path)."""
     cam_linked_libs = case.get_value("CAM_LINKED_LIBS") or ""
-    rust_link_fragment = f"-L{rust_lib_dir} -lccpp_rs {native_libs}".strip()
+    # Scheme staticlibs (librust_demo.a etc.) reference symbols in
+    # libccpp_rs.a (e.g. ErrmsgBuf), so scheme libs MUST appear before
+    # -lccpp_rs on the link line — GNU ld scans archives left-to-right
+    # and only pulls members that satisfy currently-undefined symbols.
+    scheme_lflags = " ".join(f"-l{name}" for name in sorted(rust_scheme_names))
+    rust_link_fragment = (
+        f"-L{rust_lib_dir} {scheme_lflags} -lccpp_rs {native_libs}"
+    ).strip()
     if rust_link_fragment in cam_linked_libs:
         return
 

@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+
+<?xml-stylesheet type="text/xsl"?>
+
+<entry_id_pg version="2.0">
+
+  <entry id="rust_demo_do_shift">
+    <type>logical</type>
+    <category>rust_demo</category>
+    <group>rust_demo_nl</group>
+    <standard_name>flag_for_rust_demo_shift</standard_name>
+    <units>flag</units>
+    <desc>
+      Flag for rust_demo scheme. When .true., the cloud-physics top
+      level (vertical_layer_index_of_cloud_fraction_top) is shifted one
+      layer down relative to the troposphere cloud-physics top, provided
+      the shifted index still lies within the column; otherwise the
+      troposphere cloud-physics top is returned unchanged.
+      Default: FALSE.
+    </desc>
+    <values>
+      <value>.false.</value>
+    </values>
+  </entry>
+
+</entry_id_pg>
