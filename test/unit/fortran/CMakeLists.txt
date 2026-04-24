@@ -5,6 +5,7 @@ project(CAM-SIMA-core-utils LANGUAGES Fortran C)
 option(CAM_SIMA_ENABLE_TESTS "Run pFUnit unit tests" OFF)
 option(CAM_SIMA_ENABLE_CODE_COVERAGE "Run code coverage tool" OFF)
 option(CAM_SIMA_ENABLE_IO_TESTS "Run IO test integration" OFF)
+option(CAM_SIMA_ENABLE_RUST_TESTS "Run Rust FFI sandbox pFUnit test (requires cargo)" OFF)
 
 if(NOT CAM-SIMA-core-utils_IS_TOP_LEVEL)
   message(WARNING "CAM-SIMA-core-utils is not integrated into the CMake build of any top level "
@@ -25,13 +26,16 @@ endif()
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/../../../src/core_utils ${CMAKE_BINARY_DIR}/src)
 
-if(CAM_SIMA_ENABLE_TESTS OR CAM_SIMA_ENABLE_CODE_COVERAGE OR CAM_SIMA_ENABLE_IO_TESTS)
+if(CAM_SIMA_ENABLE_TESTS OR CAM_SIMA_ENABLE_CODE_COVERAGE OR CAM_SIMA_ENABLE_IO_TESTS OR CAM_SIMA_ENABLE_RUST_TESTS)
   set(CMAKE_BUILD_TYPE Debug)
   find_package(PFUNIT REQUIRED)
   enable_testing()
 
   if(CAM_SIMA_ENABLE_TESTS)
     add_subdirectory(src/core_utils)
+  endif()
+  if(CAM_SIMA_ENABLE_RUST_TESTS)
+    add_subdirectory(src/rust_ffi_sandbox)
   endif()
   if(CAM_SIMA_ENABLE_IO_TESTS)
     list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")

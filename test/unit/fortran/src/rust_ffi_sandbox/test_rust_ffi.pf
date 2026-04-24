@@ -1,0 +1,81 @@
+@test
+subroutine test_rust_ffi_identity()
+  use iso_c_binding, only: c_int
+  use funit
+  implicit none
+  interface
+    function rust_ffi_sandbox_identity(x) result(y) &
+             bind(C, name="rust_ffi_sandbox_identity")
+      import :: c_int
+      integer(c_int), value :: x
+      integer(c_int)        :: y
+    end function
+  end interface
+  @assertEqual(42, rust_ffi_sandbox_identity(42))
+  @assertEqual(-7, rust_ffi_sandbox_identity(-7))
+end subroutine
+
+@test
+subroutine test_rust_ffi_doubled()
+  use iso_c_binding, only: c_double
+  use funit
+  implicit none
+  interface
+    function rust_ffi_sandbox_doubled(x) result(y) &
+             bind(C, name="rust_ffi_sandbox_doubled")
+      import :: c_double
+      real(c_double), value :: x
+      real(c_double)        :: y
+    end function
+  end interface
+  @assertEqual(6.28d0, rust_ffi_sandbox_doubled(3.14d0), tolerance=1.0d-12)
+end subroutine
+
+@test
+subroutine test_rust_ffi_logical()
+  use iso_c_binding, only: c_bool
+  use funit
+  implicit none
+  interface
+    function rust_ffi_sandbox_not(x) result(y) &
+             bind(C, name="rust_ffi_sandbox_not")
+      import :: c_bool
+      logical(c_bool), value :: x
+      logical(c_bool)        :: y
+    end function
+  end interface
+  ! pfUnit's @assertTrue/@assertFalse generics expect default-kind logical;
+  ! convert from c_bool before asserting. This matches the in-cap conversion
+  ! convention from RUST_DESIGN §7.3.
+  @assertTrue(logical(rust_ffi_sandbox_not(.false._c_bool)))
+  @assertFalse(logical(rust_ffi_sandbox_not(.true._c_bool)))
+end subroutine
+
+@test
+subroutine test_rust_ffi_string()
+  use iso_c_binding, only: c_char, c_int, c_null_char
+  use funit
+  implicit none
+  interface
+    subroutine rust_ffi_sandbox_write_msg(buf, buf_len) &
+               bind(C, name="rust_ffi_sandbox_write_msg")
+      import :: c_char, c_int
+      character(kind=c_char), dimension(*) :: buf
+      integer(c_int), value :: buf_len
+    end subroutine
+  end interface
+
+  character(kind=c_char, len=1), target :: buf(64)
+  character(len=64)                     :: f_str
+  integer :: i
+
+  buf(:) = c_null_char
+  call rust_ffi_sandbox_write_msg(buf, 64_c_int)
+  ! Convert NUL-terminated c_char buffer to Fortran string
+  f_str = ''
+  do i = 1, 64
+    if (buf(i) == c_null_char) exit
+    f_str(i:i) = buf(i)
+  end do
+  @assertEqual('hello from rust', trim(f_str))
+end subroutine
