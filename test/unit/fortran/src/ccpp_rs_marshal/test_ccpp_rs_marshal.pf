@@ -1,0 +1,125 @@
+! pfUnit roundtrip tests for ccpp_rs_marshal_mod (lives in
+! ccpp-framework/src/). Phase 1, CP-C of RUST_DESIGN.md.
+!
+! The marshal helpers are the Fortran half of the string FFI contract
+! used by every capgen-emitted Rust scheme cap. These tests pin down
+! the contract: Fortran string in, c_char buffer out (NUL-padded
+! beyond the last copied byte), and the reverse direction stops at
+! the first NUL.
+
+@test
+subroutine test_marshal_roundtrip_short_string()
+  use iso_c_binding, only: c_char, c_null_char
+  use ccpp_rs_marshal_mod, only: ccpp_rs_marshal_string, ccpp_rs_unmarshal_string
+  use funit
+  implicit none
+
+  character(kind=c_char,len=1) :: buf(64)
+  character(len=64)            :: out
+
+  call ccpp_rs_marshal_string('hello, world', buf)
+  call ccpp_rs_unmarshal_string(buf, out)
+
+  @assertEqual('hello, world', trim(out))
+end subroutine
+
+@test
+subroutine test_marshal_pads_with_null()
+  use iso_c_binding, only: c_char, c_null_char
+  use ccpp_rs_marshal_mod, only: ccpp_rs_marshal_string
+  use funit
+  implicit none
+
+  character(kind=c_char,len=1) :: buf(16)
+
+  call ccpp_rs_marshal_string('hi', buf)
+  ! Bytes after the last copied character must all be NUL so that the
+  ! Rust side can compute string length safely.
+  @assertEqual('h',          buf(1))
+  @assertEqual('i',          buf(2))
+  @assertEqual(c_null_char,  buf(3))
+  @assertEqual(c_null_char,  buf(16))
+end subroutine
+
+@test
+subroutine test_marshal_truncates_to_buffer()
+  use iso_c_binding, only: c_char, c_null_char
+  use ccpp_rs_marshal_mod, only: ccpp_rs_marshal_string, ccpp_rs_unmarshal_string
+  use funit
+  implicit none
+
+  character(len=10)            :: long_in = 'abcdefghij'
+  character(kind=c_char,len=1) :: buf(5)   ! 4 chars + NUL
+  character(len=10)            :: out
+
+  call ccpp_rs_marshal_string(long_in, buf)
+  ! Last byte is reserved for NUL; only 4 characters fit.
+  @assertEqual('a',         buf(1))
+  @assertEqual('d',         buf(4))
+  @assertEqual(c_null_char, buf(5))
+
+  call ccpp_rs_unmarshal_string(buf, out)
+  @assertEqual('abcd', trim(out))
+end subroutine
+
+@test
+subroutine test_unmarshal_stops_at_first_null()
+  use iso_c_binding, only: c_char, c_null_char
+  use ccpp_rs_marshal_mod, only: ccpp_rs_unmarshal_string
+  use funit
+  implicit none
+
+  character(kind=c_char,len=1) :: buf(8)
+  character(len=8)             :: out
+
+  ! Embed a NUL in the middle; bytes after it must NOT appear in out.
+  buf(1) = 'a'; buf(2) = 'b'; buf(3) = 'c'
+  buf(4) = c_null_char
+  buf(5) = 'X'; buf(6) = 'Y'; buf(7) = 'Z'
+  buf(8) = c_null_char
+
+  call ccpp_rs_unmarshal_string(buf, out)
+  @assertEqual('abc', trim(out))
+end subroutine
+
+@test
+subroutine test_marshal_empty_string()
+  use iso_c_binding, only: c_char, c_null_char
+  use ccpp_rs_marshal_mod, only: ccpp_rs_marshal_string, ccpp_rs_unmarshal_string
+  use funit
+  implicit none
+
+  character(kind=c_char,len=1) :: buf(8)
+  character(len=8)             :: out
+
+  call ccpp_rs_marshal_string('', buf)
+  ! Every byte should be NUL.
+  @assertEqual(c_null_char, buf(1))
+  @assertEqual(c_null_char, buf(8))
+
+  call ccpp_rs_unmarshal_string(buf, out)
+  @assertEqual('', trim(out))
+end subroutine
+
+@test
+subroutine test_marshal_fills_buffer_exactly()
+  use iso_c_binding, only: c_char, c_null_char
+  use ccpp_rs_marshal_mod, only: ccpp_rs_marshal_string, ccpp_rs_unmarshal_string
+  use funit
+  implicit none
+
+  ! Input length exactly matches `size(c_buf) - 1` — the all-fits-but-
+  ! NUL case. Verifies that the marshal places the NUL at the final
+  ! byte and that unmarshal recovers the full string.
+  character(len=4)             :: in_str = 'abcd'
+  character(kind=c_char,len=1) :: buf(5)
+  character(len=4)             :: out
+
+  call ccpp_rs_marshal_string(in_str, buf)
+  @assertEqual('a',         buf(1))
+  @assertEqual('d',         buf(4))
+  @assertEqual(c_null_char, buf(5))
+
+  call ccpp_rs_unmarshal_string(buf, out)
+  @assertEqual('abcd', out)
+end subroutine

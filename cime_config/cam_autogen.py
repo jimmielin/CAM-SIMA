@@ -14,6 +14,7 @@ To run doctests on this file: python cam_autogen.py
 # Python library imports
 import sys
 import os
+import re
 import logging
 import shutil
 import filecmp
@@ -330,6 +331,49 @@ def _find_metadata_files(source_dirs, scheme_finder):
 
     # Return meta_files dictionary:
     return meta_files
+
+###############################################################################
+# Match `language = rust` inside a [ccpp-table-properties] block.
+# The block header must come before the language line; we just scan the file
+# for the table-properties marker followed (anywhere later in the same file)
+# by the `language = rust` line. This is a coarse but conservative match -- a
+# scheme metadata file with two table-properties blocks where only one is
+# Rust would be flagged as Rust here. Phase 1 schemes are 1 block per file,
+# so this is acceptable; revisit if Phase 2 introduces multi-block files.
+_RUST_LANGUAGE_RE = re.compile(
+    r'\[\s*ccpp-table-properties\s*\].*?^\s*language\s*=\s*rust\s*$',
+    re.IGNORECASE | re.MULTILINE | re.DOTALL,
+)
+
+def _meta_declares_rust(meta_path):
+    """Return True iff the .meta file declares `language = rust` in any
+    ccpp-table-properties block. Used to identify Rust schemes for
+    buildlib's cargo invocation; the authoritative parser still lives in
+    ccpp-framework's metadata_table.py."""
+    try:
+        with open(meta_path, 'r', encoding='utf-8') as fobj:
+            text = fobj.read()
+    except (OSError, UnicodeDecodeError):
+        return False
+    return bool(_RUST_LANGUAGE_RE.search(text))
+
+###############################################################################
+def find_rust_schemes(scheme_names, all_scheme_files):
+###############################################################################
+    """Return the subset of `scheme_names` whose backing .meta file declares
+    `language = rust`. Caller-friendly helper exposed alongside
+    `generate_physics_suites` so buildlib can decide whether to invoke cargo.
+
+    `all_scheme_files` is the dict produced by `_find_metadata_files`:
+    `{scheme_name: (meta_path, source_path, xml_path)}`.
+    """
+    rust = set()
+    for scheme in scheme_names:
+        if scheme in all_scheme_files:
+            meta_path = all_scheme_files[scheme][0]
+            if _meta_declares_rust(meta_path):
+                rust.add(scheme)
+    return rust
 
 ###############################################################################
 def _update_genccpp_dir(utility_files, genccpp_dir):
@@ -746,8 +790,13 @@ def generate_physics_suites(build_cache, preproc_defs, host_name,
             _update_genccpp_dir(dependency_files, genccpp_dir)
     # End if
 
+    # Identify which of these schemes are written in Rust so buildlib can
+    # decide whether to invoke cargo. See `find_rust_schemes` for the
+    # rule and RUST_DESIGN.md §11 for the integration plan.
+    rust_scheme_names = find_rust_schemes(scheme_names, all_scheme_files)
+
     return [physics_blddir, genccpp_dir], do_gen_ccpp, cap_output_file,       \
-        xml_files.values(), capgen_db, scheme_names
+        xml_files.values(), capgen_db, scheme_names, rust_scheme_names
 
 ###############################################################################
 def generate_init_routines(build_cache, bldroot, force_ccpp, force_init,

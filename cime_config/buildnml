@@ -168,7 +168,9 @@ def buildnml(case, caseroot, compname):
     gen_indent = 3
 
     #Generate model code and meta-data:
-    scheme_names = config.generate_cam_src(gen_indent)
+    # generate_cam_src returns (scheme_names, rust_scheme_names); buildnml
+    # only consumes scheme_names. The Rust set is consumed by buildlib.
+    scheme_names, _ = config.generate_cam_src(gen_indent)
 
     #----------------------------------------------------------------
     # Create namelist attribute dictionary (to set namelist defaults):

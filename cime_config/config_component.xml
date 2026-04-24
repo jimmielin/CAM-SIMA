@@ -323,6 +323,21 @@
     </desc>
   </entry>
 
+  <entry id="CAM_CARGO">
+    <type>char</type>
+    <valid_values></valid_values>
+    <default_value></default_value>
+    <group>build_component_cam</group>
+    <file>env_build.xml</file>
+    <desc>
+      Path to the cargo executable used to build the rust_physics
+      workspace. Empty (default) means buildlib will look up `cargo`
+      via $PATH. Set to an absolute path on systems where rustup is
+      installed in a non-standard location (e.g.,
+      /glade/u/home/USER/.cargo/bin/cargo on Derecho).
+    </desc>
+  </entry>
+
   <help>
     =========================================
     CAM naming conventions

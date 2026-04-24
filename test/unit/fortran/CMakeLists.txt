@@ -36,6 +36,7 @@ if(CAM_SIMA_ENABLE_TESTS OR CAM_SIMA_ENABLE_CODE_COVERAGE OR CAM_SIMA_ENABLE_IO_
   endif()
   if(CAM_SIMA_ENABLE_RUST_TESTS)
     add_subdirectory(src/rust_ffi_sandbox)
+    add_subdirectory(src/ccpp_rs_marshal)
   endif()
   if(CAM_SIMA_ENABLE_IO_TESTS)
     list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")

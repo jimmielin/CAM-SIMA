@@ -6,6 +6,7 @@ create the cam library
 # Python system imports
 import sys
 import os
+import re
 import filecmp
 import shutil
 import subprocess
@@ -15,6 +16,7 @@ from cam_config import ConfigCAM # CAM's configure structure
 from atm_musica_config import MUSICA_CCPP_SCHEME_NAME, MUSICA_CONFIG_DIR_NAME
 from atm_musica_config import MUSICA_REPO_URL, MUSICA_TAG
 from atm_musica_config import CHEMISTRY_DATA_REPO_URL, CHEMISTRY_DATA_TAG
+from gen_rust_kinds import gen_rust_kinds
 
 # Check for the CIME library, and add it
 # to the python path:
@@ -79,7 +81,7 @@ def _build_cam():
         # Re-run source generator in case registry, CCPP suites, or
         # generator scripts have been modified, and
         # to extract required source code paths:
-        scheme_names = config.generate_cam_src(gen_indent)
+        scheme_names, rust_scheme_names = config.generate_cam_src(gen_indent)
 
         dycore = config.get_value('dyn')
         reg_dir = config.get_value('reg_dir')
@@ -127,6 +129,15 @@ def _build_cam():
         if dycore != "none":
             paths.append(os.path.join(atm_root, "src", "dynamics", "tests",
                                       "initial_conditions"))
+
+        # When Rust schemes are present, capgen-emitted caps reference the
+        # `ccpp_rust_kinds` module that we generate into $BLDROOT/generated/.
+        # Add that directory to the Filepath so the make scan picks it up.
+        # (The directory is created and the file generated below, alongside
+        # the cargo invocation. Adding the path here is a no-op for Fortran-
+        # only builds where rust_scheme_names is empty.)
+        if rust_scheme_names:
+            paths.append(os.path.join(bldroot, "generated"))
 
         # Write Filepath text file
         with open(filepath_src, "w", encoding='utf-8') as filepath:
@@ -202,6 +213,19 @@ def _build_cam():
                                                    "schemes", "musica", "util",
                                                    "musica_ccpp_species.F90")
             _copy2_as_needed(musica_species_src_path, phys_dirs[0])
+
+        # If any scheme in the suite is written in Rust, build the
+        # rust_physics workspace and arrange for its staticlib + the
+        # Rust runtime's required system libraries to be on the link
+        # line. Mirrors the MUSICA block above. Pattern from
+        # RUST_DESIGN.md §11.2; per-platform native-libs capture
+        # validated against the Phase 0 sandbox at
+        # test/unit/fortran/src/rust_ffi_sandbox/.
+        if rust_scheme_names:
+            _gen_rust_kinds_for_case(case, atm_root, bldroot)
+            rust_lib_dir = _build_rust_physics(case, atm_root, bldroot)
+            native_libs = _capture_rust_native_libs(case, atm_root, bldroot)
+            _set_rust_lib_path(rust_lib_dir, native_libs, case, caseroot)
 
         retcode, out, err = run_cmd(cmd)
         _LOGGER.info("Command %s:\n\nstdout:\n%s\n\nstderr:\n%s\n", cmd, out, err)
@@ -501,6 +525,145 @@ def _clone_and_checkout(repo_url: str, tag_name: str, clone_dest: str) -> None:
         raise FileNotFoundError("The 'git' command was not found.") from e
     except OSError as e:
         raise OSError("An error occurred while executing the 'git' command.") from e
+
+###############################################################################
+# Rust physics build helpers (RUST_DESIGN.md §11). Mirror the MUSICA
+# helpers above. The cargo invocation is the analogue of `_build_musica`,
+# `_capture_rust_native_libs` is the analogue of `_get_musica_libs`,
+# `_set_rust_lib_path` is the analogue of `_set_musica_lib_path`.
+# Validated patterns from the Phase 0 sandbox at
+# test/unit/fortran/src/rust_ffi_sandbox/CMakeLists.txt.
+###############################################################################
+
+# Capture line: cargo prints "note: native-static-libs: -lSystem -lc -lm" on
+# stderr. We extract everything after the marker up to the newline.
+_NATIVE_STATIC_LIBS_RE = re.compile(r'native-static-libs:\s*([^\n]*)')
+
+###############################################################################
+def _rust_workspace_dir(atm_root: str) -> str:
+###############################################################################
+    """Return the absolute path of the rust_physics cargo workspace."""
+    return os.path.join(atm_root, "src", "physics", "rust_physics")
+
+###############################################################################
+def _gen_rust_kinds_for_case(case: Case, atm_root: str, bldroot: str) -> None:
+###############################################################################
+    """Emit ccpp_rust_kinds.F90 (Fortran side) and ccpp_rs/src/generated/kind.rs
+    (Rust side) consistent with this case's physics kind. CAM-SIMA currently
+    hard-codes kind_phys = REAL64 (see cam_autogen.py); when CAM-SIMA later
+    exposes kind_phys as a CIME variable, fetch it here via case.get_value."""
+    _ = case  # Reserved for future CAM_KIND_PHYS lookup.
+    kind_phys = "REAL64"
+    bld_generated_dir = os.path.join(bldroot, "generated")
+    ccpp_rs_generated_dir = os.path.join(_rust_workspace_dir(atm_root),
+                                         "ccpp_rs", "src", "generated")
+    gen_rust_kinds(kind_phys, bld_generated_dir, ccpp_rs_generated_dir)
+
+###############################################################################
+def _find_cargo(case: Case) -> str:
+###############################################################################
+    """Locate the cargo executable. Honors CAM_CARGO env variable on the
+    case if set; otherwise falls back to bare `cargo` (looked up via PATH).
+    """
+    cargo = case.get_value("CAM_CARGO")
+    if not cargo:
+        cargo = "cargo"
+    cargo_resolved = shutil.which(cargo) if not os.path.isabs(cargo) else cargo
+    expect(cargo_resolved is not None and os.path.isfile(cargo_resolved),
+           f"Could not locate cargo executable '{cargo}'. Set CAM_CARGO to "
+           "an absolute path, or ensure cargo is on $PATH.")
+    return cargo_resolved
+
+###############################################################################
+def _build_rust_physics(case: Case, atm_root: str, bldroot: str) -> str:
+###############################################################################
+    """Build the rust_physics workspace via cargo. Returns the directory
+    containing the resulting libccpp_rs.a (and any scheme staticlibs).
+    """
+    cargo = _find_cargo(case)
+    workspace = _rust_workspace_dir(atm_root)
+    target_dir = os.path.join(bldroot, "cargo")
+    manifest = os.path.join(workspace, "Cargo.toml")
+
+    cmd = (f"{cargo} build --release --manifest-path {manifest} "
+           f"--target-dir {target_dir}")
+    rc, out, err = run_cmd(cmd)
+    _LOGGER.info("Command %s:\n\nstdout:\n%s\n\nstderr:\n%s\n", cmd, out, err)
+    expect(rc == 0,
+           f"cargo build of Rust physics workspace failed with rc={rc}.\n"
+           f"stderr:\n{err}")
+
+    rust_lib_dir = os.path.join(target_dir, "release")
+    expect(os.path.isfile(os.path.join(rust_lib_dir, "libccpp_rs.a")),
+           f"cargo build did not produce libccpp_rs.a in {rust_lib_dir}.")
+    return rust_lib_dir
+
+###############################################################################
+def _capture_rust_native_libs(case: Case, atm_root: str,
+                              bldroot: str) -> str:
+###############################################################################
+    """Re-run cargo with `--print native-static-libs` and parse the
+    space-separated list of system libraries that the Rust runtime needs
+    on the link line. On macOS this is typically '-lSystem -lc -lm'; on
+    Linux x86_64 with glibc it is typically '-lgcc_s -lutil -lrt -lpthread
+    -lm -ldl -lc'. Pattern lifted from the Phase 0 sandbox CMakeLists."""
+    cargo = _find_cargo(case)
+    workspace = _rust_workspace_dir(atm_root)
+    target_dir = os.path.join(bldroot, "cargo")
+    manifest = os.path.join(workspace, "Cargo.toml")
+
+    cmd = (f"{cargo} rustc --release --manifest-path {manifest} "
+           f"--target-dir {target_dir} -p ccpp_rs "
+           "-- --print native-static-libs")
+    rc, out, err = run_cmd(cmd)
+    _LOGGER.info("Command %s:\n\nstdout:\n%s\n\nstderr:\n%s\n", cmd, out, err)
+    expect(rc == 0,
+           f"cargo rustc --print native-static-libs failed with rc={rc}.\n"
+           f"stderr:\n{err}")
+
+    # The note is printed to stderr by rustc; in some configurations cargo
+    # surfaces it on stdout instead, so search both.
+    for stream in (err, out):
+        match = _NATIVE_STATIC_LIBS_RE.search(stream)
+        if match:
+            return match.group(1).strip()
+    expect(False,
+           "cargo rustc did not emit a native-static-libs note. "
+           f"stdout:\n{out}\nstderr:\n{err}")
+    return ""  # unreachable; for type-checkers
+
+###############################################################################
+def _set_rust_lib_path(rust_lib_dir: str, native_libs: str,
+                       case: Case, caseroot: str) -> None:
+###############################################################################
+    """Append `-L<rust_lib_dir> -lccpp_rs <native-static-libs>` to
+    CAM_LINKED_LIBS via xmlchange so the executable link picks up both the
+    Rust staticlib and the system libraries it needs. No-op on a re-run if
+    the same libs are already present (mirrors _set_musica_lib_path)."""
+    cam_linked_libs = case.get_value("CAM_LINKED_LIBS") or ""
+    rust_link_fragment = f"-L{rust_lib_dir} -lccpp_rs {native_libs}".strip()
+    if rust_link_fragment in cam_linked_libs:
+        return
+
+    command = [
+        "./xmlchange",
+        "--append",
+        f"CAM_LINKED_LIBS={rust_link_fragment}",
+    ]
+    try:
+        subprocess.run(command, cwd=caseroot, stdout=subprocess.PIPE,
+                       stderr=subprocess.PIPE, text=True, check=False)
+    except subprocess.CalledProcessError as e:
+        raise subprocess.CalledProcessError(
+            e.returncode, e.cmd,
+            "The subprocess for xmlchange to set the Rust library path "
+            "failed.") from e
+    except FileNotFoundError as e:
+        raise FileNotFoundError("The 'xmlchange' command was not found.") from e
+    except OSError as e:
+        raise OSError(
+            "An error occurred while executing the 'xmlchange' command."
+        ) from e
 
 ###############################################################################
 

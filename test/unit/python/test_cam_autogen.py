@@ -13,7 +13,7 @@ or (for more verbose output):
 
 python test_cam_autogen.py -v
 
-which will currently run 14 tests, all of which should pass.
+which will currently run 16 tests, all of which should pass.
 """
 
 #----------------------------------------
@@ -58,6 +58,7 @@ from cam_autogen import CamAutoGenError
 from cam_autogen import _update_file, _find_schemes_in_sdf
 from cam_autogen import _find_metadata_files, generate_registry
 from cam_autogen import generate_physics_suites, generate_init_routines
+from cam_autogen import find_rust_schemes, _meta_declares_rust
 
 #Import necessary CCPP framework functions:
 from parse_tools import read_xml_file
@@ -400,6 +401,99 @@ class CamAutoGenTestRoutine(unittest.TestCase):
 
     #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+    def test_meta_declares_rust(self):
+
+        """Check that "_meta_declares_rust" recognizes language=rust in
+        a [ccpp-table-properties] block, treats anything else (missing
+        property, explicit fortran) as not-rust, and returns False for
+        a non-existent file."""
+
+        rust_meta = os.path.join(self.test_src_mods_dir, "rust_x.meta")
+        with open(rust_meta, "w", encoding="utf-8") as fobj:
+            fobj.write(
+                "[ccpp-table-properties]\n"
+                "  name     = rust_x\n"
+                "  type     = scheme\n"
+                "  language = rust\n"
+            )
+        fortran_meta = os.path.join(self.test_src_mods_dir, "fortran_x.meta")
+        with open(fortran_meta, "w", encoding="utf-8") as fobj:
+            fobj.write(
+                "[ccpp-table-properties]\n"
+                "  name     = fortran_x\n"
+                "  type     = scheme\n"
+            )
+        explicit_fortran_meta = os.path.join(self.test_src_mods_dir,
+                                             "explicit_fortran_x.meta")
+        with open(explicit_fortran_meta, "w", encoding="utf-8") as fobj:
+            fobj.write(
+                "[ccpp-table-properties]\n"
+                "  name     = explicit_fortran_x\n"
+                "  type     = scheme\n"
+                "  language = fortran\n"
+            )
+
+        try:
+            self.assertTrue(_meta_declares_rust(rust_meta))
+            self.assertFalse(_meta_declares_rust(fortran_meta))
+            self.assertFalse(_meta_declares_rust(explicit_fortran_meta))
+            self.assertFalse(_meta_declares_rust(
+                os.path.join(self.test_src_mods_dir, "does_not_exist.meta")
+            ))
+        finally:
+            for path in (rust_meta, fortran_meta, explicit_fortran_meta):
+                if os.path.exists(path):
+                    os.remove(path)
+
+    #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+    def test_find_rust_schemes(self):
+
+        """Check that "find_rust_schemes" returns just the subset of
+        scheme names whose backing .meta declares language=rust, ignores
+        scheme names absent from the all_scheme_files dict, and returns
+        an empty set for empty input."""
+
+        rust_meta = os.path.join(self.test_src_mods_dir, "rust_y.meta")
+        with open(rust_meta, "w", encoding="utf-8") as fobj:
+            fobj.write(
+                "[ccpp-table-properties]\n"
+                "  name     = rust_y\n"
+                "  type     = scheme\n"
+                "  language = rust\n"
+            )
+        fortran_meta = os.path.join(self.test_src_mods_dir, "fortran_y.meta")
+        with open(fortran_meta, "w", encoding="utf-8") as fobj:
+            fobj.write(
+                "[ccpp-table-properties]\n"
+                "  name     = fortran_y\n"
+                "  type     = scheme\n"
+            )
+
+        all_scheme_files = {
+            "rust_y":    (rust_meta,    "/dev/null", None),
+            "fortran_y": (fortran_meta, "/dev/null", None),
+        }
+        try:
+            self.assertEqual(
+                find_rust_schemes({"rust_y", "fortran_y"}, all_scheme_files),
+                {"rust_y"},
+            )
+            #Unknown scheme name is silently skipped (defensive):
+            self.assertEqual(
+                find_rust_schemes({"rust_y", "unknown"}, all_scheme_files),
+                {"rust_y"},
+            )
+            #Empty input yields empty output:
+            self.assertEqual(find_rust_schemes(set(), {}), set())
+            self.assertEqual(find_rust_schemes(set(), all_scheme_files), set())
+        finally:
+            for path in (rust_meta, fortran_meta):
+                if os.path.exists(path):
+                    os.remove(path)
+
+    #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
     def test_missing_src_files(self):
 
         """
@@ -580,7 +674,7 @@ class CamAutoGenTestRoutine(unittest.TestCase):
         expected_results = ([f'{self.test_bldroot}'+os.sep+'ccpp_physics',
                              f'{self.test_bldroot}'+os.sep+'ccpp'], False,
                              f'{self.test_bldroot}'+os.sep+'ccpp'+os.sep+'ccpp_datatable.xml',
-                             [], None, {"temp_adjust"})
+                             [], None, {"temp_adjust"}, set())
 
         #Run physics suite generation function:
         gen_results = generate_physics_suites(self.test_cache, "UNSET", "cam", "simple",

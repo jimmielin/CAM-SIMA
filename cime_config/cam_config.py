@@ -881,7 +881,8 @@ class ConfigCAM:
                                           self.__atm_root, self.__bldroot,
                                           reg_dir, reg_files, source_mods_dir,
                                           self.__gpu_flag, force_ccpp)
-        phys_dirs, force_init, _, nml_fils, capgen_db, scheme_names = retvals
+        phys_dirs, force_init, _, nml_fils, capgen_db, scheme_names, \
+            rust_scheme_names = retvals
 
         # Add namelist definition files to dictionary:
         for nml_fil in nml_fils:
@@ -912,8 +913,11 @@ class ConfigCAM:
         #--------------------------------------------------------------
         build_cache.write()
 
-        #Return the set of all scheme names present in the SDFs:
-        return scheme_names
+        #Return the set of all scheme names present in the SDFs, plus
+        #the subset that are written in Rust (used by buildlib to gate
+        #cargo invocation; will be empty for Fortran-only builds, so
+        #downstream call sites can stay no-op for the common case).
+        return scheme_names, rust_scheme_names
 
     #++++++++++++++++++++++++
 
