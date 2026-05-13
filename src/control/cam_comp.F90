@@ -107,6 +107,9 @@ CONTAINS
       use ccpp_kinds,                only: kind_phys
       use ccpp_constituent_prop_mod, only: ccpp_constituent_prop_ptr_t
       use musica_ccpp_dependencies,  only: musica_ccpp_dependencies_init
+      use cam_constituents,          only: const_props_init, const_props_lock
+      use host_dynamic_props_example, only: host_dynamic_props_example_register
+      use host_dynamic_props_example, only: host_dynamic_props_example_init
 
       ! Arguments
       character(len=cl), intent(in) :: caseid                ! case ID
@@ -213,6 +216,22 @@ CONTAINS
       !    This will set the total number of constituents and the
       !    number of advected constituents.
       call cam_register_constituents(cam_runtime_opts)
+
+      ! Initialize dynamic constituent property registry.
+      ! Must be called after cam_register_constituents (which calls
+      ! lock_table) so that constituent indices are available.
+      call const_props_init()
+
+      ! Register phases for host-side modules that will
+      ! register any dynamic property on the constituents object:
+      call host_dynamic_props_example_register()  ! example
+
+      ! Lock registry: allocate storage and attach per-constituent views
+      call const_props_lock()
+
+      ! Init phases for host-side modules that will
+      ! populate values for any dynamic property on the constituents object:
+      call host_dynamic_props_example_init()  ! example
 
       ! Initialize composition-dependent constants:
       call air_composition_init()

@@ -2,9 +2,17 @@ module cam_constituents
 
    use ccpp_kinds,                only: kind_phys
    use ccpp_constituent_prop_mod, only: ccpp_constituent_prop_ptr_t
+   use sima_property_registry,    only: sima_property_registry_t
+   use sima_constituent_props,    only: sima_constituent_props_t
+   use ccpp_constituent_prop_mod, only: CCPP_PROP_TYPE_LOGICAL, &
+       CCPP_PROP_TYPE_INTEGER, CCPP_PROP_TYPE_REAL, CCPP_PROP_TYPE_CHARACTER
 
    implicit none
    private
+
+   ! Re-export type constants for callers
+   public :: CCPP_PROP_TYPE_LOGICAL, CCPP_PROP_TYPE_INTEGER
+   public :: CCPP_PROP_TYPE_REAL, CCPP_PROP_TYPE_CHARACTER
 
    ! Public system functions
    public :: cam_constituents_readnl
@@ -25,6 +33,14 @@ module cam_constituents
    public :: const_qmin
    public :: const_set_qmin
 
+   ! Dynamic constituent properties API
+   public :: const_props_init
+   public :: const_props_lock
+   public :: const_props_register
+   public :: const_has_property
+   public :: const_get_property
+   public :: const_set_property
+
    ! Private array of constituent properties (for property interface functions)
    type(ccpp_constituent_prop_ptr_t), pointer :: const_props(:) => NULL()
 
@@ -33,6 +49,11 @@ module cam_constituents
    logical, public :: readtrace = .true.
    ! Only allow initialization once
    logical, private :: initialized = .false.
+
+   ! Dynamic constituent properties state
+   type(sima_property_registry_t), target, private :: prop_registry
+   logical, private :: props_initialized = .false.
+   logical, private :: props_locked = .false.
 
    !> \section arg_table_cam_constituents  Argument Table
    !! \htmlinclude cam_constituents.html
@@ -93,6 +114,20 @@ module cam_constituents
    interface const_set_qmin
       module procedure const_set_qmin_obj
       module procedure const_set_qmin_index
+   end interface
+
+   interface const_get_property
+      module procedure const_get_property_logical
+      module procedure const_get_property_integer
+      module procedure const_get_property_real
+      module procedure const_get_property_character
+   end interface
+
+   interface const_set_property
+      module procedure const_set_property_logical
+      module procedure const_set_property_integer
+      module procedure const_set_property_real
+      module procedure const_set_property_character
    end interface
 
    ! Private interfaces
@@ -787,6 +822,271 @@ CONTAINS
       end if
 
    end subroutine const_set_qmin_index
+
+   !#######################################################################
+   !
+   ! Dynamic constituent properties API
+   !
+   !#######################################################################
+
+   subroutine const_props_init()
+      use cam_abortutils, only: endrun
+
+      character(len=*), parameter :: subname = 'const_props_init: '
+
+      if (props_initialized) then
+         call endrun(subname//"already initialized", &
+              file=__FILE__, line=__LINE__)
+      end if
+
+      call prop_registry%initialize()
+      props_initialized = .true.
+
+   end subroutine const_props_init
+
+   !#######################################################################
+
+   subroutine const_props_lock()
+      use cam_abortutils, only: endrun
+      use cam_ccpp_cap,   only: cam_model_const_properties
+
+      type(ccpp_constituent_prop_ptr_t), pointer :: cprops(:)
+      type(sima_constituent_props_t) :: view
+      integer :: n, errflg
+      character(len=512) :: errmsg
+      character(len=*), parameter :: subname = 'const_props_lock: '
+
+      if (.not. props_initialized) then
+         call endrun(subname//"not initialized", &
+              file=__FILE__, line=__LINE__)
+      end if
+      if (props_locked) then
+         call endrun(subname//"already locked", &
+              file=__FILE__, line=__LINE__)
+      end if
+
+      call prop_registry%allocate_storage(num_constituents, errflg, errmsg)
+      if (errflg /= 0) then
+         call endrun(subname//trim(errmsg), file=__FILE__, line=__LINE__)
+      end if
+
+      cprops => cam_model_const_properties()
+      do n = 1, num_constituents
+         view%registry => prop_registry
+         view%const_idx = n
+         call cprops(n)%set_host_props(view)
+      end do
+
+      props_locked = .true.
+
+   end subroutine const_props_lock
+
+   !#######################################################################
+
+   subroutine const_props_register(name, prop_type, errflg, errmsg, &
+       default_logical, default_integer, default_real, default_character)
+      use cam_abortutils, only: endrun
+
+      character(len=*), intent(in)            :: name
+      integer,          intent(in)            :: prop_type
+      integer,          intent(out)           :: errflg
+      character(len=*), intent(inout)         :: errmsg
+      logical,          intent(in), optional  :: default_logical
+      integer,          intent(in), optional  :: default_integer
+      real(kind_phys),  intent(in), optional  :: default_real
+      character(len=*), intent(in), optional  :: default_character
+      character(len=*), parameter :: subname = 'const_props_register: '
+
+      if (.not. props_initialized) then
+         call endrun(subname//"not initialized", &
+              file=__FILE__, line=__LINE__)
+      end if
+
+      call prop_registry%register(name, prop_type, errflg, errmsg, &
+          default_logical=default_logical, &
+          default_integer=default_integer, &
+          default_real=default_real, &
+          default_character=default_character)
+
+   end subroutine const_props_register
+
+   !#######################################################################
+
+   logical function const_has_property(name)
+
+      character(len=*), intent(in) :: name
+
+      const_has_property = prop_registry%has_registered(name)
+
+   end function const_has_property
+
+   !#######################################################################
+
+   subroutine const_get_property_logical(const_ind, name, val, errflg, errmsg)
+
+      integer,          intent(in)    :: const_ind
+      character(len=*), intent(in)    :: name
+      logical,          intent(out)   :: val
+      integer,          intent(out)   :: errflg
+      character(len=*), intent(inout) :: errmsg
+      integer :: pidx
+      character(len=*), parameter :: subname = 'const_get_property_logical: '
+
+      if (.not. check_index_bounds(const_ind, subname)) return
+
+      call prop_registry%prop_index(name, pidx, errflg, errmsg)
+      if (errflg /= 0) return
+
+      call prop_registry%get_logical_val(pidx, const_ind, val, errflg, errmsg)
+
+   end subroutine const_get_property_logical
+
+   !#######################################################################
+
+   subroutine const_get_property_integer(const_ind, name, val, errflg, errmsg)
+
+      integer,          intent(in)    :: const_ind
+      character(len=*), intent(in)    :: name
+      integer,          intent(out)   :: val
+      integer,          intent(out)   :: errflg
+      character(len=*), intent(inout) :: errmsg
+      integer :: pidx
+      character(len=*), parameter :: subname = 'const_get_property_integer: '
+
+      if (.not. check_index_bounds(const_ind, subname)) return
+
+      call prop_registry%prop_index(name, pidx, errflg, errmsg)
+      if (errflg /= 0) return
+
+      call prop_registry%get_integer_val(pidx, const_ind, val, errflg, errmsg)
+
+   end subroutine const_get_property_integer
+
+   !#######################################################################
+
+   subroutine const_get_property_real(const_ind, name, val, errflg, errmsg)
+
+      integer,          intent(in)    :: const_ind
+      character(len=*), intent(in)    :: name
+      real(kind_phys),  intent(out)   :: val
+      integer,          intent(out)   :: errflg
+      character(len=*), intent(inout) :: errmsg
+      integer :: pidx
+      character(len=*), parameter :: subname = 'const_get_property_real: '
+
+      if (.not. check_index_bounds(const_ind, subname)) return
+
+      call prop_registry%prop_index(name, pidx, errflg, errmsg)
+      if (errflg /= 0) return
+
+      call prop_registry%get_real_val(pidx, const_ind, val, errflg, errmsg)
+
+   end subroutine const_get_property_real
+
+   !#######################################################################
+
+   subroutine const_get_property_character(const_ind, name, val, errflg, errmsg)
+
+      integer,          intent(in)    :: const_ind
+      character(len=*), intent(in)    :: name
+      character(len=*), intent(out)   :: val
+      integer,          intent(out)   :: errflg
+      character(len=*), intent(inout) :: errmsg
+      integer :: pidx
+      character(len=*), parameter :: subname = 'const_get_property_character: '
+
+      if (.not. check_index_bounds(const_ind, subname)) return
+
+      call prop_registry%prop_index(name, pidx, errflg, errmsg)
+      if (errflg /= 0) return
+
+      call prop_registry%get_character_val(pidx, const_ind, val, errflg, errmsg)
+
+   end subroutine const_get_property_character
+
+   !#######################################################################
+
+   subroutine const_set_property_logical(const_ind, name, val, errflg, errmsg)
+
+      integer,          intent(in)    :: const_ind
+      character(len=*), intent(in)    :: name
+      logical,          intent(in)    :: val
+      integer,          intent(out)   :: errflg
+      character(len=*), intent(inout) :: errmsg
+      integer :: pidx
+      character(len=*), parameter :: subname = 'const_set_property_logical: '
+
+      if (.not. check_index_bounds(const_ind, subname)) return
+
+      call prop_registry%prop_index(name, pidx, errflg, errmsg)
+      if (errflg /= 0) return
+
+      call prop_registry%set_logical_val(pidx, const_ind, val, errflg, errmsg)
+
+   end subroutine const_set_property_logical
+
+   !#######################################################################
+
+   subroutine const_set_property_integer(const_ind, name, val, errflg, errmsg)
+
+      integer,          intent(in)    :: const_ind
+      character(len=*), intent(in)    :: name
+      integer,          intent(in)    :: val
+      integer,          intent(out)   :: errflg
+      character(len=*), intent(inout) :: errmsg
+      integer :: pidx
+      character(len=*), parameter :: subname = 'const_set_property_integer: '
+
+      if (.not. check_index_bounds(const_ind, subname)) return
+
+      call prop_registry%prop_index(name, pidx, errflg, errmsg)
+      if (errflg /= 0) return
+
+      call prop_registry%set_integer_val(pidx, const_ind, val, errflg, errmsg)
+
+   end subroutine const_set_property_integer
+
+   !#######################################################################
+
+   subroutine const_set_property_real(const_ind, name, val, errflg, errmsg)
+
+      integer,          intent(in)    :: const_ind
+      character(len=*), intent(in)    :: name
+      real(kind_phys),  intent(in)    :: val
+      integer,          intent(out)   :: errflg
+      character(len=*), intent(inout) :: errmsg
+      integer :: pidx
+      character(len=*), parameter :: subname = 'const_set_property_real: '
+
+      if (.not. check_index_bounds(const_ind, subname)) return
+
+      call prop_registry%prop_index(name, pidx, errflg, errmsg)
+      if (errflg /= 0) return
+
+      call prop_registry%set_real_val(pidx, const_ind, val, errflg, errmsg)
+
+   end subroutine const_set_property_real
+
+   !#######################################################################
+
+   subroutine const_set_property_character(const_ind, name, val, errflg, errmsg)
+
+      integer,          intent(in)    :: const_ind
+      character(len=*), intent(in)    :: name
+      character(len=*), intent(in)    :: val
+      integer,          intent(out)   :: errflg
+      character(len=*), intent(inout) :: errmsg
+      integer :: pidx
+      character(len=*), parameter :: subname = 'const_set_property_character: '
+
+      if (.not. check_index_bounds(const_ind, subname)) return
+
+      call prop_registry%prop_index(name, pidx, errflg, errmsg)
+      if (errflg /= 0) return
+
+      call prop_registry%set_character_val(pidx, const_ind, val, errflg, errmsg)
+
+   end subroutine const_set_property_character
 
    !#######################################################################
 
