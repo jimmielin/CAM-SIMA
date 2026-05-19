@@ -136,8 +136,13 @@ def _build_cam():
         # (The directory is created and the file generated below, alongside
         # the cargo invocation. Adding the path here is a no-op for Fortran-
         # only builds where rust_scheme_names is empty.)
+        #
+        # Also add src/physics/rust_physics for host-side Rust support
+        # modules (ccpp_rs_logging_mod.F90 — CP-I, RUST_DESIGN.md §9).
         if rust_scheme_names:
             paths.append(os.path.join(bldroot, "generated"))
+            paths.append(os.path.join(atm_root, "src", "physics",
+                                      "rust_physics"))
 
         # Write Filepath text file
         with open(filepath_src, "w", encoding='utf-8') as filepath:
@@ -593,7 +598,14 @@ def _build_rust_physics(case: Case, atm_root: str, bldroot: str,
     target_dir = os.path.join(bldroot, "cargo")
     manifest = os.path.join(workspace, "Cargo.toml")
 
-    cmd = (f"{cargo} build --release --manifest-path {manifest} "
+    # Pass CAM_KIND_PHYS through to cargo so ccpp_rs/build.rs writes a
+    # kind.rs that matches the case configuration (defends against a
+    # stale REAL32 kind.rs left over from an earlier case.build).
+    # CAM-SIMA currently hard-codes REAL64; this mirrors
+    # _gen_rust_kinds_for_case so both sides agree.
+    kind_phys = "REAL64"
+    cmd = (f"env CAM_KIND_PHYS={kind_phys} "
+           f"{cargo} build --release --manifest-path {manifest} "
            f"--target-dir {target_dir}")
     rc, out, err = run_cmd(cmd)
     _LOGGER.info("Command %s:\n\nstdout:\n%s\n\nstderr:\n%s\n", cmd, out, err)
@@ -659,22 +671,54 @@ def _set_rust_lib_path(rust_lib_dir: str, rust_scheme_names, native_libs: str,
     they need. No-op on a re-run if the same libs are already present
     (mirrors _set_musica_lib_path)."""
     cam_linked_libs = case.get_value("CAM_LINKED_LIBS") or ""
+    libroot = case.get_value("LIBROOT")
     # Scheme staticlibs (librust_demo.a etc.) reference symbols in
     # libccpp_rs.a (e.g. ErrmsgBuf), so scheme libs MUST appear before
     # -lccpp_rs on the link line — GNU ld scans archives left-to-right
     # and only pulls members that satisfy currently-undefined symbols.
+    #
+    # Phase 2 introduces Rust -> Fortran calls (ccpp_cprop_* in the
+    # constituent props façade, ccpp_rs_write_log in the logging mod);
+    # those Fortran symbols live in libatm.a, which is processed
+    # before USER_SLIBS in CIME's default link order. By the time GNU
+    # ld reaches the Rust libs, libatm.a has been retired, so the
+    # shim objects (ccpp_constituent_prop_ccapi.o,
+    # ccpp_rs_logging_mod.o) were never pulled in. The fix is to
+    # re-list `-latm` AFTER the Rust libs: when the linker hits the
+    # second `-latm`, libccpp_rs.a's now-undefined refs to the shim
+    # symbols are still on the list, so the linker re-scans libatm.a
+    # for them and pulls in the matching objects. This is portable
+    # (works under both GNU ld and Apple ld64) and avoids the
+    # `--start-group`/`--end-group` flags Apple ld doesn't support.
     scheme_lflags = " ".join(f"-l{name}" for name in sorted(rust_scheme_names))
     rust_link_fragment = (
-        f"-L{rust_lib_dir} {scheme_lflags} -lccpp_rs {native_libs}"
+        f"-L{rust_lib_dir} {scheme_lflags} -lccpp_rs {native_libs} "
+        f"-L{libroot} -latm"
     ).strip()
     if rust_link_fragment in cam_linked_libs:
         return
 
-    command = [
-        "./xmlchange",
-        "--append",
-        f"CAM_LINKED_LIBS={rust_link_fragment}",
-    ]
+    # If a previous buildlib run already appended a Rust fragment
+    # (recognizable by the `-L<rust_lib_dir>` token), strip everything
+    # from that token onwards and SET CAM_LINKED_LIBS — otherwise stale
+    # fragments accumulate as buildlib evolves between case.build runs.
+    # The dedup check above only catches an exact match; a buildlib
+    # code change (e.g. when this comment was added) produces a
+    # different fragment and falls through.
+    marker = f"-L{rust_lib_dir}"
+    if marker in cam_linked_libs:
+        prefix = cam_linked_libs.split(marker, 1)[0].rstrip()
+        new_value = (prefix + " " + rust_link_fragment).strip()
+        command = [
+            "./xmlchange",
+            f"CAM_LINKED_LIBS={new_value}",
+        ]
+    else:
+        command = [
+            "./xmlchange",
+            "--append",
+            f"CAM_LINKED_LIBS={rust_link_fragment}",
+        ]
     try:
         subprocess.run(command, cwd=caseroot, stdout=subprocess.PIPE,
                        stderr=subprocess.PIPE, text=True, check=False)
