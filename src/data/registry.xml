@@ -671,6 +671,33 @@
       <ic_file_input_names>ozone pbuf_ozone</ic_file_input_names>
     </variable>
 
+    <!--
+        MAM gas-phase species used by gas-aerosol exchange (gasaerexch)
+        when nsoa=1, the SOA gas is lumped into the single SOAG tracer;
+        when nsoa=5 (VBS), use SOAG0..SOAG4.
+        NH3 and MSA are present in MAM and are optional; MSA condenses onto SO4.
+    -->
+    <variable local_name="H2SO4"
+	      standard_name="H2SO4"
+	      units="kg kg-1" type="real" constituent="true">
+      <ic_file_input_names>H2SO4 cnst_H2SO4</ic_file_input_names>
+    </variable>
+    <variable local_name="NH3"
+	      standard_name="NH3"
+	      units="kg kg-1" type="real" constituent="true">
+      <ic_file_input_names>NH3 cnst_NH3</ic_file_input_names>
+    </variable>
+    <variable local_name="MSA"
+	      standard_name="MSA"
+	      units="kg kg-1" type="real" constituent="true">
+      <ic_file_input_names>MSA cnst_MSA</ic_file_input_names>
+    </variable>
+    <variable local_name="SOAG"
+	      standard_name="SOAG"
+	      units="kg kg-1" type="real" constituent="true">
+      <ic_file_input_names>SOAG cnst_SOAG</ic_file_input_names>
+    </variable>
+
     <!-- temporaries from pbuf for snapshot usage. -->
     <variable local_name="landm"
               standard_name="smoothed_land_area_fraction"
