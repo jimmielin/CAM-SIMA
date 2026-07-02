@@ -1,0 +1,98 @@
+! FULL MAM microphysics cluster test: gasaerexch -> rename -> apply -> newnuc -> coag,
+! the CCPP equivalent of CAM's gas_phase_chemdr -> aero_model_gasaerexch (setsox is
+! excluded; its tendency is a snapshot input). This is the end-to-end assembly: only
+! true cluster EXTERNALS come from the snapshot; everything the cluster produces
+! internally (del_h2so4_aeruptk, the vmr chain, the constituent tendencies) is
+! computed in-suite.
+!
+! the unified snapshot captures the following sequence
+!   (upstream setsox/imp_sol)
+!   ------ P_start ------ (aerochem_vmr_* before tape)   <-- this test starts HERE
+!   gasaerexch
+!   rename
+!   apply tendencies from gasaerexch+rename on vmr; recover del_h2so4_aeruptk
+!   ------ P_end ------- (aerochem_vmr_* after tape)
+!   newnuc
+!   ------ P2 ------ (aerochem_vmr_postnewnuc_* after tape)
+!   coag
+!   ------ P3 ------ (aerochem_vmr_postcoag_* after tape)
+!   (downstream NH3 conservation)
+!
+! Unlike the newnuc_coag testmod, TWO tapes are used:
+!  - input (ncdata) = the "before" tape:
+!    the working vmr initializes from aerochem_vmr_* at P_start (the gasaerexch
+!    entry). Cluster EXTERNALS come from the same tape: mam_del_h2so4_gasprod
+!    (from gas-phase chemistry), mam_setsox_vmr_tend_* (rename's continuous-growth
+!    "other" tendency; setsox is not run), dgnum/dgnumwet/wetdens (wet cluster,
+!    not re-run), and the newnuc met fields (zm, pblh, cld, Q).
+!    NOTE: mam_del_h2so4_aeruptk on the before tape is all zeros by construction
+!    (the value does not exist yet at P_start; CAM computes it mid-cluster);
+!    the suite computes it in mam_vmr_apply, overwriting the read.
+!  - results (ncdata_check) = the "after" tape, three b4b gates:
+!    (1) mam_vmr_postnewnuc vs aerochem_vmr_postnewnuc_*: certifies the whole
+!        gasaerexch -> rename -> apply -> newnuc chain from P_start;
+!    (2) mam_vmr_postcoag vs aerochem_vmr_postcoag_*: adds the coag chaining;
+!    (3) the computed del_h2so4_aeruptk vs the after tape's captured
+!        mam_del_h2so4_aeruptk (reported under its standard name,
+!        change_in_h2so4_molar_mixing_ratio_due_to_aerosol_uptake).
+!    Cloud-borne aerochem_vmr_*_c* rows are kept as a fourth, implicit gate:
+!    newnuc/coag never touch cloud-borne, so the working vmr's _c* slices must
+!    stay bitwise at their P_end values.
+! The full bit-for-bitness of each individual scheme can be captured in a dropsonde
+! run which verifies the inputs and outputs of each scheme. The snapshots outlined here
+! are the result of that verification.
+! Please see the suite_modal_aero_microphysics.xml header (atmospheric_physics)
+! for the scheme-level detail.
+
+ncdata = '/glade/campaign/cesm/community/amwg/sima_baselines/cam_sima_test_snapshots/cam6_4_184_ne3pg3_fhist_modal_aero_gasaerexch-block-multi-snapshot_derecho_gnu_before_c20260702.nc'
+ncdata_check = '/glade/campaign/cesm/community/amwg/sima_baselines/cam_sima_test_snapshots/cam6_4_184_ne3pg3_fhist_modal_aero_gasaerexch-block-multi-snapshot_derecho_gnu_unified_after_c20260702.nc'
+
+! Exclusions (ordered, first match wins; leading ! means keep).
+! Two classes of rows are structural noise by design, carry no signal, and are excluded:
+!  (a) plain interstitial aerochem_vmr_*: the working vmr holds the post-coag (P3)
+!      state at check time, but the after tape's aerochem_vmr_* is the P_end
+!      capture -> species newnuc/coag touch differ by their real deltas (up to
+!      ~1 relative on num_a2). SOAG and the coarse mode (_a3) are untouched after
+!      the apply, so those rows are kept as additional bitwise checks.
+!  (b) bare constituent rows of the modes newnuc/coag touch (*_a1 accum, *_a2
+!      aitken, *_a4 pcarbon, and the H2SO4 gas): the difference unpack applies the
+!      FULL cluster tendency to the constituents (post-coag state), but the tape's
+!      cnst_* targets were captured at P_end (post-apply) -> the same structural
+!      offset in mmr space. These rows also carry the documented apply-space ulp
+!      floor (see HANDOFF.md), and their magnitudes are step-dependent (soa_a1
+!      grew from 6e-17 to 5e-13 between steps 1 and 5), so the whole touched-mode
+!      set is excluded rather than curating today's magnitudes.
+!  num_c2 is the one cloud-borne constituent above min_difference: the apply-space
+!  floor amplified where rename's aitken->accum merge removes most of the aitken
+!  cloud-borne number (~1e-9 relative; num_c1 has the same floor but sits ~4e-16).
+! Still hard-checked: the three gates, cloud-borne aerochem_vmr_*_c*,
+! aerochem_vmr_SOAG + coarse _a3 rows (bitwise), the remaining constituents
+! within min_difference, and Q.
+ncdata_check_exclude = '!aerochem_vmr_post*', '!aerochem_vmr_*_c*',
+    '!aerochem_vmr_SOAG', '!aerochem_vmr_*_a3', 'aerochem_vmr_*',
+    '*_a1', '*_a2', '*_a4', '*H2SO4', '*num_c2'
+ncdata_check_err = .true.
+min_difference = 2e-15
+
+! fhist:
+pver = 32
+
+debug_output = 1
+
+rad_aer_climate = 'M:mam4_mode1:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/mam4_mode1_rrtmg_aeronetdust_sig1.6_dgnh.48_c140304.nc',
+         'M:mam4_mode2:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/mam4_mode2_rrtmg_aitkendust_c141106.nc',
+         'M:mam4_mode3:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/mam4_mode3_rrtmg_aeronetdust_sig1.2_dgnl.40_c150219.nc',
+         'M:mam4_mode4:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/mam4_mode4_rrtmg_c130628.nc'
+
+mode_defs = 'mam4_mode1:accum:=', 'A:num_a1:N:num_c1:num_mr:+',
+         'A:so4_a1:N:so4_c1:sulfate:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/sulfate_rrtmg_c080918.nc:+', 'A:pom_a1:N:pom_c1:p-organic:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ocpho_rrtmg_c130709.nc:+',
+         'A:soa_a1:N:soa_c1:s-organic:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ocphi_rrtmg_c100508.nc:+', 'A:bc_a1:N:bc_c1:black-c:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/bcpho_rrtmg_c100508.nc:+',
+         'A:dst_a1:N:dst_c1:dust:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/dust_aeronet_rrtmg_c141106.nc:+', 'A:ncl_a1:N:ncl_c1:seasalt:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ssam_rrtmg_c100508.nc',
+         'mam4_mode2:aitken:=', 'A:num_a2:N:num_c2:num_mr:+',
+         'A:so4_a2:N:so4_c2:sulfate:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/sulfate_rrtmg_c080918.nc:+', 'A:soa_a2:N:soa_c2:s-organic:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ocphi_rrtmg_c100508.nc:+',
+         'A:ncl_a2:N:ncl_c2:seasalt:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ssam_rrtmg_c100508.nc:+', 'A:dst_a2:N:dst_c2:dust:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/dust_aeronet_rrtmg_c141106.nc',
+         'mam4_mode3:coarse:=', 'A:num_a3:N:num_c3:num_mr:+',
+         'A:dst_a3:N:dst_c3:dust:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/dust_aeronet_rrtmg_c141106.nc:+', 'A:ncl_a3:N:ncl_c3:seasalt:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ssam_rrtmg_c100508.nc:+',
+         'A:so4_a3:N:so4_c3:sulfate:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/sulfate_rrtmg_c080918.nc', 'mam4_mode4:primary_carbon:=',
+         'A:num_a4:N:num_c4:num_mr:+', 'A:pom_a4:N:pom_c4:p-organic:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ocpho_rrtmg_c130709.nc:+',
+         'A:bc_a4:N:bc_c4:black-c:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/bcpho_rrtmg_c100508.nc'
