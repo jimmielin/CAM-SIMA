@@ -1715,6 +1715,15 @@
       <initial_value>0.0_kind_phys</initial_value>
       <ic_file_input_names>mam_setsox_vmr_tend</ic_file_input_names>
     </variable>
+    <variable local_name="mam_vmr"
+              standard_name="molar_mixing_ratio_of_mam_microphysics_constituents"
+              units="none" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <long_name>constituent molar mixing ratios, the working array of the MAM microphysics (gas-aerosol exchange) cluster</long_name>
+      <dimensions>horizontal_dimension vertical_layer_dimension number_of_ccpp_constituents</dimensions>
+      <initial_value>0.0_kind_phys</initial_value>
+      <ic_file_input_names>aerochem_vmr</ic_file_input_names>
+    </variable>
 
     <!-- Gravity wave variables - need to be kept in the CAM registry -->
     <variable local_name="kvt"
