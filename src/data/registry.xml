@@ -1575,6 +1575,15 @@
       <initial_value>0.0_kind_phys</initial_value>
       <ic_file_input_names>DGNUMWET pbuf_DGNUMWET</ic_file_input_names>
     </variable>
+    <variable local_name="wetdens_a"
+              standard_name="wet_density_of_modal_aerosol"
+              units="kg m-3" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <long_name>wet density of interstitial modal aerosol (from previous timestep)</long_name>
+      <dimensions>horizontal_dimension vertical_layer_dimension number_of_aerosol_modes</dimensions>
+      <initial_value>0.0_kind_phys</initial_value>
+      <ic_file_input_names>WETDENS_AP pbuf_WETDENS_AP</ic_file_input_names>
+    </variable>
     <variable local_name="hygro_aer"
               standard_name="volume_weighted_hygroscopicity_of_modal_aerosol"
               units="1" type="real" kind="kind_phys"
@@ -1686,6 +1695,56 @@
       <dimensions>horizontal_dimension vertical_layer_dimension number_of_ccpp_constituents</dimensions>
       <initial_value>0.0_kind_phys</initial_value>
       <ic_file_input_names>aerochem_vmr</ic_file_input_names>
+    </variable>
+    <!-- MAM microphysics-cluster stage boundaries (newnuc/coag validation).
+         The CAM aerochem snapshot bracket (design_docs mam_project_scratchpad
+         chem_aero_snapshot_test_design.md, Milestone 2) captures the working
+         vmr at every cluster boundary; these variables receive them so each
+         scheme can be validated standalone (bit-true entry injected, exit
+         checked) or as checkpoints inside the assembled suite (a small
+         observe-only scheme copies mam_vmr into them at the matching SDF
+         position, and ncdata_check compares). -->
+    <variable local_name="mam_vmr_postnewnuc"
+              standard_name="molar_mixing_ratio_of_mam_microphysics_constituents_after_new_particle_nucleation"
+              units="none" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <long_name>constituent molar mixing ratios after new-particle nucleation (= coagulation entry); standalone-coag input and post-newnuc validation checkpoint</long_name>
+      <dimensions>horizontal_dimension vertical_layer_dimension number_of_ccpp_constituents</dimensions>
+      <initial_value>0.0_kind_phys</initial_value>
+      <ic_file_input_names>aerochem_vmr_postnewnuc</ic_file_input_names>
+    </variable>
+    <variable local_name="mam_vmr_postcoag"
+              standard_name="molar_mixing_ratio_of_mam_microphysics_constituents_after_coagulation"
+              units="none" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <long_name>constituent molar mixing ratios after coagulation (= cluster exit, pre NH3 conservation); post-coag validation checkpoint and the assembled suite's final vmr-space comparison point</long_name>
+      <dimensions>horizontal_dimension vertical_layer_dimension number_of_ccpp_constituents</dimensions>
+      <initial_value>0.0_kind_phys</initial_value>
+      <ic_file_input_names>aerochem_vmr_postcoag</ic_file_input_names>
+    </variable>
+    <!-- H2SO4 vapor deltas consumed by new-particle nucleation. gasprod is
+         produced by gas-phase chemistry (MOZART), so it is always read from
+         the snapshot; aeruptk is recovered around the gasaerexch+rename
+         tendency apply in the assembled suite (the interstitial overwrites
+         the value read here) and read from the snapshot only when newnuc
+         runs standalone. -->
+    <variable local_name="mam_del_h2so4_gasprod"
+              standard_name="change_in_h2so4_molar_mixing_ratio_due_to_gas_phase_chemistry"
+              units="mol mol-1" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <long_name>H2SO4 gas-phase-chemistry production over the timestep (newnuc input)</long_name>
+      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <initial_value>0.0_kind_phys</initial_value>
+      <ic_file_input_names>mam_del_h2so4_gasprod</ic_file_input_names>
+    </variable>
+    <variable local_name="mam_del_h2so4_aeruptk"
+              standard_name="change_in_h2so4_molar_mixing_ratio_due_to_aerosol_uptake"
+              units="mol mol-1" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <long_name>H2SO4 loss to aerosol uptake (condensation) over the timestep (newnuc input)</long_name>
+      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <initial_value>0.0_kind_phys</initial_value>
+      <ic_file_input_names>mam_del_h2so4_aeruptk</ic_file_input_names>
     </variable>
 
     <!-- Gravity wave variables - need to be kept in the CAM registry -->
