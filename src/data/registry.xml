@@ -1722,12 +1722,21 @@
       <initial_value>0.0_kind_phys</initial_value>
       <ic_file_input_names>aerochem_vmr_postcoag</ic_file_input_names>
     </variable>
+    <variable local_name="mam_vmr_entry"
+              standard_name="molar_mixing_ratio_of_mam_microphysics_constituents_at_cluster_entry"
+              units="none" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <long_name>constituent molar mixing ratios at microphysics-cluster entry, saved by mam_vmr_checkpoint_entry; newnuc/coag update the working vmr directly, so the cluster's total constituent tendency is unpacked as (vmr - mam_vmr_entry)/deltat. Computed in-suite, never read from a snapshot.</long_name>
+      <dimensions>horizontal_dimension vertical_layer_dimension number_of_ccpp_constituents</dimensions>
+      <initial_value>0.0_kind_phys</initial_value>
+    </variable>
     <!-- H2SO4 vapor deltas consumed by new-particle nucleation. gasprod is
          produced by gas-phase chemistry (MOZART), so it is always read from
-         the snapshot; aeruptk is recovered around the gasaerexch+rename
-         tendency apply in the assembled suite (the interstitial overwrites
-         the value read here) and read from the snapshot only when newnuc
-         runs standalone. -->
+         the snapshot; aeruptk is recovered by mam_vmr_apply (bracketing the
+         gasaerexch+rename tendency apply) in suites where the apply runs,
+         and read from the snapshot only when newnuc runs standalone (the
+         "before" tape cannot carry it - it does not exist at the capture
+         bracket start). -->
     <variable local_name="mam_del_h2so4_gasprod"
               standard_name="change_in_h2so4_molar_mixing_ratio_due_to_gas_phase_chemistry"
               units="mol mol-1" type="real" kind="kind_phys"
