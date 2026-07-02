@@ -196,9 +196,10 @@ contains
             call read_field(file, std_name, input_var_names(:,const_input_idx), 'lev', timestep, field_data_ptr(:,:,constituent_idx), &
                 mark_as_read=.false., error_on_not_found=.false., var_found=var_found)
          else
-            ! If not in standard names list, then just use constituent name as input file name:
-            call read_field(file, std_name, [std_name], 'lev', timestep, field_data_ptr(:,:,constituent_idx), mark_as_read=.false., &
-                error_on_not_found=.false., var_found=var_found)
+            ! If not in standard names list, then attempt constituent name
+            ! and cnst_, pbuf_ prefixes used by CAM snapshots (advected, non-advected) as input names:
+            call read_field(file, std_name, [character(len=std_name_len) :: std_name, 'cnst_'//trim(std_name), 'pbuf_'//trim(std_name)], 'lev', &
+                timestep, field_data_ptr(:,:,constituent_idx), mark_as_read=.false., error_on_not_found=.false., var_found=var_found)
          end if
          if(.not. var_found) then
             constituent_has_default = .false.
@@ -224,7 +225,7 @@ contains
       use cam_abortutils,              only: endrun
       use shr_kind_mod,                only: SHR_KIND_CS, SHR_KIND_CL, SHR_KIND_CX
       use physics_data,                only: check_field, find_input_name_idx, no_exist_idx, init_mark_idx, prot_no_init_idx, const_idx
-      use physics_data,                only: flush_check_field_verbose
+      use physics_data,                only: check_constituent_dimensioned_field, flush_check_field_verbose
       use cam_ccpp_cap,                only: ccpp_physics_suite_variables, cam_constituents_array, cam_model_const_properties
       use cam_constituents,            only: const_get_index
       use ccpp_kinds,                  only: kind_phys
@@ -300,6 +301,7 @@ contains
       end if
       allocate(file)
       call cam_pio_openfile(file, ncdata_check_loc, pio_nowrite, log_info=.false.)
+      const_props => cam_model_const_properties()
       ! Loop over CCPP physics/chemistry suites:
       do suite_idx = 1, size(suite_names, 1)
 
@@ -359,7 +361,6 @@ contains
 
       ! Check constituent variables
       field_data_ptr => cam_constituents_array()
-      const_props => cam_model_const_properties()
 
       do constituent_idx = 1, size(const_props)
          ! Check if constituent standard name in registered SIMA standard names list:
@@ -378,9 +379,10 @@ contains
                overall_diff_found = .true.
             end if
          else
-            ! If not in standard names list, then just use constituent name as input file name:
-            call check_field(file, [std_name], 'lev', timestep, field_data_ptr(:,:,constituent_idx), std_name, min_difference, min_relative_value, &
-                is_first, diff_found)
+            ! If not in standard names list, then attempt constituent name
+            ! and cnst_, pbuf_ prefixes used by CAM snapshots (advected, non-advected) as input names:
+            call check_field(file, [character(len=std_name_len) :: std_name, 'cnst_'//trim(std_name), 'pbuf_'//trim(std_name)], 'lev', timestep, &
+                field_data_ptr(:,:,constituent_idx), std_name, min_difference, min_relative_value, is_first, diff_found)
             if (diff_found) then
                overall_diff_found = .true.
             end if
