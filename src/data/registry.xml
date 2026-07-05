@@ -679,6 +679,15 @@
 	      units="kg kg-1" type="real" constituent="true">
       <ic_file_input_names>Q cnst_Q</ic_file_input_names>
     </variable>
+    <variable local_name="CO2"
+	      standard_name="CO2"
+	      units="kg kg-1" type="real" constituent="true">
+      <!-- Listed only because aerochem_co2_mmr is not derivable from the
+           standard name by the cnst_/pbuf_ all-case fallback: it is the
+           rad_cnst CO2 mmr captured by the CAM aerochem snapshot bracket
+           (setsox pH carbonate-term input). -->
+      <ic_file_input_names>CO2 cnst_CO2 aerochem_co2_mmr</ic_file_input_names>
+    </variable>
     <variable local_name="CFC11"
 	      standard_name="CFC11"
 	      units="kg kg-1" type="real" constituent="true">
@@ -687,7 +696,9 @@
     <variable local_name="O3"
 	      standard_name="O3"
 	      units="kg kg-1" type="real" constituent="true">
-      <ic_file_input_names>ozone pbuf_ozone</ic_file_input_names>
+      <!-- first name is the const_shortmap shortname: constituent-dimensioned
+           captures (aerochem_vmr_*, mam_setsox_vmr_tend_*) are suffixed _O3 -->
+      <ic_file_input_names>O3 ozone pbuf_ozone</ic_file_input_names>
     </variable>
 
     <!-- temporaries from pbuf for snapshot usage. -->
@@ -1715,6 +1726,12 @@
       <long_name>flag for stratospheric sulfate equilibrium treatment in modal aerosol</long_name>
       <initial_value>.false.</initial_value>
     </variable>
+    <variable local_name="do_aqueous_sulfur_chemistry_aerosol_update"
+              standard_name="do_aqueous_sulfur_chemistry_aerosol_update"
+              units="flag" type="logical">
+      <long_name>apply the aqueous sulfur chemistry (setsox) update to the aerosol/gas state; .false. only when the chemistry package does its own in-cloud sulfur oxidation (e.g. GEOS-Chem), to avoid double counting</long_name>
+      <initial_value>.true.</initial_value>
+    </variable>
     <variable local_name="mam_setsox_vmr_tend"
               standard_name="tendency_of_molar_mixing_ratio_of_mam_microphysics_constituents_due_to_aqueous_sulfur_chemistry"
               units="none" type="real" kind="kind_phys"
@@ -1741,6 +1758,15 @@
          checked) or as checkpoints inside the assembled suite (a small
          observe-only scheme copies mam_vmr into them at the matching SDF
          position, and ncdata_check compares). -->
+    <variable local_name="mam_vmr_presetsox"
+              standard_name="molar_mixing_ratio_of_mam_microphysics_constituents_before_aqueous_sulfur_chemistry"
+              units="none" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <long_name>constituent molar mixing ratios before aqueous sulfur chemistry (the P-1 capture, immediately after qqcw2vmr = setsox entry); standalone-setsox input via mam_vmr_inject_presetsox</long_name>
+      <dimensions>horizontal_dimension vertical_layer_dimension number_of_ccpp_constituents</dimensions>
+      <initial_value>0.0_kind_phys</initial_value>
+      <ic_file_input_names>aerochem_vmr_presetsox</ic_file_input_names>
+    </variable>
     <variable local_name="mam_vmr_postnewnuc"
               standard_name="molar_mixing_ratio_of_mam_microphysics_constituents_after_new_particle_nucleation"
               units="none" type="real" kind="kind_phys"
