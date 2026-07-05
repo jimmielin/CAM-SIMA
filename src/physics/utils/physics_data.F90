@@ -77,6 +77,7 @@ CONTAINS
       use phys_vars_init_check, only: is_initialized
       use phys_vars_init_check, only: is_read_from_file
       use cam_constituents,     only: const_get_index
+      use string_utils,         only: to_lower
 
       ! Dummy arguments
       ! Variable standard name being checked:
@@ -111,8 +112,10 @@ CONTAINS
 
       !Loop through physics variable standard names:
       do idx = 1, phys_var_num
-         !Check if provided name is in required names array:
-         if (trim(phys_var_stdnames(idx)) == trim(stdname)) then
+         !Check if provided name is in required names array (standard names
+         !are case-insensitive: capgen normalizes scheme-side names to
+         !lowercase while registry declarations keep their authored case):
+         if (to_lower(trim(phys_var_stdnames(idx))) == to_lower(trim(stdname))) then
             found_in_phys_vars = .true.
             !Check if this variable has already been initialized.
             !If so, then set the index to a quantity that will be skipped:
@@ -158,7 +161,7 @@ CONTAINS
       ! If not found, loop through the excluded variable standard names
       if (find_input_name_idx == no_exist_idx) then
          do idx = 1, phys_const_num
-            if (trim(phys_const_stdnames(idx)) == trim(stdname)) then
+            if (to_lower(trim(phys_const_stdnames(idx))) == to_lower(trim(stdname))) then
                ! Set to initialized because we can't check here.
                ! The relevant modules (e.g., cam_constituents) will check.
                find_input_name_idx = init_mark_idx
@@ -479,6 +482,7 @@ CONTAINS
       use ccpp_constituent_prop_mod, only: ccpp_constituent_prop_ptr_t
       use phys_vars_init_check, only: mark_as_read_from_file
       use phys_vars_init_check, only: phys_var_stdnames, input_var_names, phys_var_num
+      use string_utils,         only: to_lower
 
       ! Dummy arguments
       type(ccpp_constituent_prop_ptr_t),     intent(in)    :: const_props(:)      ! Constituent properties
@@ -543,7 +547,8 @@ CONTAINS
          ! is the short name
          const_input_idx = -1
          phys_inputvar_loop: do n = 1, phys_var_num
-            if (trim(phys_var_stdnames(n)) == trim(constituent_std_name)) then
+            ! case-insensitive: see find_input_name_idx
+            if (to_lower(trim(phys_var_stdnames(n))) == to_lower(trim(constituent_std_name))) then
                const_input_idx = n
                exit phys_inputvar_loop
             end if
@@ -699,6 +704,7 @@ CONTAINS
       use ccpp_constituent_prop_mod, only: ccpp_constituent_prop_ptr_t
       use phys_vars_init_check, only: mark_as_read_from_file
       use phys_vars_init_check, only: phys_var_stdnames, input_var_names, phys_var_num
+      use string_utils,         only: to_lower
 
       ! Dummy arguments
       type(ccpp_constituent_prop_ptr_t),     intent(in)    :: const_props(:)      ! Constituent properties
@@ -774,7 +780,8 @@ CONTAINS
          ! is the short name
          const_input_idx = -1
          phys_inputvar_loop: do n = 1, phys_var_num
-            if (trim(phys_var_stdnames(n)) == trim(constituent_std_name)) then
+            ! case-insensitive: see find_input_name_idx
+            if (to_lower(trim(phys_var_stdnames(n))) == to_lower(trim(constituent_std_name))) then
                const_input_idx = n
                exit phys_inputvar_loop
             end if
@@ -928,6 +935,7 @@ CONTAINS
       use cam_abortutils,       only: check_allocate
       use ccpp_constituent_prop_mod, only: ccpp_constituent_prop_ptr_t
       use phys_vars_init_check, only: phys_var_stdnames, input_var_names, phys_var_num
+      use string_utils,         only: to_lower
 
       ! Dummy arguments
       type(ccpp_constituent_prop_ptr_t), intent(in)    :: const_props(:)      ! Constituent properties
@@ -981,7 +989,8 @@ CONTAINS
          ! is the short name
          const_input_idx = -1
          phys_inputvar_loop: do n = 1, phys_var_num
-            if (trim(phys_var_stdnames(n)) == trim(constituent_std_name)) then
+            ! case-insensitive: see find_input_name_idx
+            if (to_lower(trim(phys_var_stdnames(n))) == to_lower(trim(constituent_std_name))) then
                const_input_idx = n
                exit phys_inputvar_loop
             end if
