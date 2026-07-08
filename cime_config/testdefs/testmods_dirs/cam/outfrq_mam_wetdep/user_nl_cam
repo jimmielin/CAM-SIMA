@@ -1,15 +1,12 @@
-! REPLACE after the classic cam_snapshot capture run
-! (cam_take_snapshot_before/after = "aero_model_wetdep";
-!  production convproc_do_aer = .true. capture):
-ncdata = 'REPLACE_WITH_BEFORE_TAPE.nc'
-ncdata_check = 'REPLACE_WITH_AFTER_TAPE.nc'
+! convproc_do_aer = .true. version of modal aerosol wet deposition:
+ncdata = '/glade/campaign/cesm/community/amwg/sima_baselines/cam_sima_test_snapshots/cam6_4_185_ne3pg3_fhist_modal_aero_wetdep_snapshot_derecho_gnu_before_c20260708.nc'
+ncdata_check = '/glade/campaign/cesm/community/amwg/sima_baselines/cam_sima_test_snapshots/cam6_4_185_ne3pg3_fhist_modal_aero_wetdep_snapshot_derecho_gnu_after_c20260708.nc'
 
 ! fhist:
 pver = 32
 
 debug_output = 1
 ncdata_check_err = .true.
-min_difference = 2e-15
 
 rad_aer_climate = 'M:mam4_mode1:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/mam4_mode1_rrtmg_aeronetdust_sig1.6_dgnh.48_c140304.nc',
          'M:mam4_mode2:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/mam4_mode2_rrtmg_aitkendust_c141106.nc',
@@ -28,12 +25,3 @@ mode_defs = 'mam4_mode1:accum:=', 'A:num_a1:N:num_c1:num_mr:+',
          'A:so4_a3:N:so4_c3:sulfate:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/sulfate_rrtmg_c080918.nc', 'mam4_mode4:primary_carbon:=',
          'A:num_a4:N:num_c4:num_mr:+', 'A:pom_a4:N:pom_c4:p-organic:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ocpho_rrtmg_c130709.nc:+',
          'A:bc_a4:N:bc_c4:black-c:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/bcpho_rrtmg_c100508.nc'
-
-! Expected-diff exclusions (class-based). The after tape's cnst_ interstitial
-! aerosol rows hold POST-physics_update targets (q += ptend*dt, then qneg3
-! with CAM's per-constituent qmin) while this no-apply suite holds the
-! injected pre-apply values; the tendencies are compared instead (ptend_*
-! rows = the primary gate, kept below along with the per-constituent fracis
-! rows). Keep-rules must precede the *_aN excludes (first match wins).
-ncdata_check_exclude = '!ptend_*', '!pbuf_FRACIS_*',
-                       '*_a1', '*_a2', '*_a3', '*_a4'

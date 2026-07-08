@@ -9,7 +9,6 @@ pver = 32
 
 debug_output = 1
 ncdata_check_err = .true.
-min_difference = 2e-15
 
 ! GATE 1: convproc path off (stratiform wetdep + the cloud-borne in-place
 ! refactor in isolation); must be paired with the .false. capture tapes
@@ -32,12 +31,3 @@ mode_defs = 'mam4_mode1:accum:=', 'A:num_a1:N:num_c1:num_mr:+',
          'A:so4_a3:N:so4_c3:sulfate:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/sulfate_rrtmg_c080918.nc', 'mam4_mode4:primary_carbon:=',
          'A:num_a4:N:num_c4:num_mr:+', 'A:pom_a4:N:pom_c4:p-organic:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ocpho_rrtmg_c130709.nc:+',
          'A:bc_a4:N:bc_c4:black-c:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/bcpho_rrtmg_c100508.nc'
-
-! Expected-diff exclusions (class-based). The after tape's cnst_ interstitial
-! aerosol rows hold POST-physics_update targets (q += ptend*dt, then qneg3
-! with CAM's per-constituent qmin) while this no-apply suite holds the
-! injected pre-apply values; the tendencies are compared instead (ptend_*
-! rows = the primary gate, kept below along with the per-constituent fracis
-! rows). Keep-rules must precede the *_aN excludes (first match wins).
-ncdata_check_exclude = '!ptend_*', '!pbuf_FRACIS_*',
-                       '*_a1', '*_a2', '*_a3', '*_a4'
