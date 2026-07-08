@@ -23,3 +23,24 @@ mode_defs = 'mam4_mode1:accum:=', 'A:num_a1:N:num_c1:num_mr:+',
          'A:so4_a3:N:so4_c3:sulfate:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/sulfate_rrtmg_c080918.nc', 'mam4_mode4:primary_carbon:=',
          'A:num_a4:N:num_c4:num_mr:+', 'A:pom_a4:N:pom_c4:p-organic:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ocpho_rrtmg_c130709.nc:+',
          'A:bc_a4:N:bc_c4:black-c:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/bcpho_rrtmg_c100508.nc'
+
+! ---------------------------------------------------------------------------
+! MAM diagnostics baseline (h1): all FHIST/MAM4 fields emitted by the calcsize
+! + wateruptake diagnostics schemes in this suite.
+! ---------------------------------------------------------------------------
+! calcsize number-adjust source/sink:
+hist_add_inst_fields;h1: num_a1_sfcsiz1, num_c1_sfcsiz1, num_a2_sfcsiz1, num_c2_sfcsiz1, num_a3_sfcsiz1, num_c3_sfcsiz1, num_a4_sfcsiz1, num_c4_sfcsiz1
+hist_add_inst_fields;h1: num_a1_sfcsiz2, num_c1_sfcsiz2, num_a2_sfcsiz2, num_c2_sfcsiz2, num_a3_sfcsiz2, num_c3_sfcsiz2, num_a4_sfcsiz2, num_c4_sfcsiz2
+! calcsize aitken<->accum transfer, interstitial (_sfcsiz3 = aitken->accum, _sfcsiz4 = accum->aitken):
+hist_add_inst_fields;h1: num_a2_sfcsiz3, num_a1_sfcsiz3, so4_a2_sfcsiz3, so4_a1_sfcsiz3, soa_a2_sfcsiz3, soa_a1_sfcsiz3, ncl_a2_sfcsiz3, ncl_a1_sfcsiz3, dst_a2_sfcsiz3, dst_a1_sfcsiz3
+hist_add_inst_fields;h1: num_a2_sfcsiz4, num_a1_sfcsiz4, so4_a2_sfcsiz4, so4_a1_sfcsiz4, soa_a2_sfcsiz4, soa_a1_sfcsiz4, ncl_a2_sfcsiz4, ncl_a1_sfcsiz4, dst_a2_sfcsiz4, dst_a1_sfcsiz4
+! calcsize aitken<->accum transfer, cloud-borne:
+hist_add_inst_fields;h1: num_c2_sfcsiz3, num_c1_sfcsiz3, so4_c2_sfcsiz3, so4_c1_sfcsiz3, soa_c2_sfcsiz3, soa_c1_sfcsiz3, ncl_c2_sfcsiz3, ncl_c1_sfcsiz3, dst_c2_sfcsiz3, dst_c1_sfcsiz3
+hist_add_inst_fields;h1: num_c2_sfcsiz4, num_c1_sfcsiz4, so4_c2_sfcsiz4, so4_c1_sfcsiz4, soa_c2_sfcsiz4, soa_c1_sfcsiz4, ncl_c2_sfcsiz4, ncl_c1_sfcsiz4, dst_c2_sfcsiz4, dst_c1_sfcsiz4
+! wateruptake per-mode dry/wet diameter + aerosol water:
+hist_add_inst_fields;h1: dgnd_a01, dgnd_a02, dgnd_a03, dgnd_a04, dgnw_a01, dgnw_a02, dgnw_a03, dgnw_a04, wat_a1, wat_a2, wat_a3, wat_a4
+! wateruptake PM mass diagnostics:
+hist_add_inst_fields;h1: PM25, PM25_SRF, PM25_MMR, PM1_SRF, PM1_MMR, PM10_SRF, PM10_MMR, PMTOT_MMR, RHO_AIR
+hist_output_frequency;h1: 1*nstep
+hist_precision;h1: REAL64
+hist_max_frames;h1: 1
