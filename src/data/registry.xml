@@ -1138,7 +1138,7 @@
               allocatable="allocatable">
       <dimensions>horizontal_dimension</dimensions>
       <initial_value>0.0_kind_phys</initial_value>
-      <ic_file_input_names>bcphiwet cam_out_bcphidwet</ic_file_input_names>
+      <ic_file_input_names>bcphiwet cam_out_bcphiwet</ic_file_input_names>
     </variable>
     <variable local_name="bcphodry"
               standard_name="dry_deposition_flux_of_hydrophobic_black_carbon_at_surface_to_coupler"
