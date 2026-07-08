@@ -23,3 +23,19 @@ mode_defs = 'mam4_mode1:accum:=', 'A:num_a1:N:num_c1:num_mr:+',
          'A:so4_a3:N:so4_c3:sulfate:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/sulfate_rrtmg_c080918.nc', 'mam4_mode4:primary_carbon:=',
          'A:num_a4:N:num_c4:num_mr:+', 'A:pom_a4:N:pom_c4:p-organic:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ocpho_rrtmg_c130709.nc:+',
          'A:bc_a4:N:bc_c4:black-c:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/bcpho_rrtmg_c100508.nc'
+
+! ---------------------------------------------------------------------------
+! MAM diagnostics baseline (h1): all FHIST/MAM4 fields emitted by the
+! gasaerexch + rename + vmr diagnostics schemes in this suite.
+! ---------------------------------------------------------------------------
+! gasaerexch primary (condensation/aging) column tendency:
+hist_add_inst_fields;h1: H2SO4_sfgaex1, SOAG_sfgaex1, so4_a1_sfgaex1, pom_a1_sfgaex1, soa_a1_sfgaex1, bc_a1_sfgaex1, so4_a2_sfgaex1, soa_a2_sfgaex1, so4_a3_sfgaex1, pom_a4_sfgaex1, bc_a4_sfgaex1
+! rename (mode-merging) column tendency, interstitial:
+hist_add_inst_fields;h1: num_a1_sfgaex2, num_a2_sfgaex2, num_a3_sfgaex2, so4_a1_sfgaex2, so4_a2_sfgaex2, so4_a3_sfgaex2, soa_a1_sfgaex2, soa_a2_sfgaex2, ncl_a1_sfgaex2, ncl_a2_sfgaex2, ncl_a3_sfgaex2, dst_a1_sfgaex2, dst_a2_sfgaex2, dst_a3_sfgaex2
+! rename column tendency, cloud-borne:
+hist_add_inst_fields;h1: num_c1_sfgaex2, num_c2_sfgaex2, num_c3_sfgaex2, so4_c1_sfgaex2, so4_c2_sfgaex2, so4_c3_sfgaex2, soa_c1_sfgaex2, soa_c2_sfgaex2, ncl_c1_sfgaex2, ncl_c2_sfgaex2, ncl_c3_sfgaex2, dst_c1_sfgaex2, dst_c2_sfgaex2, dst_c3_sfgaex2
+! gas-phase species VMRs (pre-unpack):
+hist_add_inst_fields;h1: SO2vmr, SO2vmr_SRF, H2SO4vmr, H2SO4vmr_SRF, H2O2vmr, H2O2vmr_SRF, SOAGvmr, SOAGvmr_SRF, O3vmr, O3vmr_SRF, HO2vmr, HO2vmr_SRF
+hist_output_frequency;h1: 1*nstep
+hist_precision;h1: REAL64
+hist_max_frames;h1: 1
