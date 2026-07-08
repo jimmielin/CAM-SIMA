@@ -223,6 +223,83 @@
       <initial_value>0.0_kind_phys</initial_value>
       <ic_file_input_names>pbuf_RPRDDP</ic_file_input_names>
     </variable>
+
+    <!-- Aerosol wet deposition (wetdep + convproc) inputs.
+         Fields produced from upstream deep/shallow convection. -->
+    <variable local_name="rprdsh"
+              standard_name="tendency_of_precipitation_wrt_moist_air_and_condensed_water_due_to_shallow_convection_excluding_subcloud_evaporation"
+              units="kg kg-1 s-1" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <initial_value>0.0_kind_phys</initial_value>
+      <ic_file_input_names>pbuf_RPRDSH</ic_file_input_names>
+    </variable>
+    <variable local_name="icwmrsh"
+              standard_name="in_cloud_water_vapor_mixing_ratio_wrt_moist_air_and_condensed_water_due_to_shallow_convection"
+              units="kg kg-1" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <initial_value>0.0_kind_phys</initial_value>
+      <ic_file_input_names>ICWMRSH pbuf_ICWMRSH</ic_file_input_names>
+    </variable>
+    <variable local_name="prain"
+              standard_name="tendency_of_precipitation_wrt_moist_air_and_condensed_water_due_to_microphysics"
+              units="kg kg-1 s-1" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <initial_value>0.0_kind_phys</initial_value>
+      <ic_file_input_names>PRAIN pbuf_PRAIN</ic_file_input_names>
+    </variable>
+    <variable local_name="nevapr"
+              standard_name="evaporation_rate_of_precipitation_wrt_moist_air_and_condensed_water_due_to_microphysics"
+              units="kg kg-1 s-1" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <initial_value>0.0_kind_phys</initial_value>
+      <ic_file_input_names>NEVAPR pbuf_NEVAPR</ic_file_input_names>
+    </variable>
+    <variable local_name="bergso"
+              standard_name="tendency_of_cloud_liquid_mixing_ratio_converted_to_snow_due_to_bergeron_process"
+              units="kg kg-1 s-1" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <long_name>conversion of cloud liquid water to snow through the Bergeron process; optional in CAM (zero when the microphysics does not provide it)</long_name>
+      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <initial_value>0.0_kind_phys</initial_value>
+      <ic_file_input_names>BERGSO pbuf_BERGSO</ic_file_input_names>
+    </variable>
+    <variable local_name="nevapr_shcu"
+              standard_name="evaporation_rate_of_precipitation_due_to_shallow_convection"
+              units="kg kg-1 s-1" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <initial_value>0.0_kind_phys</initial_value>
+      <ic_file_input_names>NEVAPR_SHCU pbuf_NEVAPR_SHCU</ic_file_input_names>
+    </variable>
+    <variable local_name="nevapr_dpcu"
+              standard_name="evaporation_rate_of_precipitation_due_to_deep_convection"
+              units="kg kg-1 s-1" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <initial_value>0.0_kind_phys</initial_value>
+      <ic_file_input_names>NEVAPR_DPCU pbuf_NEVAPR_DPCU</ic_file_input_names>
+    </variable>
+    <variable local_name="dp_frac"
+              standard_name="deep_convective_cloud_area_fraction"
+              units="fraction" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <initial_value>0.0_kind_phys</initial_value>
+      <ic_file_input_names>DP_FRAC pbuf_DP_FRAC</ic_file_input_names>
+    </variable>
+    <variable local_name="sh_frac"
+              standard_name="shallow_convective_cloud_area_fraction"
+              units="fraction" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <initial_value>0.0_kind_phys</initial_value>
+      <ic_file_input_names>SH_FRAC pbuf_SH_FRAC</ic_file_input_names>
+    </variable>
+
     <variable local_name="rliq"
               standard_name="vertically_integrated_cloud_liquid_water_tendency_due_to_all_convection_to_be_applied_later_in_time_loop"
               units="m s-1" type="real" kind="kind_phys"
@@ -1756,6 +1833,15 @@
       <dimensions>horizontal_dimension vertical_layer_dimension number_of_ccpp_constituents</dimensions>
       <initial_value>0.0_kind_phys</initial_value>
     </variable>
+    <variable local_name="mam_wetdep_tend"
+              standard_name="tendency_of_ccpp_constituents_due_to_aerosol_wet_deposition"
+              units="kg kg-1 s-1" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <long_name>constituent tendencies from aerosol wet deposition (convproc + stratiform wetdep), saved by mam_wetdep_tend_checkpoint. The per-constituent check base ptend matches the classic-snapshot after-tape capture of aero_model_wetdep's ptend%q (ptend_[name]); the before tape has no ptend fields, so the every-step ic read warns and leaves zeros - benign, the checkpoint overwrites. Computed in-suite.</long_name>
+      <dimensions>horizontal_dimension vertical_layer_dimension number_of_ccpp_constituents</dimensions>
+      <initial_value>0.0_kind_phys</initial_value>
+      <ic_file_input_names>ptend</ic_file_input_names>
+    </variable>
     <!-- H2SO4 vapor deltas consumed by new-particle nucleation. gasprod is
          produced by gas-phase chemistry (MOZART), so it is always read from
          the snapshot; aeruptk is recovered by mam_vmr_apply (bracketing the
@@ -2150,13 +2236,74 @@
               allocatable="allocatable">
       <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
     </variable>
+
+    <!-- Zhang-McFarlane gathered convective-column arrays consumed by the
+         aerosol convective processing scheme (aero_convproc_ccpp). -->
+    <variable local_name="zm_eu"
+              standard_name="atmosphere_updraft_entrainment_convective_mass_flux_for_deep_convection_for_convective_columns"
+              units="s-1" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <initial_value>0.0_kind_phys</initial_value>
+      <ic_file_input_names>pbuf_ZM_EU</ic_file_input_names>
+    </variable>
+    <variable local_name="zm_du"
+              standard_name="atmosphere_detrainment_convective_mass_flux_for_deep_convection_for_convective_columns"
+              units="s-1" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <initial_value>0.0_kind_phys</initial_value>
+      <ic_file_input_names>pbuf_ZM_DU</ic_file_input_names>
+    </variable>
+    <variable local_name="zm_ed"
+              standard_name="atmosphere_downdraft_entrainment_convective_mass_flux_for_deep_convection_for_convective_columns"
+              units="s-1" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <initial_value>0.0_kind_phys</initial_value>
+      <ic_file_input_names>pbuf_ZM_ED</ic_file_input_names>
+    </variable>
+    <variable local_name="zm_dp"
+              standard_name="pressure_thickness_for_deep_convection_for_convective_columns"
+              units="hPa" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <initial_value>0.0_kind_phys</initial_value>
+      <ic_file_input_names>pbuf_ZM_DP</ic_file_input_names>
+    </variable>
+    <variable local_name="zm_jt_real"
+              standard_name="vertical_index_at_top_of_deep_convection_for_convective_columns_real"
+              units="index" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <dimensions>horizontal_dimension</dimensions>
+      <initial_value>0.0_kind_phys</initial_value>
+      <ic_file_input_names>pbuf_ZM_JT</ic_file_input_names>
+    </variable>
+    <variable local_name="zm_maxg_real"
+              standard_name="vertical_index_of_deep_convection_launch_level_for_convective_columns_real"
+              units="index" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <dimensions>horizontal_dimension</dimensions>
+      <initial_value>0.0_kind_phys</initial_value>
+      <ic_file_input_names>pbuf_ZM_MAXG</ic_file_input_names>
+    </variable>
+    <variable local_name="zm_ideep_real"
+              standard_name="horizontal_index_of_convective_columns_for_deep_convection_for_convective_columns_real"
+              units="index" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <dimensions>horizontal_dimension</dimensions>
+      <initial_value>0.0_kind_phys</initial_value>
+      <ic_file_input_names>pbuf_ZM_IDEEP</ic_file_input_names>
+    </variable>
     <variable local_name="fracis"
               standard_name="fraction_of_water_insoluble_convectively_transported_species"
               units="fraction" type="real" kind="kind_phys"
-              allocatable="allocatable"
-              access="protected" >
+              allocatable="allocatable">
+      <long_name>fraction of transported species that is insoluble; written per interstitial aerosol constituent by aerosol wet deposition (wetdepa_v2), consumed by convective transport.</long_name>
       <dimensions>horizontal_dimension vertical_layer_dimension number_of_ccpp_constituents</dimensions>
       <initial_value>1._kind_phys</initial_value>
+      <!-- Constituent-dimensioned snapshot read/check via per-constituent pbuf_FRACIS_(name) fields -->
+      <ic_file_input_names>pbuf_FRACIS</ic_file_input_names>
     </variable>
     <variable local_name="ttend_dp"
               standard_name="tendency_of_air_temperature_due_to_deep_convection"
