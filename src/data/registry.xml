@@ -1847,15 +1847,6 @@
       <dimensions>horizontal_dimension vertical_layer_dimension number_of_ccpp_constituents</dimensions>
       <initial_value>0.0_kind_phys</initial_value>
     </variable>
-    <variable local_name="mam_wetdep_tend"
-              standard_name="tendency_of_ccpp_constituents_due_to_aerosol_wet_deposition"
-              units="kg kg-1 s-1" type="real" kind="kind_phys"
-              allocatable="allocatable">
-      <long_name>constituent tendencies from aerosol wet deposition (convproc + stratiform wetdep), saved by mam_wetdep_tend_checkpoint. The per-constituent check base ptend matches the classic-snapshot after-tape capture of aero_model_wetdep's ptend%q (ptend_[name]); the before tape has no ptend fields, so the every-step ic read warns and leaves zeros - benign, the checkpoint overwrites. Computed in-suite.</long_name>
-      <dimensions>horizontal_dimension vertical_layer_dimension number_of_ccpp_constituents</dimensions>
-      <initial_value>0.0_kind_phys</initial_value>
-      <ic_file_input_names>ptend</ic_file_input_names>
-    </variable>
     <!-- H2SO4 vapor deltas consumed by new-particle nucleation. gasprod is
          produced by gas-phase chemistry (MOZART), so it is always read from
          the snapshot; aeruptk is recovered by mam_vmr_apply (bracketing the
