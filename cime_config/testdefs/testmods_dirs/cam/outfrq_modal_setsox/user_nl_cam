@@ -25,3 +25,15 @@ mode_defs = 'mam4_mode1:accum:=', 'A:num_a1:N:num_c1:num_mr:+',
          'A:so4_a3:N:so4_c3:sulfate:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/sulfate_rrtmg_c080918.nc', 'mam4_mode4:primary_carbon:=',
          'A:num_a4:N:num_c4:num_mr:+', 'A:pom_a4:N:pom_c4:p-organic:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ocpho_rrtmg_c130709.nc:+',
          'A:bc_a4:N:bc_c4:black-c:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/bcpho_rrtmg_c100508.nc'
+
+! ---------------------------------------------------------------------------
+! MAM diagnostics baseline (h1): all FHIST/MAM4 fields emitted by the setsox
+! + vmr diagnostics schemes in this suite.
+! ---------------------------------------------------------------------------
+! setsox aqueous sulfur chemistry:
+hist_add_inst_fields;h1: so4_c1AQSO4, so4_c1AQH2SO4, so4_c2AQSO4, so4_c2AQH2SO4, so4_c3AQSO4, so4_c3AQH2SO4, AQSO4_H2O2, AQSO4_O3, XPH_LWC
+! gas-phase species VMRs (pre-unpack):
+hist_add_inst_fields;h1: SO2vmr, SO2vmr_SRF, H2SO4vmr, H2SO4vmr_SRF, H2O2vmr, H2O2vmr_SRF, SOAGvmr, SOAGvmr_SRF, O3vmr, O3vmr_SRF, HO2vmr, HO2vmr_SRF
+hist_output_frequency;h1: 1*nstep
+hist_precision;h1: REAL64
+hist_max_frames;h1: 1
