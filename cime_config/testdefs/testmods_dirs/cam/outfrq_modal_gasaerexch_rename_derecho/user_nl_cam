@@ -1,30 +1,48 @@
 ncdata = '/glade/campaign/cesm/community/amwg/sima_baselines/cam_sima_test_snapshots/cam6_4_185_ne3pg3_fhist_modal_aero_gasaerexch-block-multi-snapshot_derecho_gnu_unified_before_c20260709.nc'
 ncdata_check = '/glade/campaign/cesm/community/amwg/sima_baselines/cam_sima_test_snapshots/cam6_4_185_ne3pg3_fhist_modal_aero_gasaerexch-block-multi-snapshot_derecho_gnu_unified_after_c20260709.nc'
 
-! Exclusions (ordered, first match wins; leading ! means keep).
-! This testmod runs the gasaerexch+rename head of the cluster off the unified
-! multi-snapshot pair: ncdata = the before tape (working vmr and the setsox
-! "other" tendency read at P_start, the post-setsox / gasaerexch entry);
-! ncdata_check = the after tape, whose plain aerochem_vmr_* rows are the
-! P_end (post-apply) capture the working vmr must reproduce bitwise -> ALL
-! aerochem rows are kept as the primary gate (the keep rule also shields
-! aerochem_vmr_num_a2 from the num_a2 glob below). The after tape's
-! aerochem_vmr_postnewnuc/postcoag rows produce no check rows here: this
-! suite never updates the checkpoint variables.
-! The after tape's bare constituent rows hold the same post-apply state the
-! suite's difference unpack lands on, but by a different arithmetic path:
-! CAM's tape converts the applied sum fl((vmr+d*dt)*a) while the unpack
-! applies the converted tendency fl(vmr*a)+fl(dt*fl(d*a)), so every species
-! gasaerexch/rename touch keeps the documented ~1-2 ulp apply-space relative
-! floor (see HANDOFF.md) -> absorbed by min_difference, rows still checked.
-! The floor is amplified above min_difference only where rename's
-! aitken->accum merge removes most of the aitken number: num_a2 (~1.4e-9
-! relative) and num_c2 (~7.4e-10) -> excluded (leading wildcard also covers
-! a possible cnst_ label prefix).
-! Still hard-checked: all aerochem_vmr_* rows (bitwise), the recovered
-! del_h2so4_aeruptk vs the after tape's capture (bitwise, via mam_vmr_apply),
-! untouched species, and all other touched constituents within
-! min_difference.
+! gitignore-style ignores:
+! Keep all aerochem_vmr_* rows (incl. num_a2/c2):
+!   this is the raw capture of the VMR array after the gasaerexch+rename block.
+! EXCLUDE num_a2, num_c2 constituent rows:
+!   the MMR -> VMR -> MMR round-trip is inherently diff-generating:
+!   CAM converts the applied sum fl((vmr+d*dt)*a)
+!   SIMA VMR unpack applies the converted tendency in the MMR space
+!        fl(vmr*a)+fl(dt*fl(d*a))
+!   Most of these differences are absorbed by the 2e-15 min_difference,
+!   except for the aitken numbers, since the "rename" (mode merging) scheme
+!   physically merges aitken (2) -> accum (1) mode leading to very low VMRs
+!   strongly susceptible to noise.
+! Naturally included: del_h2so4_aeruptk, all other constituents
+!
+! If running with debug, that is all you need. The snapshot is made with debug.
+!
+! --------------------------------------------------------------------------------
+!       Technical notes for the brave reader who is considering changing
+!                         this test to a non-_D test:
+!
+! If disabling debug, the -O2 flag will optimize the paths differently enough to
+! cause a O(1e-14) drift in aerochem_vmr_num_a4 (even in VMR space).
+!
+! A dropsonde verification with a custom-built "-g -O2" binary has verified that
+! the outputs for modal_aero_gasaerexch_run drift by O(1e-14) for dqdt/qsrflx_gaexch
+! even when given identical inputs. They disappear at O0.
+!
+! The verification run was made by Haipeng who also stubbornly hand-verified
+! the assembly to confirm that it is indeed a -O2 problem.
+!
+! Specifically, -O2 inlines gas_aer_uptkrates and vectorizes the nghq=2
+! Gauss-Hermite quadrature. The dp = exp(lndp) is compiled into libmvec SIMD
+! covering both quadrature points. libmvec does not guarantee bit-identical to
+! the scalar version. This shifts the H2SO4/SOAG uptake rates...
+! ...which in turn perturbs the condensation amounts on aerosol
+!    (H2SO4 -> so4_a1/2/3, SOAG -> soa_a1/2)
+!    and the primary-carbon aging transfers (bc/pom/num_a4 -> a1)
+! Primary-carbon aging drains most of the local num_a4 primary carbon mode number,
+! leaving it, again, susceptible to a large relative difference. There are 45 cells
+! in this snapshot in which this happens, and their end value is O(1e-15).
+!
+! tl;dr: If you disable debug, you have to add '*num_a4' to the exclude list below:
 ncdata_check_exclude = '!aerochem_vmr_*', '*num_a2', '*num_c2'
 ncdata_check_err = .true.
 min_difference = 2e-15
