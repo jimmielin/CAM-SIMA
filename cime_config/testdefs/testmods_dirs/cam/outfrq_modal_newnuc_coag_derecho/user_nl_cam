@@ -37,8 +37,8 @@
 ! structural noise by design, so they should not be compared.
 ! Please see the suite_mam_newnuc_coag.xml header (atmospheric_physics) for the scheme-level detail.
 
-ncdata = '/glade/campaign/cesm/community/amwg/sima_baselines/cam_sima_test_snapshots/cam6_4_184_ne3pg3_fhist_modal_aero_gasaerexch-block-multi-snapshot_derecho_gnu_unified_after_c20260702.nc'
-ncdata_check = '/glade/campaign/cesm/community/amwg/sima_baselines/cam_sima_test_snapshots/cam6_4_184_ne3pg3_fhist_modal_aero_gasaerexch-block-multi-snapshot_derecho_gnu_unified_after_c20260702.nc'
+ncdata = '/glade/campaign/cesm/community/amwg/sima_baselines/cam_sima_test_snapshots/cam6_4_185_ne3pg3_fhist_modal_aero_gasaerexch-block-multi-snapshot_derecho_gnu_unified_after_c20260709.nc'
+ncdata_check = '/glade/campaign/cesm/community/amwg/sima_baselines/cam_sima_test_snapshots/cam6_4_185_ne3pg3_fhist_modal_aero_gasaerexch-block-multi-snapshot_derecho_gnu_unified_after_c20260709.nc'
 
 ! the aerochem_vmr_ plain fields are from gasaerexch (full pipeline) above
 ! but the _c_ cloud-borne can be kept for consistency check against the input:
