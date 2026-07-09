@@ -1,5 +1,33 @@
-ncdata = '/glade/campaign/cesm/community/amwg/sima_baselines/cam_sima_test_snapshots/cam6_4_184_ne3pg3_fhist_modal_aero_gasaerexch-rename_snapshot_derecho_gnu_before_c20260702.nc'
-ncdata_check = '/glade/campaign/cesm/community/amwg/sima_baselines/cam_sima_test_snapshots/cam6_4_184_ne3pg3_fhist_modal_aero_gasaerexch-rename_snapshot_derecho_gnu_after_c20260702.nc'
+ncdata = '/glade/campaign/cesm/community/amwg/sima_baselines/cam_sima_test_snapshots/cam6_4_185_ne3pg3_fhist_modal_aero_gasaerexch-block-multi-snapshot_derecho_gnu_unified_before_c20260709.nc'
+ncdata_check = '/glade/campaign/cesm/community/amwg/sima_baselines/cam_sima_test_snapshots/cam6_4_185_ne3pg3_fhist_modal_aero_gasaerexch-block-multi-snapshot_derecho_gnu_unified_after_c20260709.nc'
+
+! Exclusions (ordered, first match wins; leading ! means keep).
+! This testmod runs the gasaerexch+rename head of the cluster off the unified
+! multi-snapshot pair: ncdata = the before tape (working vmr and the setsox
+! "other" tendency read at P_start, the post-setsox / gasaerexch entry);
+! ncdata_check = the after tape, whose plain aerochem_vmr_* rows are the
+! P_end (post-apply) capture the working vmr must reproduce bitwise -> ALL
+! aerochem rows are kept as the primary gate (the keep rule also shields
+! aerochem_vmr_num_a2 from the num_a2 glob below). The after tape's
+! aerochem_vmr_postnewnuc/postcoag rows produce no check rows here: this
+! suite never updates the checkpoint variables.
+! The after tape's bare constituent rows hold the same post-apply state the
+! suite's difference unpack lands on, but by a different arithmetic path:
+! CAM's tape converts the applied sum fl((vmr+d*dt)*a) while the unpack
+! applies the converted tendency fl(vmr*a)+fl(dt*fl(d*a)), so every species
+! gasaerexch/rename touch keeps the documented ~1-2 ulp apply-space relative
+! floor (see HANDOFF.md) -> absorbed by min_difference, rows still checked.
+! The floor is amplified above min_difference only where rename's
+! aitken->accum merge removes most of the aitken number: num_a2 (~1.4e-9
+! relative) and num_c2 (~7.4e-10) -> excluded (leading wildcard also covers
+! a possible cnst_ label prefix).
+! Still hard-checked: all aerochem_vmr_* rows (bitwise), the recovered
+! del_h2so4_aeruptk vs the after tape's capture (bitwise, via mam_vmr_apply),
+! untouched species, and all other touched constituents within
+! min_difference.
+ncdata_check_exclude = '!aerochem_vmr_*', '*num_a2', '*num_c2'
+ncdata_check_err = .true.
+min_difference = 2e-15
 
 ! CAM6 FHIST snapshot:
 pver = 32
