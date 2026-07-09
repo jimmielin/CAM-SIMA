@@ -22,68 +22,79 @@
 !   (downstream NH3 conservation)
 !
 ! Unlike the newnuc_coag testmod, TWO tapes are used:
-!  - input (ncdata) = the "before" tape (with the P-1 extension):
-!    mam_vmr_inject_presetsox initializes the working vmr from the P-1
-!    (presetsox) capture, and the entry checkpoint saves that state so the
-!    difference unpack carries the FULL setsox->coag tendency. Cluster
-!    EXTERNALS come from the same tape: the presetsox-base oxidants,
-!    mam_del_h2so4_gasprod (from gas-phase chemistry), dgnum/dgnumwet/wetdens
-!    (wet cluster, not re-run), and the newnuc met fields (zm, pblh, cld, Q).
-!    mam_setsox_vmr_tend (rename's continuous-growth "other" tendency) is
-!    COMPUTED in-suite by mam_setsox_tendency, not taken from the snapshot.
+!  - input (ncdata) = the "before" tape:
+!    mam_vmr_inject_presetsox initializes the working vmr from the P-1 (pre-setsox)
+!    capture point, and the entry checkpoint saves that state so the
+!    difference unpack carries the FULL setsox->coag tendency.
+!
+!    Quantities external to the microphysics block come from the same tape:
+!      the pre-setsox oxidants,
+!      mam_del_h2so4_gasprod (from gas-phase chemistry),
+!      dgnum/dgnumwet/wetdens (computed by the aerosol_wet_processes, in snapshot),
+!      and the newnuc met fields (zm, pblh, cld, Q).
+!
+!    mam_setsox_vmr_tend (rename's continuous-growth "other" tendency)
+!    is computed in-suite by mam_setsox_tendency, not taken from the snapshot.
+!
 !    NOTE: mam_del_h2so4_aeruptk on the before tape is all zeros by construction
-!    (the value does not exist yet at P-1/P_start; CAM computes it mid-cluster);
+!    (the value does not exist yet; CAM computes it within this suite.);
 !    the suite computes it in mam_vmr_apply, overwriting the read.
+!
 !  - results (ncdata_check) = the "after" tape, three b4b gates:
 !    (1) mam_vmr_postnewnuc vs aerochem_vmr_postnewnuc_*: certifies the whole
-!        setsox -> gasaerexch -> rename -> apply -> newnuc chain from P-1;
+!        setsox -> gasaerexch -> rename -> apply -> newnuc block;
 !    (2) mam_vmr_postcoag vs aerochem_vmr_postcoag_*: adds the coag chaining;
 !    (3) the computed del_h2so4_aeruptk vs the after tape's captured
 !        mam_del_h2so4_aeruptk (reported under its standard name,
 !        change_in_h2so4_molar_mixing_ratio_due_to_aerosol_uptake).
-!    Cloud-borne aerochem_vmr_*_c* rows are kept as a fourth, implicit gate:
+!
+!    Cloud-borne aerochem_vmr_*_c* rows are kept as additional verification:
 !    newnuc/coag never touch cloud-borne, so the working vmr's _c* slices must
 !    stay bitwise at their P_end values (which now include setsox's aqueous
 !    so4_c* production and rename's cloud-borne merge).
+!
 ! The full bit-for-bitness of each individual scheme can be captured in a dropsonde
-! run which verifies the inputs and outputs of each scheme. The snapshots outlined here
-! are the result of that verification.
+! run which verifies the inputs and outputs of each scheme.
+! The snapshots outlined here are the result of that verification.
 ! Please see the suite_modal_aero_microphysics.xml header (atmospheric_physics)
 ! for the scheme-level detail.
 
 ncdata = '/glade/campaign/cesm/community/amwg/sima_baselines/cam_sima_test_snapshots/cam6_4_185_ne3pg3_fhist_modal_aero_gasaerexch-block-multi-snapshot_derecho_gnu_unified_before_c20260709.nc'
 ncdata_check = '/glade/campaign/cesm/community/amwg/sima_baselines/cam_sima_test_snapshots/cam6_4_185_ne3pg3_fhist_modal_aero_gasaerexch-block-multi-snapshot_derecho_gnu_unified_after_c20260709.nc'
 
-! Exclusions (ordered, first match wins; leading ! means keep).
-! Two classes of rows are structural noise by design, carry no signal, and are excluded:
-!  (a) plain interstitial aerochem_vmr_*: the working vmr holds the post-coag (P3)
-!      state at check time, but the after tape's aerochem_vmr_* is the P_end
-!      capture -> species newnuc/coag touch differ by their real deltas (up to
-!      ~1 relative on num_a2). SOAG and the coarse mode (_a3) are untouched after
-!      the apply, so those rows are kept as additional bitwise checks.
-!  (b) bare constituent rows of the modes newnuc/coag touch (*_a1 accum, *_a2
-!      aitken, *_a4 pcarbon, and the H2SO4 gas): the difference unpack applies the
-!      FULL cluster tendency to the constituents (post-coag state), but the tape's
-!      cnst_* targets were captured at P_end (post-apply) -> the same structural
-!      offset in mmr space. These rows also carry the documented apply-space ulp
-!      floor (see HANDOFF.md), and their magnitudes are step-dependent (soa_a1
-!      grew from 6e-17 to 5e-13 between steps 1 and 5), so the whole touched-mode
-!      set is excluded rather than curating today's magnitudes.
-!  (c) bare constituent rows of setsox-touched species (SO2/H2O2 oxidant
-!      consumption; so4_c1/c2/c3 aqueous production): the same apply-space
-!      floor as (b), amplified where setsox consumes or produces most of the
-!      local burden (up to ~5e-10 relative on SO2/so4_c2).
-!  num_c2 is the one other cloud-borne constituent above min_difference: the
-!  apply-space floor amplified where rename's aitken->accum merge removes most
-!  of the aitken cloud-borne number (~1e-9 relative; num_c1 has the same floor
-!  but sits ~4e-16).
-! (The before-tape-only captures - mam_setsox_vmr_tend_*, aerochem_co2_mmr,
-! the presetsox rows and base oxidants - are absent from the after tape by
-! construction, so they produce no check rows and need no exclusions; the
-! setsox tendency is hard-checked bitwise in suite_mam_setsox instead.)
-! Still hard-checked: the three gates, cloud-borne aerochem_vmr_*_c*,
-! aerochem_vmr_SOAG + coarse _a3 rows (bitwise), the remaining constituents
-! within min_difference, and Q.
+! gitignore-style ignores:
+!
+! EXCLUDE by design due to the multi-snapshot system:
+!  (a) aerochem_vmr_*: the ncdata_check tape contains the capture at the end
+!      of gasaerexch_rename but this suite runs until coag.
+!      Because newnuc_coag does not change SOAG and coarse mode (a3) we still
+!      keep those as additional sanity checks, but we do not have to.
+!  (b) constituents modified by newnuc_coag:
+!      a1 accum; a2 aitken; a4 primary carbon; H2SO4 gas (consumed in uptake)
+!      The ncdata_check tape captured the constituents at the end of
+!      gasaerexch_rename in MMR space; so they are not at the right place.
+!  (c) constituents modified by setsox:
+!      SO2/H2O2 (consumed by setsox), so4_c1/c2/c3 (aqueous production)
+! EXCLUDE num_a2, num_c2 constituent rows:
+!  see the testmod outfrq_modal_gasaerexch_rename/user_nl_cam.
+!
+! If running with debug, that is all you need. The snapshot is made with debug.
+!
+! --------------------------------------------------------------------------------
+!       Technical notes for the brave reader who is considering changing
+!                         this test to a non-_D test:
+!
+! Please, just don't.
+!
+! See the testmod outfrq_modal_gasaerexch_rename/user_nl_cam.
+!
+! The num_a4 answer difference in gasaerexch will propagate in the later schemes
+!   Variable                                          # Diffs  Max Diff   Max Diff loc (rank, col, lev, extra_dim)
+!  --------                                          -------  --------   -----------------------------
+!  aerochem_vmr_postcoag_num_a4                            1  0.32E-14   (0,369,14)
+!  aerochem_vmr_postcoag_num_a2                            1  0.24E-14   (0,426,32)
+!  aerochem_vmr_postnewnuc_num_a4                         45  0.71E-14   (0,226,14)
+!  aerochem_vmr_postnewnuc_num_a2                          1  0.24E-14   (0,426,32)
 ncdata_check_exclude = '!aerochem_vmr_post*', '!aerochem_vmr_*_c*',
     '!aerochem_vmr_SOAG', '!aerochem_vmr_*_a3', 'aerochem_vmr_*',
     '*_a1', '*_a2', '*_a4', '*H2SO4', '*num_c2',
