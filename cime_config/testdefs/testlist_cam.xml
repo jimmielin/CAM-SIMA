@@ -241,6 +241,15 @@
       <option name="comment">Test for modal aerosol model (MAM4): aerosol wet processes including calcsize and water uptake</option>
     </options>
   </test>
+  <test compset="FPHYStest" grid="ne3pg3_ne3pg3_mg37" name="SMS_Ln2" testmods="cam/outfrq_modal_wetdep_noconvproc_derecho">
+    <machines>
+      <machine name="derecho" compiler="gnu" category="aux_sima"/>
+    </machines>
+    <options>
+      <option name="wallclock">00:10:00</option>
+      <option name="comment">Test for modal aerosol model (MAM4): aerosol wet deposition only stratiform scavenging (convection off)</option>
+    </options>
+  </test>
   <test compset="FPHYStest" grid="ne3pg3_ne3pg3_mg37" name="SMS_Ln2" testmods="cam/outfrq_modal_wetdep_derecho">
     <machines>
       <machine name="derecho" compiler="gnu" category="aux_sima"/>
