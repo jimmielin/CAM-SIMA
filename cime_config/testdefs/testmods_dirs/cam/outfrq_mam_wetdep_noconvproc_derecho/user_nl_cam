@@ -1,8 +1,8 @@
 ! REPLACE after the classic cam_snapshot capture run
 ! (cam_take_snapshot_before/after = "aero_model_wetdep";
 !  convproc_do_aer = .false. override on the capture):
-ncdata = 'REPLACE_WITH_BEFORE_TAPE.nc'
-ncdata_check = 'REPLACE_WITH_AFTER_TAPE.nc'
+ncdata = '/glade/campaign/cesm/community/amwg/sima_baselines/cam_sima_test_snapshots/cam6_4_185_ne3pg3_fhist_modal_aero_wetdep_nodoaer_snapshot_derecho_gnu_before_c20260708.nc'
+ncdata_check = '/glade/campaign/cesm/community/amwg/sima_baselines/cam_sima_test_snapshots/cam6_4_185_ne3pg3_fhist_modal_aero_wetdep_nodoaer_snapshot_derecho_gnu_after_c20260708.nc'
 
 ! fhist:
 pver = 32
@@ -10,8 +10,6 @@ pver = 32
 debug_output = 1
 ncdata_check_err = .true.
 
-! GATE 1: convproc path off (stratiform wetdep + the cloud-borne in-place
-! refactor in isolation); must be paired with the .false. capture tapes
 convproc_do_aer = .false.
 
 rad_aer_climate = 'M:mam4_mode1:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/mam4_mode1_rrtmg_aeronetdust_sig1.6_dgnh.48_c140304.nc',
