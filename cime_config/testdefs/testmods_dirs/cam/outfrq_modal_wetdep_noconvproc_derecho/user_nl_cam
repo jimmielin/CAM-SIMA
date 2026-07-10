@@ -29,3 +29,41 @@ mode_defs = 'mam4_mode1:accum:=', 'A:num_a1:N:num_c1:num_mr:+',
          'A:so4_a3:N:so4_c3:sulfate:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/sulfate_rrtmg_c080918.nc', 'mam4_mode4:primary_carbon:=',
          'A:num_a4:N:num_c4:num_mr:+', 'A:pom_a4:N:pom_c4:p-organic:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ocpho_rrtmg_c130709.nc:+',
          'A:bc_a4:N:bc_c4:black-c:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/bcpho_rrtmg_c100508.nc'
+
+! Wet deposition diagnostics (aero_wetdep_diagnostics). With convproc_do_aer =
+! .false. the convective fields (SFSEC/SFSES/SFSBD/SFSID/SFSED/SFWETC/WETC/CONU/
+! RSPTD/DP_*) are neither registered nor written, exactly as in CAM; the
+! interstitial SFSIC comes from wetdepa here rather than from convproc.
+hist_add_inst_fields;h1: num_a1SFWET, so4_a1SFWET, pom_a1SFWET, soa_a1SFWET, bc_a1SFWET, dst_a1SFWET, ncl_a1SFWET, num_a2SFWET
+hist_add_inst_fields;h1: so4_a2SFWET, soa_a2SFWET, ncl_a2SFWET, dst_a2SFWET, num_a3SFWET, dst_a3SFWET, ncl_a3SFWET, so4_a3SFWET
+hist_add_inst_fields;h1: num_a4SFWET, pom_a4SFWET, bc_a4SFWET
+hist_add_inst_fields;h1: num_a1SFSIC, so4_a1SFSIC, pom_a1SFSIC, soa_a1SFSIC, bc_a1SFSIC, dst_a1SFSIC, ncl_a1SFSIC, num_a2SFSIC
+hist_add_inst_fields;h1: so4_a2SFSIC, soa_a2SFSIC, ncl_a2SFSIC, dst_a2SFSIC, num_a3SFSIC, dst_a3SFSIC, ncl_a3SFSIC, so4_a3SFSIC
+hist_add_inst_fields;h1: num_a4SFSIC, pom_a4SFSIC, bc_a4SFSIC
+hist_add_inst_fields;h1: num_a1SFSIS, so4_a1SFSIS, pom_a1SFSIS, soa_a1SFSIS, bc_a1SFSIS, dst_a1SFSIS, ncl_a1SFSIS, num_a2SFSIS
+hist_add_inst_fields;h1: so4_a2SFSIS, soa_a2SFSIS, ncl_a2SFSIS, dst_a2SFSIS, num_a3SFSIS, dst_a3SFSIS, ncl_a3SFSIS, so4_a3SFSIS
+hist_add_inst_fields;h1: num_a4SFSIS, pom_a4SFSIS, bc_a4SFSIS
+hist_add_inst_fields;h1: num_a1SFSBC, so4_a1SFSBC, pom_a1SFSBC, soa_a1SFSBC, bc_a1SFSBC, dst_a1SFSBC, ncl_a1SFSBC, num_a2SFSBC
+hist_add_inst_fields;h1: so4_a2SFSBC, soa_a2SFSBC, ncl_a2SFSBC, dst_a2SFSBC, num_a3SFSBC, dst_a3SFSBC, ncl_a3SFSBC, so4_a3SFSBC
+hist_add_inst_fields;h1: num_a4SFSBC, pom_a4SFSBC, bc_a4SFSBC
+hist_add_inst_fields;h1: num_a1SFSBS, so4_a1SFSBS, pom_a1SFSBS, soa_a1SFSBS, bc_a1SFSBS, dst_a1SFSBS, ncl_a1SFSBS, num_a2SFSBS
+hist_add_inst_fields;h1: so4_a2SFSBS, soa_a2SFSBS, ncl_a2SFSBS, dst_a2SFSBS, num_a3SFSBS, dst_a3SFSBS, ncl_a3SFSBS, so4_a3SFSBS
+hist_add_inst_fields;h1: num_a4SFSBS, pom_a4SFSBS, bc_a4SFSBS
+hist_add_inst_fields;h1: num_c1SFWET, so4_c1SFWET, pom_c1SFWET, soa_c1SFWET, bc_c1SFWET, dst_c1SFWET, ncl_c1SFWET, num_c2SFWET
+hist_add_inst_fields;h1: so4_c2SFWET, soa_c2SFWET, ncl_c2SFWET, dst_c2SFWET, num_c3SFWET, dst_c3SFWET, ncl_c3SFWET, so4_c3SFWET
+hist_add_inst_fields;h1: num_c4SFWET, pom_c4SFWET, bc_c4SFWET
+hist_add_inst_fields;h1: num_c1SFSIC, so4_c1SFSIC, pom_c1SFSIC, soa_c1SFSIC, bc_c1SFSIC, dst_c1SFSIC, ncl_c1SFSIC, num_c2SFSIC
+hist_add_inst_fields;h1: so4_c2SFSIC, soa_c2SFSIC, ncl_c2SFSIC, dst_c2SFSIC, num_c3SFSIC, dst_c3SFSIC, ncl_c3SFSIC, so4_c3SFSIC
+hist_add_inst_fields;h1: num_c4SFSIC, pom_c4SFSIC, bc_c4SFSIC
+hist_add_inst_fields;h1: num_c1SFSIS, so4_c1SFSIS, pom_c1SFSIS, soa_c1SFSIS, bc_c1SFSIS, dst_c1SFSIS, ncl_c1SFSIS, num_c2SFSIS
+hist_add_inst_fields;h1: so4_c2SFSIS, soa_c2SFSIS, ncl_c2SFSIS, dst_c2SFSIS, num_c3SFSIS, dst_c3SFSIS, ncl_c3SFSIS, so4_c3SFSIS
+hist_add_inst_fields;h1: num_c4SFSIS, pom_c4SFSIS, bc_c4SFSIS
+hist_add_inst_fields;h1: num_c1SFSBC, so4_c1SFSBC, pom_c1SFSBC, soa_c1SFSBC, bc_c1SFSBC, dst_c1SFSBC, ncl_c1SFSBC, num_c2SFSBC
+hist_add_inst_fields;h1: so4_c2SFSBC, soa_c2SFSBC, ncl_c2SFSBC, dst_c2SFSBC, num_c3SFSBC, dst_c3SFSBC, ncl_c3SFSBC, so4_c3SFSBC
+hist_add_inst_fields;h1: num_c4SFSBC, pom_c4SFSBC, bc_c4SFSBC
+hist_add_inst_fields;h1: num_c1SFSBS, so4_c1SFSBS, pom_c1SFSBS, soa_c1SFSBS, bc_c1SFSBS, dst_c1SFSBS, ncl_c1SFSBS, num_c2SFSBS
+hist_add_inst_fields;h1: so4_c2SFSBS, soa_c2SFSBS, ncl_c2SFSBS, dst_c2SFSBS, num_c3SFSBS, dst_c3SFSBS, ncl_c3SFSBS, so4_c3SFSBS
+hist_add_inst_fields;h1: num_c4SFSBS, pom_c4SFSBS, bc_c4SFSBS
+hist_output_frequency;h1: 1*nstep
+hist_precision;h1: REAL64
+hist_max_frames;h1: 1
