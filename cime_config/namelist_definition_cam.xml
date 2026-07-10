@@ -369,6 +369,21 @@
     </values>
   </entry>
 
+<!-- Dry deposition inputs -->
+  <entry id="drydep_srf_file">
+    <type>char*256</type>
+    <category>dry_deposition</category>
+    <group>drydep_input_nl</group>
+    <desc>
+      Full pathname of the dry deposition surface dataset ("atmsrf" file)
+      holding the land use class fractions (fraction_landuse) on the model
+      physics grid. If unset, land use fractions are zero.
+    </desc>
+    <values>
+      <value>UNSET_PATH</value>
+    </values>
+  </entry>
+
 <!-- Radiation -->
 
   <entry id="nswbands">
