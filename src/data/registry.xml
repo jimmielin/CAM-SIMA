@@ -301,6 +301,23 @@
       <ic_file_input_names>SH_FRAC pbuf_SH_FRAC</ic_file_input_names>
     </variable>
 
+    <!-- Aerosol dry deposition inputs -->
+    <variable local_name="obklen"
+              standard_name="obukhov_length"
+              units="m" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <dimensions>horizontal_dimension</dimensions>
+      <initial_value>0.0_kind_phys</initial_value>
+      <ic_file_input_names>obklen tphysac_obklen</ic_file_input_names>
+    </variable>
+    <variable local_name="surfric"
+              standard_name="surface_friction_velocity"
+              units="m s-1" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <dimensions>horizontal_dimension</dimensions>
+      <initial_value>0.0_kind_phys</initial_value>
+      <ic_file_input_names>surfric tphysac_surfric</ic_file_input_names>
+    </variable>
 
     <variable local_name="rliq"
               standard_name="vertically_integrated_cloud_liquid_water_tendency_due_to_all_convection_to_be_applied_later_in_time_loop"
