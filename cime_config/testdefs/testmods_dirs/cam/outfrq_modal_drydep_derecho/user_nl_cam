@@ -28,3 +28,29 @@ mode_defs = 'mam4_mode1:accum:=', 'A:num_a1:N:num_c1:num_mr:+',
          'A:so4_a3:N:so4_c3:sulfate:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/sulfate_rrtmg_c080918.nc', 'mam4_mode4:primary_carbon:=',
          'A:num_a4:N:num_c4:num_mr:+', 'A:pom_a4:N:pom_c4:p-organic:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ocpho_rrtmg_c130709.nc:+',
          'A:bc_a4:N:bc_c4:black-c:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/bcpho_rrtmg_c100508.nc'
+
+! Dry deposition diagnostics (aero_drydep_diagnostics). This is CAM's
+! history_aerosol h0 field set: surface fluxes plus RAM1/airFV. The per-level
+! <name>DTQ and <name>DDV fields are registered as well and can be requested here.
+hist_add_inst_fields;h1: RAM1, airFV
+hist_add_inst_fields;h1: num_a1DDF, so4_a1DDF, pom_a1DDF, soa_a1DDF, bc_a1DDF, dst_a1DDF, ncl_a1DDF, num_a2DDF
+hist_add_inst_fields;h1: so4_a2DDF, soa_a2DDF, ncl_a2DDF, dst_a2DDF, num_a3DDF, dst_a3DDF, ncl_a3DDF, so4_a3DDF
+hist_add_inst_fields;h1: num_a4DDF, pom_a4DDF, bc_a4DDF
+hist_add_inst_fields;h1: num_a1TBF, so4_a1TBF, pom_a1TBF, soa_a1TBF, bc_a1TBF, dst_a1TBF, ncl_a1TBF, num_a2TBF
+hist_add_inst_fields;h1: so4_a2TBF, soa_a2TBF, ncl_a2TBF, dst_a2TBF, num_a3TBF, dst_a3TBF, ncl_a3TBF, so4_a3TBF
+hist_add_inst_fields;h1: num_a4TBF, pom_a4TBF, bc_a4TBF
+hist_add_inst_fields;h1: num_a1GVF, so4_a1GVF, pom_a1GVF, soa_a1GVF, bc_a1GVF, dst_a1GVF, ncl_a1GVF, num_a2GVF
+hist_add_inst_fields;h1: so4_a2GVF, soa_a2GVF, ncl_a2GVF, dst_a2GVF, num_a3GVF, dst_a3GVF, ncl_a3GVF, so4_a3GVF
+hist_add_inst_fields;h1: num_a4GVF, pom_a4GVF, bc_a4GVF
+hist_add_inst_fields;h1: num_c1DDF, so4_c1DDF, pom_c1DDF, soa_c1DDF, bc_c1DDF, dst_c1DDF, ncl_c1DDF, num_c2DDF
+hist_add_inst_fields;h1: so4_c2DDF, soa_c2DDF, ncl_c2DDF, dst_c2DDF, num_c3DDF, dst_c3DDF, ncl_c3DDF, so4_c3DDF
+hist_add_inst_fields;h1: num_c4DDF, pom_c4DDF, bc_c4DDF
+hist_add_inst_fields;h1: num_c1TBF, so4_c1TBF, pom_c1TBF, soa_c1TBF, bc_c1TBF, dst_c1TBF, ncl_c1TBF, num_c2TBF
+hist_add_inst_fields;h1: so4_c2TBF, soa_c2TBF, ncl_c2TBF, dst_c2TBF, num_c3TBF, dst_c3TBF, ncl_c3TBF, so4_c3TBF
+hist_add_inst_fields;h1: num_c4TBF, pom_c4TBF, bc_c4TBF
+hist_add_inst_fields;h1: num_c1GVF, so4_c1GVF, pom_c1GVF, soa_c1GVF, bc_c1GVF, dst_c1GVF, ncl_c1GVF, num_c2GVF
+hist_add_inst_fields;h1: so4_c2GVF, soa_c2GVF, ncl_c2GVF, dst_c2GVF, num_c3GVF, dst_c3GVF, ncl_c3GVF, so4_c3GVF
+hist_add_inst_fields;h1: num_c4GVF, pom_c4GVF, bc_c4GVF
+hist_output_frequency;h1: 1*nstep
+hist_precision;h1: REAL64
+hist_max_frames;h1: 1
