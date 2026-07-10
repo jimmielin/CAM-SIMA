@@ -24,6 +24,7 @@
   <metadata_file>$SRCROOT/src/physics/utils/cam_constituents.meta</metadata_file>
   <metadata_file>$SRCROOT/src/physics/utils/tropopause_climo_read.meta</metadata_file>
   <metadata_file>$SRCROOT/src/physics/utils/gravity_wave_drag_ridge_read.meta</metadata_file>
+  <metadata_file>$SRCROOT/src/physics/utils/fraction_landuse_read.meta</metadata_file>
   <metadata_file>$SRCROOT/src/aerosol/radiative_aerosol_definitions.meta</metadata_file>
   <metadata_file>$SRCROOT/src/data/air_composition.meta</metadata_file>
   <metadata_file>$SRCROOT/src/data/cam_thermo.meta</metadata_file>
@@ -299,6 +300,7 @@
       <initial_value>0.0_kind_phys</initial_value>
       <ic_file_input_names>SH_FRAC pbuf_SH_FRAC</ic_file_input_names>
     </variable>
+
 
     <variable local_name="rliq"
               standard_name="vertically_integrated_cloud_liquid_water_tendency_due_to_all_convection_to_be_applied_later_in_time_loop"
