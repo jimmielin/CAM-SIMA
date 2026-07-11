@@ -1816,12 +1816,6 @@
       <dimensions>horizontal_dimension vertical_layer_dimension number_of_aerosol_modes</dimensions>
       <initial_value>0.0_kind_phys</initial_value>
     </variable>
-    <variable local_name="do_strat_sulfate"
-              standard_name="flag_for_stratospheric_sulfate_treatment"
-              units="flag" type="logical">
-      <long_name>flag for stratospheric sulfate equilibrium treatment in modal aerosol</long_name>
-      <initial_value>.false.</initial_value>
-    </variable>
     <variable local_name="do_aqueous_sulfur_chemistry_aerosol_update"
               standard_name="do_aqueous_sulfur_chemistry_aerosol_update"
               units="flag" type="logical">
