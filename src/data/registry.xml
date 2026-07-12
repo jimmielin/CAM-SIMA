@@ -897,15 +897,18 @@
       <initial_value>0.0_kind_phys</initial_value>
     </variable>
 
-    <!-- dstflx has no ic_file_input_names yet: the initial-conditions reader does not
-         support fixed non-vertical extra dimensions; snapshot reads (from per-bin
-         cam_in_dstflx_bin(N) file variables) will be wired up with the consumer. -->
+    <!-- dstflx's fixed bin dimension cannot be captured as a single snapshot
+         variable, so it is read from numbered per-bin file variables
+         (cam_in_dstflx_bin1..4). The ic_file_input_names below are therefore
+         name PREFIXES: the bin index is appended by
+         read_indexed_dimensioned_field (see physics_data.F90). -->
     <variable local_name="dstflx"
               standard_name="surface_upward_dust_fluxes_from_coupler"
               units="kg m-2 s-1" type="real" kind="kind_phys"
               allocatable="allocatable">
       <dimensions>horizontal_dimension dust_size_bin_dimension</dimensions>
       <initial_value>0.0_kind_phys</initial_value>
+      <ic_file_input_names>dstflx_bin cam_in_dstflx_bin</ic_file_input_names>
     </variable>
 
     <variable local_name="fco2_lnd"
