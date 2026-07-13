@@ -301,6 +301,15 @@
       <option name="comment">Test for modal aerosol model (MAM4): aero gas-aerosol exchange/microphysics block end-to-end</option>
     </options>
   </test>
+  <test compset="FPHYStest" grid="ne3pg3_ne3pg3_mg37" name="SMS_Ln2" testmods="cam/outfrq_modal_aero_emissions_derecho">
+    <machines>
+      <machine name="derecho" compiler="gnu" category="aux_sima"/>
+    </machines>
+    <options>
+      <option name="wallclock">00:10:00</option>
+      <option name="comment">Test for modal aerosol model (MAM4): aero dust and seasalt emissions</option>
+    </options>
+  </test>
 
 
   <!-- CAM7 physics tests -->
