@@ -1,0 +1,50 @@
+ncdata = '/glade/campaign/cesm/community/amwg/sima_baselines/cam_sima_test_snapshots/cam6_4_185_ne3pg3_fhist_modal_aero_emissions_snapshot_derecho_gnu_before_c20260712.nc'
+ncdata_check = '/glade/campaign/cesm/community/amwg/sima_baselines/cam_sima_test_snapshots/cam6_4_185_ne3pg3_fhist_modal_aero_emissions_snapshot_derecho_gnu_after_c20260712.nc'
+
+pver = 32
+
+debug_output = 1
+
+! tolerances for testing
+ncdata_check_err = .true.
+
+! note: this tolerance is slightly larger than usual because the dust computation
+! relies on radians but they are converted from degrees in the snapshot:
+min_difference = 5e-15
+
+! the following fields are from mo_srf_emissions and are not covered by this test:
+! (mo_srf_emissions populates cflx as well in addition to the aerosol dust/sslt emissions tested here)
+ncdata_check_exclude = 'cam_in_cflx_num_a1', 'cam_in_cflx_num_a2', 'cam_in_cflx_num_a4',
+                       'cam_in_cflx_so4_a1', 'cam_in_cflx_so4_a2',
+                       'cam_in_cflx_bc_a4',  'cam_in_cflx_pom_a4'
+
+! read dust and seasalt parameters:
+dust_emis_fact=1.75D0
+seasalt_emis_scale=1.00D0
+soil_erod_file = '${DIN_LOC_ROOT}/atm/cam/dst/dst_source2x2tunedcam6-2x2-04062017.nc'
+
+! history
+hist_add_inst_fields;h1:LND_MBL,SSTSFMBL,DSTSFMBL
+hist_add_inst_fields;h1:dst_a1SF,dst_a2SF,dst_a3SF,num_a1SF,num_a2SF,num_a3SF
+hist_add_inst_fields;h1:ncl_a1SF,ncl_a2SF,ncl_a3SF
+hist_output_frequency;h1: 1*nstep
+hist_precision;h1: REAL64
+hist_max_frames;h1: 1
+
+rad_aer_climate = 'M:mam4_mode1:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/mam4_mode1_rrtmg_aeronetdust_sig1.6_dgnh.48_c140304.nc',
+         'M:mam4_mode2:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/mam4_mode2_rrtmg_aitkendust_c141106.nc',
+         'M:mam4_mode3:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/mam4_mode3_rrtmg_aeronetdust_sig1.2_dgnl.40_c150219.nc',
+         'M:mam4_mode4:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/mam4_mode4_rrtmg_c130628.nc'
+
+mode_defs = 'mam4_mode1:accum:=', 'A:num_a1:N:num_c1:num_mr:+',
+         'A:so4_a1:N:so4_c1:sulfate:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/sulfate_rrtmg_c080918.nc:+', 'A:pom_a1:N:pom_c1:p-organic:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ocpho_rrtmg_c130709.nc:+',
+         'A:soa_a1:N:soa_c1:s-organic:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ocphi_rrtmg_c100508.nc:+', 'A:bc_a1:N:bc_c1:black-c:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/bcpho_rrtmg_c100508.nc:+',
+         'A:dst_a1:N:dst_c1:dust:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/dust_aeronet_rrtmg_c141106.nc:+', 'A:ncl_a1:N:ncl_c1:seasalt:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ssam_rrtmg_c100508.nc',
+         'mam4_mode2:aitken:=', 'A:num_a2:N:num_c2:num_mr:+',
+         'A:so4_a2:N:so4_c2:sulfate:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/sulfate_rrtmg_c080918.nc:+', 'A:soa_a2:N:soa_c2:s-organic:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ocphi_rrtmg_c100508.nc:+',
+         'A:ncl_a2:N:ncl_c2:seasalt:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ssam_rrtmg_c100508.nc:+', 'A:dst_a2:N:dst_c2:dust:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/dust_aeronet_rrtmg_c141106.nc',
+         'mam4_mode3:coarse:=', 'A:num_a3:N:num_c3:num_mr:+',
+         'A:dst_a3:N:dst_c3:dust:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/dust_aeronet_rrtmg_c141106.nc:+', 'A:ncl_a3:N:ncl_c3:seasalt:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ssam_rrtmg_c100508.nc:+',
+         'A:so4_a3:N:so4_c3:sulfate:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/sulfate_rrtmg_c080918.nc', 'mam4_mode4:primary_carbon:=',
+         'A:num_a4:N:num_c4:num_mr:+', 'A:pom_a4:N:pom_c4:p-organic:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ocpho_rrtmg_c130709.nc:+',
+         'A:bc_a4:N:bc_c4:black-c:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/bcpho_rrtmg_c100508.nc'
