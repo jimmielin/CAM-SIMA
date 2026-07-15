@@ -808,6 +808,16 @@
       <initial_value>0.0_kind_phys</initial_value>
       <ic_file_input_names>pbuf_AST</ic_file_input_names>
     </variable>
+    <variable local_name="cldo"
+              standard_name="stratiform_cloud_area_fraction_on_previous_timestep"
+              units="fraction" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <!-- Note: In CAM, CLDO is a pbuf field registered and updated by
+           micro_pumas_cam; consumed by droplet activation (dropmixnuc). -->
+      <initial_value>0.0_kind_phys</initial_value>
+      <ic_file_input_names>pbuf_CLDO</ic_file_input_names>
+    </variable>
 
     <!-- cam_in Variables -->
     <variable local_name="aldif"
