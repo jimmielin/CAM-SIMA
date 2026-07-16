@@ -549,8 +549,17 @@ contains
       ! retrieve units from file (used by downstream code to potentially
       ! perform unit conversions on read data)
       !
+      ! The units attribute is optional. Blank the buffer first, since pio fills
+      ! only as many characters as the attribute occupies, and blank it again if
+      ! the variable carries no units attribute at all, so that undefined
+      ! characters cannot reach flds(f)%units.
+      !
       ! convert units to lowercase to facilitate comparisons
+      data_units = ' '
       ierr = pio_get_att(file%curr_fileid, flds(f)%var_id, 'units', data_units)
+      if (ierr /= PIO_NOERR) then
+        data_units = ' '
+      end if
       flds(f)%units = trim(to_lower(data_units(1:32)))
 
     end do flds_loop
