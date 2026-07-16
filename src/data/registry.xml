@@ -35,6 +35,8 @@
   <metadata_file>$SRCROOT/src/data/ref_pres.meta</metadata_file>
   <metadata_file>$SRCROOT/src/dynamics/utils/vert_coord.meta</metadata_file>
   <metadata_file>$SRCROOT/src/dynamics/utils/hycoef.meta</metadata_file>
+<!-- PUMAS DDT metadata file -->
+  <metadata_file>$SRCROOT/src/physics/ncar_ccpp/schemes/pumas/pumas/micro_pumas_diags.meta</metadata_file>
 
   <!-- Variables registered to physics_types -->
   <file name="physics_types" type="module">
@@ -48,6 +50,25 @@
     <use module="physconst" reference="rair"/>
     <use module="physconst" reference="mwdry"/>
     <use module="physconst" reference="zvir"/>
+
+    <!-- Dimensions -->
+    <variable local_name="dust_size_bins_dimension"
+              standard_name="dust_size_bins_dimension"
+              units="count" type="integer"
+              allocatable="parameter">
+      <initial_value>4</initial_value>
+    </variable>
+    <variable local_name="ndust"
+              standard_name="dust_size_bin_dimension"
+              units="count" type="integer" allocatable="parameter">
+      <long_name>number of dust size bins used in aerosol model</long_name>
+      <initial_value>4</initial_value>
+      <!-- this is not runtime configurable, and
+           not even easily compile-time configurable, because the assumption that
+           there are four dust bins is deeply embedded in the microphysics and
+           coupling to the land model (see dstdry1/2/3/4, dstwet1/2/3/4) -->
+    </variable>
+
     <!-- State variables -->
     <variable local_name="ps" standard_name="surface_air_pressure"
               units="Pa" type="real" kind="kind_phys"
@@ -749,6 +770,39 @@
               units="kg kg-1" type="real" constituent="true">
       <long_name>graupel mass mixing ratio with respect to moist air plus all airborne condensates</long_name>
       <ic_file_input_names>GRAUQM cnst_GRAUQM</ic_file_input_names>
+    </variable>
+    <variable local_name="numliq"
+              standard_name="mass_number_concentration_of_cloud_liquid_wrt_moist_air_and_condensed_water"
+              units="kg kg-1" type="real" constituent="true">
+      <long_name>mass number concentration of cloud liquid water wrt moist air plus all airborne condensates</long_name>
+      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <ic_file_input_names>NUMLIQ cnst_NUMLIQ</ic_file_input_names>
+    </variable>
+    <variable local_name="numice"
+              standard_name="mass_number_concentration_of_ice_wrt_moist_air_and_condensed_water"
+              units="kg kg-1" type="real" constituent="true">
+      <long_name>mass number concentration of Cloud ice mass mixing ratio with respect to moist air plus all airborne condensates</long_name>
+      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <ic_file_input_names>NUMICE cnst_NUMICE</ic_file_input_names>
+    </variable>
+    <variable local_name="numrai"
+              standard_name="mass_number_concentration_of_rain_wrt_moist_air_and_condensed_water"
+              units="kg kg-1" type="real" constituent="true">
+      <long_name>mass number concentration of rain mass mixing ratio with respect to moist air plus all airborne condensates</long_name>
+      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <ic_file_input_names>NUMRAI cnst_NUMRAI</ic_file_input_names>
+    </variable>
+    <variable local_name="numsno"
+              standard_name="mass_number_concentration_of_snow_wrt_moist_air_and_condensed_water"
+              units="kg kg-1" type="real" constituent="true">
+      <long_name>mass number concentration of snow mass mixing ratio with respect to moist air plus all airborne condensates</long_name>
+      <ic_file_input_names>NUMSNO cnst_NUMSNO</ic_file_input_names>
+    </variable>
+    <variable local_name="numgra"
+              standard_name="mass_number_concentration_of_graupel_wrt_moist_air_and_condensed_water"
+              units="kg kg-1" type="real" constituent="true">
+      <long_name>mass number concentration of graupel mass mixing ratio with respect to moist air plus all airborne condensates</long_name>
+      <ic_file_input_names>NUMGRA cnst_NUMGRA</ic_file_input_names>
     </variable>
     <variable local_name="H2O"
 	      standard_name="H2O"
@@ -2571,6 +2625,129 @@
 	      standard_name="include_liquid_plus_graupel_stratiform_cloud_area_fraction"
 	    units="flag" type="logical">
       <initial_value>.false.</initial_value>
+    </variable>
+
+<!-- From cldfrc2m.F90-->
+    <variable local_name="rhmini"
+              standard_name="relative_humidity_threshold_for_ice_nucleation"
+              units="fraction" type="real" kind="kind_phys">
+      <initial_value>0.8_kind_phys</initial_value>
+    </variable>
+
+    <!-- From phys_control-->
+    <variable local_name="relvar_in"
+              standard_name="relative_variance_of_subgrid_cloud_condensate_distribution"
+              units="1" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <!-- CAM initializes relvar to 2 (micro_pumas_cam init); CLUBB overwrites it each step when active -->
+      <initial_value>2._kind_phys</initial_value>
+      <ic_file_input_names>RELVAR pbuf_RELVAR</ic_file_input_names>
+    </variable>
+    <variable local_name="strat_liq_cldfrc_in"
+              standard_name="stratiform_cloud_liquid_area_fraction"
+              units="fraction" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <ic_file_input_names>ALST pbuf_ALST</ic_file_input_names>
+    </variable>
+    <variable local_name="strat_ice_cldfrc_in"
+              standard_name="stratiform_cloud_ice_area_fraction"
+              units="fraction" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <ic_file_input_names>AIST pbuf_AIST</ic_file_input_names>
+    </variable>
+    <variable local_name="qsatfac_in"
+              standard_name="subgrid_cloud_water_saturation_scaling_factor_for_microphysics"
+              units="1" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <!-- CAM uses qsatfac = 1 when no scheme (CLUBB) provides it (micro_pumas_cam) -->
+      <initial_value>1._kind_phys</initial_value>
+      <ic_file_input_names>QSATFAC pbuf_QSATFAC</ic_file_input_names>
+    </variable>
+    <variable local_name="naai_in"
+              standard_name="tendency_of_number_concentration_of_activated_ice_nuclei"
+              units="kg-1 s-1" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <ic_file_input_names>NAAI pbuf_NAAI</ic_file_input_names>
+    </variable>
+    <variable local_name="npccn_in"
+              standard_name="tendency_of_activated_cloud_condensation_nuclei_mass_number_concentration"
+              units="kg-1 s-1" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <ic_file_input_names>NPCCN pbuf_NPCCN</ic_file_input_names>
+    </variable>
+    <variable local_name="rndst_in"
+              standard_name="dust_radii_by_size_bin"
+              units="m" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <dimensions>horizontal_dimension vertical_layer_dimension dust_size_bin_dimension</dimensions>
+      <ic_file_input_names>RNDST pbuf_RNDST</ic_file_input_names>
+    </variable>
+    <variable local_name="nacon_in"
+              standard_name="dust_number_concentration_by_size_bin_for_contact_freezing"
+              units="m-3" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <dimensions>horizontal_dimension vertical_layer_dimension dust_size_bin_dimension</dimensions>
+      <ic_file_input_names>NACON pbuf_NACON</ic_file_input_names>
+    </variable>
+    <variable local_name="effi_external_in"
+              standard_name="effective_radius_of_stratiform_cloud_ice_particle"
+              units="micron" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <ic_file_input_names>REI pbuf_REI</ic_file_input_names>
+    </variable>    <variable local_name="frzimm_in"
+              standard_name="tendency_of_cloud_liquid_droplet_number_concentration_due_to_immersion_freezing"
+              units="cm-3" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <initial_value>0</initial_value>
+      <ic_file_input_names>FRZIMM pbuf_FRZIMM</ic_file_input_names>
+    </variable>
+    <variable local_name="frzcnt_in"
+              standard_name="tendency_of_cloud_liquid_droplet_number_concentration_due_to_contact_freezing"
+              units="cm-3" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <initial_value>0</initial_value>
+      <ic_file_input_names>FRZCNT pbuf_FRZCNT</ic_file_input_names>
+    </variable>
+    <variable local_name="frzdep_in"
+              standard_name="tendency_of_cloud_ice_number_concentration_due_to_deposition_nucleation"
+              units="cm-3" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <initial_value>0</initial_value>
+      <ic_file_input_names>FRZDEP pbuf_FRZDEP</ic_file_input_names>
+    </variable><variable local_name="micro_accre_enhan_in"
+              standard_name="accretion_enhancement_factor"
+              units="1" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <!-- CAM initializes accre_enhan to 1 (micro_pumas_cam init); CLUBB overwrites it each step when active -->
+      <initial_value>1._kind_phys</initial_value>
+      <ic_file_input_names>accre_enhan pbuf_accre_enhan pbuf_ACCRE_ENHAN</ic_file_input_names>
+
+  <!-- CACNOTE: Not sure these snapshot cnst_XXX variables are the same ones - check more carefully -->
+    </variable>
+    <variable local_name="snowice_tend_external_in"
+              standard_name="tendency_of_snow_mixing_ratio_wrt_moist_air_and_condensed_water_from_external"
+              units="kg kg-1 s-1" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <ic_file_input_names>cnst_SNOWQM tnd_qsnow pbuf_tnd_qsnow</ic_file_input_names>
+    </variable>
+    <variable local_name="numsnow_tend_external_in"
+              standard_name="tendency_of_mass_number_concentration_of_snow_wrt_moist_air_and_condensed_water_from_external"
+              units="kg-1 s-1" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <ic_file_input_names>cnst_NUMSNO tnd_nsnow pbuf_tnd_nsnow</ic_file_input_names>
     </variable>
 
     <!-- CAM with MPAS-like "convection-permitting" physics suite (EXPERIMENTAL) -->
