@@ -64,7 +64,10 @@
 
   <compset>
     <alias>FHIST_C5</alias>
-    <lname>HIST_CAM50_CLM50%SP_CICE%PRES_DOCN%DOM_MOSART_CISM2%NOEVOLVE_SWAV</lname>
+    <!-- SROF_SGLC rather than FHIST's MOSART_CISM2%NOEVOLVE: the cism
+         component is not checked out in CAM-SIMA and the atmosphere
+         consumes nothing from rof/glc -->
+    <lname>HIST_CAM50_CLM50%SP_CICE%PRES_DOCN%DOM_SROF_SGLC_SWAV</lname>
   </compset>
 
   <compset>
