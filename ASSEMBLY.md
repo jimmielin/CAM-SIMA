@@ -48,6 +48,12 @@ re-run the audit:
 
 - `01a5cb4` FHIST_C5 compset (FIX-9): FHIST component set with CAM50 +
   the `_CAM50` -> `--physics-suites cam5` CAM_CONFIG_OPTS mapping.
+- `8a87660` FHIST_C5 lname -> SROF_SGLC (cism not checked out in CAM-SIMA).
+- `8385b50` (user) sgh30 registry entry (from hplin/beljaars, already in
+  development).
+- `90941a5` topography_statics_read (FIX-13): SGH/SGH30/LANDM_COSLAT from
+  bnd_topo; durable home = standalone CAM-SIMA PR. Needs bnd_topo set in
+  user_nl_cam.
 
 ## Validation done at assembly
 
