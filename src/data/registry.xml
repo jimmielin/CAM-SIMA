@@ -53,6 +53,16 @@
               allocatable="parameter">
       <initial_value>4</initial_value>
     </variable>
+    <variable local_name="ndust"
+              standard_name="dust_size_bin_dimension"
+              units="count" type="integer" allocatable="parameter">
+      <long_name>number of dust size bins used in aerosol model</long_name>
+      <initial_value>4</initial_value>
+      <!-- this is not runtime configurable, and
+           not even easily compile-time configurable, because the assumption that
+           there are four dust bins is deeply embedded in the microphysics and
+           coupling to the land model (see dstdry1/2/3/4, dstwet1/2/3/4) -->
+    </variable>
 
     <!-- State variables -->
     <variable local_name="ps" standard_name="surface_air_pressure"
@@ -2060,6 +2070,8 @@
               units="1" type="real" kind="kind_phys"
               allocatable="allocatable">
       <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <!-- CAM initializes relvar to 2 (micro_pumas_cam init); CLUBB overwrites it each step when active -->
+      <initial_value>2._kind_phys</initial_value>
       <ic_file_input_names>RELVAR pbuf_RELVAR</ic_file_input_names>
     </variable>
     <variable local_name="strat_liq_cldfrc_in"
@@ -2081,10 +2093,12 @@
               units="1" type="real" kind="kind_phys"
               allocatable="allocatable">
       <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <!-- CAM uses qsatfac = 1 when no scheme (CLUBB) provides it (micro_pumas_cam) -->
+      <initial_value>1._kind_phys</initial_value>
       <ic_file_input_names>QSATFAC pbuf_QSATFAC</ic_file_input_names>
     </variable>
     <variable local_name="naai_in"
-              standard_name="tendency_of_activated_ice_nuclei_mass_number_concentration"
+              standard_name="tendency_of_number_concentration_of_activated_ice_nuclei"
               units="kg-1 s-1" type="real" kind="kind_phys"
               allocatable="allocatable">
       <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
@@ -2101,14 +2115,14 @@
               standard_name="dust_radii_by_size_bin"
               units="m" type="real" kind="kind_phys"
               allocatable="allocatable">
-      <dimensions>horizontal_dimension vertical_layer_dimension dust_size_bins_dimension</dimensions>
+      <dimensions>horizontal_dimension vertical_layer_dimension dust_size_bin_dimension</dimensions>
       <ic_file_input_names>RNDST pbuf_RNDST</ic_file_input_names>
     </variable>
     <variable local_name="nacon_in"
               standard_name="dust_number_concentration_by_size_bin_for_contact_freezing"
               units="m-3" type="real" kind="kind_phys"
               allocatable="allocatable">
-      <dimensions>horizontal_dimension vertical_layer_dimension dust_size_bins_dimension</dimensions>
+      <dimensions>horizontal_dimension vertical_layer_dimension dust_size_bin_dimension</dimensions>
       <ic_file_input_names>NACON pbuf_NACON</ic_file_input_names>
     </variable>
     <variable local_name="effi_external_in"
@@ -2145,6 +2159,8 @@
               units="1" type="real" kind="kind_phys"
               allocatable="allocatable">
       <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <!-- CAM initializes accre_enhan to 1 (micro_pumas_cam init); CLUBB overwrites it each step when active -->
+      <initial_value>1._kind_phys</initial_value>
       <ic_file_input_names>accre_enhan pbuf_accre_enhan pbuf_ACCRE_ENHAN</ic_file_input_names>
 
   <!-- CACNOTE: Not sure these snapshot cnst_XXX variables are the same ones - check more carefully -->
