@@ -44,6 +44,11 @@ re-run the audit:
   branch is unpushed).
 - Inside it, `schemes/pumas/pumas` -> nusbaume/PUMAS @ `c4aec4a`.
 
+## Post-merge work on this branch
+
+- `01a5cb4` FHIST_C5 compset (FIX-9): FHIST component set with CAM50 +
+  the `_CAM50` -> `--physics-suites cam5` CAM_CONFIG_OPTS mapping.
+
 ## Validation done at assembly
 
 - Duplicate standard_name/local_name audit clean after dedupe.
