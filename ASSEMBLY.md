@@ -54,6 +54,18 @@ re-run the audit:
 - `90941a5` topography_statics_read (FIX-13): SGH/SGH30/LANDM_COSLAT from
   bnd_topo; durable home = standalone CAM-SIMA PR. Needs bnd_topo set in
   user_nl_cam.
+- (no commit, case config) FIX-33: user_nl_cam MUST set
+  `drydep_srf_file = '/glade/campaign/cesm/cesmdata/inputdata/atm/cam/chem/trop_mam/atmsrf_ne16pg3_c230520.nc'`
+  (the CAM default for ne16pg3). With it UNSET, fraction_landuse_read
+  silently leaves the registry fraction_landuse at 0; the drydep
+  bottom-level velocity is the landuse-WEIGHTED sum (aero_drydep_core
+  wrk3, verbatim CAM), so vlc_dry(pver) = 0 exactly -> zero dry
+  deposition flux for EVERY aerosol (DDV nonzero aloft, DDF/GVF = 0;
+  dust burden reached 2.5 g/m2 by day 2). CAM cannot hit this (missing
+  atmsrf aborts in build-namelist); flag to upstream: the host read
+  should WARN on UNSET at least. One of the two missing sinks behind the
+  day-3 AOD runaway -> SW crash (the other = FIX-32 convproc bridge,
+  atmos_phys).
 - (no commit, case config) Dust with CLM Leung_2023: user_nl_cam MUST set
   `zender_soil_erod_from_atm = .false.` -- the aero_emissions XML default
   is .true. (the Zender+atm-erodibility validation shape), which
