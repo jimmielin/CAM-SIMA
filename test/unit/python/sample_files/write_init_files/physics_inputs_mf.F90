@@ -183,14 +183,6 @@ contains
          var_found = .false.
          ! Check if constituent standard name in registered SIMA standard names list:
          call const_props(constituent_idx)%standard_name(std_name)
-         ! Don't read the variable in if it's already initialized. This must
-         ! cover both read paths below: an advected constituent read by the
-         ! dycore is marked initialized but need not be a registry variable,
-         ! and reading it here would use the physics grid rather than the
-         ! dynamics grid it was written on.
-         if (is_initialized(std_name)) then
-            cycle
-         end if
          ! Find array index to extract correct input names
          ! (case-insensitive: see find_input_name_idx):
          const_input_idx = -1
@@ -201,6 +193,10 @@ contains
             end if
          end do
          if(const_input_idx > 0) then
+            ! Don't read the variable in if it's already initialized
+            if (is_initialized(std_name)) then
+               cycle
+            end if
             call read_field(file, std_name, input_var_names(:,const_input_idx), 'lev', timestep, field_data_ptr(:,:,constituent_idx), &
                 mark_as_read=.false., error_on_not_found=.false., var_found=var_found)
          else
