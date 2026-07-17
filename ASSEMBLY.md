@@ -62,6 +62,14 @@ re-run the audit:
   share 1.1.19, CUPiD v0.5.1. ncar-physics deliberately untouched.
   After `git-fleximod update`, RE-CHECKOUT the atmos_phys octopus branch
   in src/physics/ncar_ccpp (fleximod resets it to the pinned hash).
+- `aee42e9` FIX-20: initial_value for the PUMAS external-ice trio
+  (effi_external_in = 25 micron, snowice/numsnow_tend_external_in = 0).
+  Without one, write_init_files.py makes the ncdata read FATAL. These are
+  CAM's do_cldice=.false. inputs — never read here (CAM passes NaN), so
+  the values are fail-safe placeholders, not physics. The scoping doc
+  records two real upstream PUMAS wiring bugs found while diagnosing this
+  (meta `um` vs code `m` in the submodule = flag to Cheryl/Jesse; REI vs
+  RE_ICE conflation in dims_pre = deferred, atmos_phys-local).
 
 ## Validation done at assembly
 
