@@ -492,6 +492,11 @@
       <initial_value>.false.</initial_value>
       <initial_value dyn="SE,MPAS">.true.</initial_value>
     </variable>
+
+    <variable local_name="do_clubb_sgs" standard_name="do_clubb" units="flag" type="logical">
+       <initial_value>.false.</initial_value><!-- cam5 hplin patch -->
+    </variable>
+
     <!-- Timestep properties -->
     <variable local_name="is_first_timestep"
               standard_name="is_first_timestep"
@@ -2386,6 +2391,7 @@
               units="kg kg-1" type="real" kind="kind_phys"
               allocatable="allocatable">
       <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <initial_value>0.0_kind_phys</initial_value>
       <ic_file_input_names>ICWMRDP pbuf_ICWMRDP</ic_file_input_names>
     </variable>
     <variable local_name="cldfrc"
@@ -2740,6 +2746,7 @@
               units="fraction" type="real" kind="kind_phys"
               allocatable="allocatable">
       <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <initial_value>0.0_kind_phys</initial_value>
       <ic_file_input_names>ALST pbuf_ALST</ic_file_input_names>
     </variable>
     <variable local_name="qsatfac_in"
