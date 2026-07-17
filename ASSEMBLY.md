@@ -54,6 +54,14 @@ re-run the audit:
 - `90941a5` topography_statics_read (FIX-13): SGH/SGH30/LANDM_COSLAT from
   bnd_topo; durable home = standalone CAM-SIMA PR. Needs bnd_topo set in
   user_nl_cam.
+- `3224c87` + follow-up: externals aligned to CAM cam_development pins
+  (FIX-16), triggered by cdeps1.0.84 FPE-trapping on NaN stream data in
+  debug (urbantv/CLM init; fixed upstream in cdeps1.0.93). Bumped fxtags:
+  cdeps 1.0.93, ccs_config 1.0.81, cice cesm3_cice6_6_3_5, cime 6.1.169,
+  clm ctsm5.4.024, cmeps 1.1.41, mosart 1.1.13, parallelio pio2_6_8,
+  share 1.1.19, CUPiD v0.5.1. ncar-physics deliberately untouched.
+  After `git-fleximod update`, RE-CHECKOUT the atmos_phys octopus branch
+  in src/physics/ncar_ccpp (fleximod resets it to the pinned hash).
 
 ## Validation done at assembly
 
