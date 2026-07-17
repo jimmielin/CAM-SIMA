@@ -75,11 +75,21 @@ re-run the audit:
   removed an un-guarded `DEBUG -JN` loop in the SE dyn_comp (durable home
   = the CAM-SIMA-dycore-update branch — tell Jesse or it returns on the
   next rebuild).
-- `136c15d` FIX-23 **REVERTED in `467fc38`** — the premise was false (the
-  dycore never reads or marks runtime-registered constituents). The real
-  gap (runtime-registered advected constituents have no IC path in a
-  dycore run) is OPEN; see FIX-23R in the scoping doc. Do not re-apply
-  the hoist: it breaks snapshot runs.
+- `136c15d` FIX-23 **REVERTED in `467fc38`** — its premise was false (the
+  dycore never reads or marks runtime-registered constituents). Do not
+  re-apply that hoist: it breaks snapshot runs.
+- `db0a911` FIX-23R/24: runtime-registered advected constituents (all MAM
+  aerosols) had NO IC path in a dycore run — read_inidat skipped them (no
+  registry entry -> no ic_file_input_names) and physics read them on the
+  physics grid while ncdata holds them on the dynamics grid. Fix:
+  read_inidat falls back to the constituent's standard name as the IC
+  field name; new index-keyed `const_mark_as_initialized` /
+  `const_is_initialized` in cam_constituents let the dycore tell physics
+  what it already read (phys_vars_init_check cannot — it is name-keyed
+  over registry variables only); plus `dbuf3 = 0._r8` when a constituent
+  is absent from the file (it used to inherit the previous constituent's
+  data). Durable home = standalone CAM-SIMA PR; the read_inidat hunks ride
+  the dycore b4b fixes.
 
 ## Validation done at assembly
 
