@@ -123,6 +123,19 @@ re-run the audit:
   (init-phase schemes cannot tell the IC read they set a constituent, so
   prescribed gases absent from ncdata are silently zeroed) is upstream and
   being filed by the user.
+- FIX-36: registry entries for the four net radiative flux profiles
+  (fns/fcns/fnl/fcnl, W m-2, interface-dimensioned, initial 0). The rrtmgp
+  calculate_fluxes schemes write them only on radiation steps (FIX-30
+  early-return) while heating-rate + diagnostics schemes read them every
+  step; as capgen group-locals they were PER-CALL allocatables (fresh heap
+  each group invocation, deallocated at exit), so every non-radiation step
+  read uninitialized memory -- an FPE lottery that hit at nstep 4 (the
+  first non-rad step under irad_always=-1) of the first FIX-34/35 run, and
+  that the 5-day run survived only by heap-reuse luck. Host storage =
+  CAM's pbuf persistence semantics; no scheme changes. REVISES FIX-30's
+  premise: capgen group-local persistence across timesteps is NOT a
+  contract (upstream ccpp-framework flag, user files). These entries must
+  land WITH the FIX-30 scheme guards in the upstream atmos_phys PR.
 - `714a43f` FIX-34 (registry half; schemes = atmos_phys `47cbfb3`): five
   std names renamed to the live-producer spellings (NEVAPR, PRAIN,
   NEVAPR_SHCU, NEVAPR_DPCU precip inputs; pbuf_tke -> tke_at_interfaces).
