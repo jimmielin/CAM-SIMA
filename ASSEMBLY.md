@@ -70,6 +70,17 @@ re-run the audit:
   records two real upstream PUMAS wiring bugs found while diagnosing this
   (meta `um` vs code `m` in the submodule = flag to Cheryl/Jesse; REI vs
   RE_ICE conflation in dims_pre = deferred, atmos_phys-local).
+- `e61be7a` (user) FIX-21/22: more initial_value fixes (ICWMRDP, cldfrc);
+  FIX-11 do_clubb hardcode brought down from a stash into the branch;
+  removed an un-guarded `DEBUG -JN` loop in the SE dyn_comp (durable home
+  = the CAM-SIMA-dycore-update branch — tell Jesse or it returns on the
+  next rebuild).
+- `136c15d` FIX-23: write_init_files.py — skip already-initialized
+  constituents on BOTH IC read paths. Runtime-registered constituents
+  (all MAM aerosols) took the snapshot-fallback branch, which ignored the
+  dycore's mark_as_initialized and re-read them on the physics grid;
+  fatal once physics grid /= dynamics grid (SE + pg3). Durable home =
+  standalone CAM-SIMA PR.
 
 ## Validation done at assembly
 
