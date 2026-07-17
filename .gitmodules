@@ -38,7 +38,7 @@
 [submodule "cdeps"]
         path          = components/cdeps
         url           = https://github.com/ESCOMP/CDEPS.git
-        fxtag         = cdeps1.0.84
+        fxtag         = cdeps1.0.93
         fxrequired    = ToplevelRequired
         fxDONOTUSEurl = https://github.com/ESCOMP/CDEPS.git
 [submodule "cice"]
