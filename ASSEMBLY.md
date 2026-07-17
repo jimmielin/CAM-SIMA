@@ -123,6 +123,11 @@ re-run the audit:
   (init-phase schemes cannot tell the IC read they set a constituent, so
   prescribed gases absent from ncdata are silently zeroed) is upstream and
   being filed by the user.
+- `714a43f` FIX-34 (registry half; schemes = atmos_phys `47cbfb3`): five
+  std names renamed to the live-producer spellings (NEVAPR, PRAIN,
+  NEVAPR_SHCU, NEVAPR_DPCU precip inputs; pbuf_tke -> tke_at_interfaces).
+  ic_file_input_names unchanged, so snapshot suites still read the same
+  tape fields. Rides the MAM host PR.
 - `0187ca4` FIX-31 (registry half; producer = atmos_phys `631d15d`
   co2_diagnostic_export): co2diag std name co2diag_tbd ->
   diagnostic_volume_mixing_ratio_of_co2_to_coupler (units ppmv), variable
