@@ -2624,11 +2624,16 @@
       <ic_file_input_names>DES pbuf_DES</ic_file_input_names>
     </variable>
     <!-- convective_cloud_water + cloud_water_paths inputs for RRTMGP cloud optics -->
+    <!-- CAM's no-ice fallback value (micro_pumas_v1 effi = 25 micron). Only a
+         placeholder: PUMAS writes this every step before the radiation-side
+         consumers read it, and the external-ice path that reads it as an input
+         is inactive when do_cldice is true (CAM passes NaN there). -->
     <variable local_name="effi_external_in"
               standard_name="effective_radius_of_stratiform_cloud_ice_particle"
               units="micron" type="real" kind="kind_phys"
               allocatable="allocatable">
       <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <initial_value>25._kind_phys</initial_value>
       <ic_file_input_names>REI pbuf_REI</ic_file_input_names>
     </variable>
     <variable local_name="concld"
@@ -2785,6 +2790,7 @@
               units="kg kg-1 s-1" type="real" kind="kind_phys"
               allocatable="allocatable">
       <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <initial_value>0._kind_phys</initial_value>
       <ic_file_input_names>cnst_SNOWQM tnd_qsnow pbuf_tnd_qsnow</ic_file_input_names>
     </variable>
     <variable local_name="numsnow_tend_external_in"
@@ -2792,6 +2798,7 @@
               units="kg-1 s-1" type="real" kind="kind_phys"
               allocatable="allocatable">
       <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <initial_value>0._kind_phys</initial_value>
       <ic_file_input_names>cnst_NUMSNO tnd_nsnow pbuf_tnd_nsnow</ic_file_input_names>
     </variable>
 
