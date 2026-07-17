@@ -101,16 +101,21 @@ re-run the audit:
   (init-phase schemes cannot tell the IC read they set a constituent, so
   prescribed gases absent from ncdata are silently zeroed) is upstream and
   being filed by the user.
-- (no commit) FIX-31: CASE XML must set
-  `./xmlchange CLM_CO2_TYPE=constant CCSM_CO2_PPMV=336.8` for any
-  active-land run. The registry cam_out co2diag/co2prog are `_tbd`
-  placeholders (initial_value 0, no producer), so with CLM's default
-  co2_type='diagnostic' the land receives Sa_co2diag = 0 ppm and LUNA
-  NaNs at its daily update once its 10-day CO2 running mean decays
+- `0187ca4` FIX-31 (registry half; producer = atmos_phys `631d15d`
+  co2_diagnostic_export): co2diag std name co2diag_tbd ->
+  diagnostic_volume_mixing_ratio_of_co2_to_coupler (units ppmv), variable
+  entry + cam_out_t ddt member. The scheme exports prescribed_co2_vmr*1e6
+  each step (CAM camsrfexch convention), so CLM_CO2_TYPE can return to
+  'diagnostic' after rebuild. Set `prescribed_co2_vmr = 336.8e-6` in
+  user_nl_cam for 1979 (default 367e-6 -- and radiation uses this same
+  namelist value). co2prog_tbd stays a placeholder.
+  Pre-fix workaround (needed until the rebuild): CASE XML
+  `./xmlchange CLM_CO2_TYPE=constant CCSM_CO2_PPMV=336.8`; with CLM's
+  default co2_type='diagnostic' the land received Sa_co2diag = 0 ppm and
+  LUNA NaN'd at its daily update once its 10-day CO2 running mean decayed
   (LunaMod nue 0/0). A run that hit this must RESTART FROM SCRATCH -- the
-  CLM restart carries the poisoned running mean. Durable home = upstream
-  CAM-SIMA CO2 export producer (user files with the FIX-25 issue batch).
-  Full analysis in the fix register.
+  CLM restart carries the poisoned running mean. Full analysis in the fix
+  register.
 
 ## Validation done at assembly
 
