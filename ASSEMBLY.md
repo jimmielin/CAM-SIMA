@@ -54,6 +54,16 @@ re-run the audit:
 - `90941a5` topography_statics_read (FIX-13): SGH/SGH30/LANDM_COSLAT from
   bnd_topo; durable home = standalone CAM-SIMA PR. Needs bnd_topo set in
   user_nl_cam.
+- (no commit, case config) Dust with CLM Leung_2023: user_nl_cam MUST set
+  `zender_soil_erod_from_atm = .false.` -- the aero_emissions XML default
+  is .true. (the Zender+atm-erodibility validation shape), which
+  multiplies CLM's Fall_flxdst by the soil_erod field; with
+  soil_erod_file UNSET that field is all zero, so DSTSFMBL/dst_a*SF come
+  out identically 0 while the coupler import is healthy. The flag is the
+  documented stopgap for CAM-SIMA not reading drv_flds_in
+  dust_emis_inparm; keep it consistent with CLM's dust_emis_method until
+  the shr_dust_emis read lands (emissions PR 2). dust_emis_fact = 0.88 is
+  the Leung-consistent tuning (Zender FHIST used 1.75).
 - `3224c87` + follow-up: externals aligned to CAM cam_development pins
   (FIX-16), triggered by cdeps1.0.84 FPE-trapping on NaN stream data in
   debug (urbantv/CLM init; fixed upstream in cdeps1.0.93). Bumped fxtags:
