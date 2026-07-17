@@ -195,13 +195,25 @@ CONTAINS
    end subroutine phys_register
 
    subroutine phys_init()
-      use cam_abortutils,       only: endrun
-      use physics_grid,         only: columns_on_task
-      use vert_coord,           only: pver, pverp
-      use cam_thermo,           only: cam_thermo_init
-      use cam_thermo_formula,   only: cam_thermo_formula_init
-      use physics_types,        only: allocate_physics_types_fields
-      use cam_ccpp_cap,         only: cam_ccpp_physics_initialize
+      use cam_abortutils,            only: endrun
+      use physics_grid,              only: columns_on_task
+      use vert_coord,                only: pver, pverp
+      use cam_thermo,                only: cam_thermo_init
+      use cam_thermo_formula,        only: cam_thermo_formula_init
+      use physics_types,             only: allocate_physics_types_fields
+      use cam_ccpp_cap,              only: cam_ccpp_physics_initialize
+      use cam_ccpp_cap,              only: cam_constituents_array
+      use cam_ccpp_cap,              only: cam_model_const_properties
+      use cam_constituents,          only: num_constituents
+      use cam_constituents,          only: const_mark_as_initialized
+      use ccpp_constituent_prop_mod, only: ccpp_constituent_prop_ptr_t
+      use runtime_obj,               only: cam_runtime_opts
+
+      ! Local variables
+      type(ccpp_constituent_prop_ptr_t), pointer :: const_props(:)
+      real(kind_phys),                   pointer :: const_array(:,:,:)
+      real(kind_phys)                            :: const_default
+      integer                                    :: const_idx
 
       call cam_thermo_init(columns_on_task, pver, pverp)
       call cam_thermo_formula_init()
@@ -213,6 +225,30 @@ CONTAINS
       call cam_ccpp_physics_initialize(phys_suite_name)
       if (errcode /= 0) then
          call endrun('cam_ccpp_physics_initialize: '//trim(errmsg))
+      end if
+
+      ! With any dycore but the null dycore, the initial conditions file holds
+      ! dynamics grid data, which the physics initial conditions read cannot
+      ! use for constituents: the dycore reads the advected ones (and marks
+      ! them itself), and every other constituent value has to come from a
+      ! scheme. Mark the constituents an "init" phase scheme has just set so
+      ! that read leaves them alone, rather than resetting them to the
+      ! constituent minimum. A constituent has been set if it no longer holds
+      ! the default value the constituents object initialized it to.
+      ! The null dycore reads a physics grid snapshot, which is authoritative
+      ! for every constituent, so nothing is marked in that case.
+      if (cam_runtime_opts%get_dycore() /= 'null') then
+         const_props => cam_model_const_properties()
+         const_array => cam_constituents_array()
+         do const_idx = 1, num_constituents
+            call const_props(const_idx)%default_value(const_default, errcode, errmsg)
+            if (errcode /= 0) then
+               call endrun('phys_init: default_value: '//trim(errmsg))
+            end if
+            if (any(const_array(:,:,const_idx) /= const_default)) then
+               call const_mark_as_initialized(const_idx)
+            end if
+         end do
       end if
 
    end subroutine phys_init
