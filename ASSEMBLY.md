@@ -75,12 +75,11 @@ re-run the audit:
   removed an un-guarded `DEBUG -JN` loop in the SE dyn_comp (durable home
   = the CAM-SIMA-dycore-update branch — tell Jesse or it returns on the
   next rebuild).
-- `136c15d` FIX-23: write_init_files.py — skip already-initialized
-  constituents on BOTH IC read paths. Runtime-registered constituents
-  (all MAM aerosols) took the snapshot-fallback branch, which ignored the
-  dycore's mark_as_initialized and re-read them on the physics grid;
-  fatal once physics grid /= dynamics grid (SE + pg3). Durable home =
-  standalone CAM-SIMA PR.
+- `136c15d` FIX-23 **REVERTED in `467fc38`** — the premise was false (the
+  dycore never reads or marks runtime-registered constituents). The real
+  gap (runtime-registered advected constituents have no IC path in a
+  dycore run) is OPEN; see FIX-23R in the scoping doc. Do not re-apply
+  the hoist: it breaks snapshot runs.
 
 ## Validation done at assembly
 
