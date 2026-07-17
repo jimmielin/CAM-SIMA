@@ -1006,6 +1006,7 @@ def write_phys_read_subroutine(outfile, host_dict, host_vars, host_imports,
                  [phys_check_fname_str, ["phys_var_num", "phys_var_stdnames",
                                          "input_var_names", "std_name_len",
                                          "is_initialized"]],
+                 ["cam_constituents", ["const_is_initialized"]],
                  ["ccpp_constituent_prop_mod", ["ccpp_constituent_prop_ptr_t"]],
                  ["cam_logfile", ["iulog"]]]
 
@@ -1207,6 +1208,14 @@ def write_phys_read_subroutine(outfile, host_dict, host_vars, host_imports,
     outfile.comment("Iterate over all registered constituents", 2)
     outfile.write("do constituent_idx = 1, size(const_props)", 2)
     outfile.write("var_found = .false.", 3)
+    outfile.comment("Skip constituents whose initial values are already set, e.g. the", 3)
+    outfile.comment("advected constituents a dycore read on the dynamics grid; reading", 3)
+    outfile.comment("those here would use the physics grid. Keyed on index rather than", 3)
+    outfile.comment("standard name so it also covers constituents registered at run", 3)
+    outfile.comment("time, which are absent from phys_var_stdnames.", 3)
+    outfile.write("if (const_is_initialized(constituent_idx)) then", 3)
+    outfile.write("cycle", 4)
+    outfile.write("end if", 3)
     outfile.comment("Check if constituent standard name in registered SIMA standard names list:", 3)
     outfile.write("call const_props(constituent_idx)%standard_name(std_name)", 3)
     outfile.comment("Find array index to extract correct input names", 3)

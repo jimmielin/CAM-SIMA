@@ -38,6 +38,7 @@ contains
       use ccpp_kinds,                only: kind_phys
       use string_utils,              only: to_lower
       use phys_vars_init_check_4D,   only: phys_var_num, phys_var_stdnames, input_var_names, std_name_len, is_initialized
+      use cam_constituents,          only: const_is_initialized
       use ccpp_constituent_prop_mod, only: ccpp_constituent_prop_ptr_t
       use cam_logfile,               only: iulog
       use physics_types_4D,          only: eddy_len, slp, theta
@@ -183,6 +184,14 @@ contains
       ! Iterate over all registered constituents
       do constituent_idx = 1, size(const_props)
          var_found = .false.
+         ! Skip constituents whose initial values are already set, e.g. the
+         ! advected constituents a dycore read on the dynamics grid; reading
+         ! those here would use the physics grid. Keyed on index rather than
+         ! standard name so it also covers constituents registered at run
+         ! time, which are absent from phys_var_stdnames.
+         if (const_is_initialized(constituent_idx)) then
+            cycle
+         end if
          ! Check if constituent standard name in registered SIMA standard names list:
          call const_props(constituent_idx)%standard_name(std_name)
          ! Find array index to extract correct input names

@@ -1347,6 +1347,7 @@ subroutine read_inidat(dyn_in)
    use cam_initfiles,        only: pertlim, initial_file_get_id, topo_file_get_id
    use cam_constituents,     only: num_advected, const_name
    use cam_constituents,     only: const_is_water_species, const_qmin, const_is_wet
+   use cam_constituents,     only: const_mark_as_initialized
    use dyn_tests_utils,      only: vcoord=>vc_dry_pressure
 
    !This should eventually be replaced with the "const_diag_name" function from "cam_constituents".
@@ -1749,12 +1750,15 @@ subroutine read_inidat(dyn_in)
          end if
       end do
 
-      ! Skip to next constituent if not found in input names list:
-      if (const_ic_names_idx < 0) cycle
-
-      ! The first name in IC names list should be the correct
-      ! name for standard CAM IC (ncdata) files:
-      const_ic_name(m_cnst) = input_var_names(1, const_ic_names_idx)
+      if (const_ic_names_idx < 0) then
+         ! Constituents registered at run time have no registry entry, so no
+         ! input names list; their standard name is the IC file field name.
+         const_ic_name(m_cnst) = trim(std_name)
+      else
+         ! The first name in IC names list should be the correct
+         ! name for standard CAM IC (ncdata) files:
+         const_ic_name(m_cnst) = input_var_names(1, const_ic_names_idx)
+      end if
    end do
    !-------------
 
@@ -1786,6 +1790,13 @@ subroutine read_inidat(dyn_in)
 
       if (found) then
          call read_dyn_var(trim(const_ic_name(m_cnst)), fh_ini, dimname, dbuf3)
+         ! Tell the physics initial conditions read to leave this constituent
+         ! alone: it holds dynamics-grid data that physics cannot re-read.
+         call const_mark_as_initialized(advected_constituent_index(m_cnst))
+      else
+         ! Not on the file: cold start from the constituent minimum below,
+         ! rather than from whatever the previous constituent left in dbuf3.
+         dbuf3 = 0._r8
       end if
 
       do ie = 1, nelemd
