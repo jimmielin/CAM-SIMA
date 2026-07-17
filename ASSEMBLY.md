@@ -90,6 +90,17 @@ re-run the audit:
   is absent from the file (it used to inherit the previous constituent's
   data). Durable home = standalone CAM-SIMA PR; the read_inidat hunks ride
   the dycore b4b fixes.
+- `a0f198c` FIX-25: phys_init marks the constituents an "init" phase scheme
+  set (those no longer at the value the constituents object initialized
+  them to) so the IC read skips them. Fixes the CFC11 dim mismatch —
+  CFC11 is non-advected (rad_climate 'N:CFC11STAR:CFC11'), so the dycore
+  skips it while the file still carries it on the dynamics grid, and its
+  value was already set by prescribe_radiative_gas_concentrations_init.
+  Scoped to non-null dycores to keep the snapshot path (and its b4b)
+  unchanged. Durable home = standalone CAM-SIMA PR. The underlying gap
+  (init-phase schemes cannot tell the IC read they set a constituent, so
+  prescribed gases absent from ncdata are silently zeroed) is upstream and
+  being filed by the user.
 
 ## Validation done at assembly
 
