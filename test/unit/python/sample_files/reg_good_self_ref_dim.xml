@@ -37,6 +37,14 @@
       <dimensions>horizontal_dimension vertical_layer_dimension dust_size_bin_dimension</dimensions>
       <initial_value>0.0_kind_phys</initial_value>
     </variable>
+    <!-- dgn_tgt exercises allocatable="allocatable, target": the declaration
+         must carry both attributes and the allocate subroutine must still
+         allocate and initialize the array. -->
+    <variable local_name="dgn_tgt" standard_name="dry_diameter_of_dust_by_size_bin"
+              units="m" type="real" kind="kind_phys" allocatable="allocatable, target">
+      <dimensions>horizontal_dimension vertical_layer_dimension dust_size_bin_dimension</dimensions>
+      <initial_value>0.0_kind_phys</initial_value>
+    </variable>
     <ddt type="cam_in_srd_t">
       <data>surface_upward_dust_fluxes_from_coupler</data>
     </ddt>

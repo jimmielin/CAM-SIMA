@@ -46,6 +46,11 @@
   units = m
   type = real | kind = kind_phys
   dimensions = (horizontal_dimension, vertical_layer_dimension, dust_size_bin_dimension)
+[ dgn_tgt ]
+  standard_name = dry_diameter_of_dust_by_size_bin
+  units = m
+  type = real | kind = kind_phys
+  dimensions = (horizontal_dimension, vertical_layer_dimension, dust_size_bin_dimension)
 [ cam_in ]
   standard_name = cam_in_object_self_ref_dim
   units = None

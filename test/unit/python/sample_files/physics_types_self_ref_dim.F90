@@ -32,17 +32,19 @@ module physics_types_self_ref_dim
 !> \section arg_table_physics_types_self_ref_dim  Argument Table
 !! \htmlinclude physics_types_self_ref_dim.html
   ! ncol: Number of horizontal columns
-  integer,            public,              protected :: ncol = 0
+  integer,            public,                      protected :: ncol = 0
   ! pver: Number of vertical layers
-  integer,            public,              protected :: pver = 0
+  integer,            public,                      protected :: pver = 0
   ! dust_dmt: Dust diameter by size bin
-  real(kind_phys),    public, allocatable          :: dust_dmt(:)
+  real(kind_phys),    public, allocatable                  :: dust_dmt(:)
   ! ndust: Number of dust size bins
-  integer,            public, parameter            :: ndust = 4
+  integer,            public, parameter                    :: ndust = 4
   ! rndst: Dust radii by size bin
-  real(kind_phys),    public, allocatable          :: rndst(:, :, :)
+  real(kind_phys),    public, allocatable                  :: rndst(:, :, :)
+  ! dgn_tgt: Dry diameter of dust by size bin
+  real(kind_phys),    public, allocatable, target          :: dgn_tgt(:, :, :)
   ! cam_in: Cam in object self ref dim
-  type(cam_in_srd_t), public                       :: cam_in
+  type(cam_in_srd_t), public                               :: cam_in
 
 !! public interfaces
   public :: allocate_physics_types_self_ref_dim_fields
@@ -103,6 +105,17 @@ contains
     allocate(rndst(horizontal_dimension, vertical_layer_dimension, ndust))
     if (set_init_val) then
       rndst = 0.0_kind_phys
+    end if
+    if (allocated(dgn_tgt)) then
+      if (reallocate) then
+        deallocate(dgn_tgt)
+      else
+        call endrun(subname//": dgn_tgt is already allocated, cannot allocate")
+      end if
+    end if
+    allocate(dgn_tgt(horizontal_dimension, vertical_layer_dimension, ndust))
+    if (set_init_val) then
+      dgn_tgt = 0.0_kind_phys
     end if
     if (allocated(cam_in%dstflx)) then
       if (reallocate) then
