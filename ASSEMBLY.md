@@ -165,6 +165,18 @@ re-run the audit:
   ndust param, relvar_in=2, qsatfac_in=1 initializations confirmed in
   generated physics_types.F90.
 
+## Ingredient added 2026-07-21: GAP-H gas deposition host wiring
+
+- `80dd4ae` cherry-picked from `hplin/gas_deposition` (same change folded
+  into the sl-ddvel-coupler PR branch as `88f738d`): drydep_coupling now
+  mirrors the drv_flds_in drydep_list NAMES next to the count (cap sets
+  both after shr_drydep_readnl; list order = Sl_ddvel coupler index
+  contract with CLM), and the registry depvel units attribute is
+  corrected to cm s-1 (CLM sends Sl_ddvel in cm/s; an m s-1 attr against
+  the consumer's cm s-1 metadata would invite a spurious capgen unit
+  conversion).
+- Consumer: atmos_phys octopus gas_drydep_ccpp in suite_cam5.
+
 Anything else changed here to make the run work MUST be added to the fix
 register in the scoping doc with a durable home (our unit branches /
 pumas_round3 PR to Cheryl+Jesse / recorded-here-only).
