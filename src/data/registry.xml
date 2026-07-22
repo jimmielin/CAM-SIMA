@@ -2483,6 +2483,7 @@
               units="um" type="real" kind="kind_phys"
               allocatable="allocatable">
       <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <initial_value>0._kind_phys</initial_value>
       <ic_file_input_names>REI pbuf_REI</ic_file_input_names>
     </variable>
     <variable local_name="concld"
