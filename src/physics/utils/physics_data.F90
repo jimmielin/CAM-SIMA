@@ -835,12 +835,14 @@ CONTAINS
             ! Get constituent short name
             constituent_name = constituent_short_names(const_idx)
 
-            ! Create file variable name: <base_var_name>_<constituent_name>
-            file_var_name = trim(base_var_names(base_idx)) // '_' // trim(constituent_name)
-
-            ! Try to find variable in file
+            ! Try to find variable in file: <base_var_name>_<constituent_name>,
+            ! trying case variants of the constituent name (see
+            ! constituent_dim_file_var_names).
             var_found = .false.
-            call cam_pio_find_var(file, [file_var_name], found_name, vardesc, var_found)
+            call cam_pio_find_var(file,                                         &
+                 constituent_dim_file_var_names(base_var_names(base_idx),       &
+                                                constituent_name),              &
+                 found_name, vardesc, var_found)
 
             if(var_found) then
                exit base_idx_loop
@@ -867,20 +869,26 @@ CONTAINS
          ! Get constituent short name
          constituent_name = constituent_short_names(const_idx)
 
-         ! Create file variable name: <base_var_name>_<constituent_name>
+         ! Create file variable name (used for reporting): <base_var_name>_<constituent_name>
          file_var_name = trim(base_var_names(base_idx)) // '_' // trim(constituent_name)
 
-         ! Try to find variable in file
+         ! Try to find variable in file, trying case variants of the
+         ! constituent name (see constituent_dim_file_var_names).
          var_found = .false.
-         call cam_pio_find_var(file, [file_var_name], found_name, vardesc, var_found)
+         call cam_pio_find_var(file,                                            &
+              constituent_dim_file_var_names(base_var_names(base_idx),          &
+                                             constituent_name),                 &
+              found_name, vardesc, var_found)
 
          ! Some constituents whose names are not specified in the registry
          ! will have cnst_ prepended to them (e.g., cnst_dst_a1); also try reading
          ! from file by removing this prefix:
          if (.not. var_found) then
             if (constituent_name(1:5) == 'cnst_') then
-               file_var_name = trim(base_var_names(base_idx)) // '_' // trim(constituent_name(6:))
-               call cam_pio_find_var(file, [file_var_name], found_name, vardesc, var_found)
+               call cam_pio_find_var(file,                                      &
+                    constituent_dim_file_var_names(base_var_names(base_idx),    &
+                                                   constituent_name(6:)),       &
+                    found_name, vardesc, var_found)
             end if
          end if
 
