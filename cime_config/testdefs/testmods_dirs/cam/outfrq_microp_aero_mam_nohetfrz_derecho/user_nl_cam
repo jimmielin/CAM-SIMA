@@ -42,3 +42,24 @@ rad_aer_climate = 'M:mam4_mode1:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/
          'A:so4_a3:N:so4_c3:sulfate:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/sulfate_rrtmg_c080918.nc', 'mam4_mode4:primary_carbon:=',
          'A:num_a4:N:num_c4:num_mr:+', 'A:pom_a4:N:pom_c4:p-organic:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ocpho_rrtmg_c130709.nc:+',
          'A:bc_a4:N:bc_c4:black-c:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/bcpho_rrtmg_c100508.nc'
+
+! diagnostics for the microp_aero MAM suite (h1, one REAL64 frame); the test
+! must write a history file or CIME fails the RUN phase when it collects hist files
+hist_output_frequency;h1: 1*nsteps
+hist_write_nstep0;h1: .true.
+hist_precision;h1: REAL64
+hist_max_frames;h1: 1
+
+! scale_subgrid_vertical_velocity diagnostics
+hist_add_inst_fields;h1: WSUB,WSUBI
+
+! nucleate_ice diagnostics
+hist_add_inst_fields;h1: NIHFTEN,NIIMMTEN,NIDEPTEN,NIMEYTEN
+hist_add_inst_fields;h1: NIREGM,NISUBGRID,NITROP_PD
+hist_add_inst_fields;h1: FHOM,WICE,WEFF
+hist_add_inst_fields;h1: INnso4TEN,INnbcTEN,INndustTEN,INondustTEN,INhetTEN,INhomTEN
+hist_add_inst_fields;h1: INFrehom,INFreIN
+
+! droplet_activation diagnostics
+hist_add_inst_fields;h1: CCN1,CCN2,CCN3,CCN4,CCN5,CCN6
+hist_add_inst_fields;h1: WTKE,NDROPMIX,NDROPSRC,NDROPCOL,LCLOUD
