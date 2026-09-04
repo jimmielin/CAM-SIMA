@@ -1,0 +1,60 @@
+ncdata = '/glade/campaign/cesm/community/amwg/sima_baselines/cam_sima_test_snapshots/cam6_4_184_ne3pg3_fhist_modal_aero_wet_processes_snapshot_derecho_gnu_before_c20260701.nc'
+ncdata_check = '/glade/campaign/cesm/community/amwg/sima_baselines/cam_sima_test_snapshots/cam6_4_184_ne3pg3_fhist_modal_aero_wet_processes_snapshot_derecho_gnu_after_c20260701.nc'
+
+! CAM6 FHIST snapshot:
+pver = 32
+
+debug_output = 1
+
+rad_aer_climate = 'M:mam4_mode1:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/mam4_mode1_rrtmg_aeronetdust_sig1.6_dgnh.48_c140304.nc',
+         'M:mam4_mode2:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/mam4_mode2_rrtmg_aitkendust_c141106.nc',
+         'M:mam4_mode3:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/mam4_mode3_rrtmg_aeronetdust_sig1.2_dgnl.40_c150219.nc',
+         'M:mam4_mode4:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/mam4_mode4_rrtmg_c130628.nc'
+
+mode_defs = 'mam4_mode1:accum:=', 'A:num_a1:N:num_c1:num_mr:+',
+         'A:so4_a1:N:so4_c1:sulfate:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/sulfate_rrtmg_c080918.nc:+', 'A:pom_a1:N:pom_c1:p-organic:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ocpho_rrtmg_c130709.nc:+',
+         'A:soa_a1:N:soa_c1:s-organic:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ocphi_rrtmg_c100508.nc:+', 'A:bc_a1:N:bc_c1:black-c:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/bcpho_rrtmg_c100508.nc:+',
+         'A:dst_a1:N:dst_c1:dust:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/dust_aeronet_rrtmg_c141106.nc:+', 'A:ncl_a1:N:ncl_c1:seasalt:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ssam_rrtmg_c100508.nc',
+         'mam4_mode2:aitken:=', 'A:num_a2:N:num_c2:num_mr:+',
+         'A:so4_a2:N:so4_c2:sulfate:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/sulfate_rrtmg_c080918.nc:+', 'A:soa_a2:N:soa_c2:s-organic:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ocphi_rrtmg_c100508.nc:+',
+         'A:ncl_a2:N:ncl_c2:seasalt:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ssam_rrtmg_c100508.nc:+', 'A:dst_a2:N:dst_c2:dust:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/dust_aeronet_rrtmg_c141106.nc',
+         'mam4_mode3:coarse:=', 'A:num_a3:N:num_c3:num_mr:+',
+         'A:dst_a3:N:dst_c3:dust:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/dust_aeronet_rrtmg_c141106.nc:+', 'A:ncl_a3:N:ncl_c3:seasalt:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ssam_rrtmg_c100508.nc:+',
+         'A:so4_a3:N:so4_c3:sulfate:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/sulfate_rrtmg_c080918.nc', 'mam4_mode4:primary_carbon:=',
+         'A:num_a4:N:num_c4:num_mr:+', 'A:pom_a4:N:pom_c4:p-organic:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ocpho_rrtmg_c130709.nc:+',
+         'A:bc_a4:N:bc_c4:black-c:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/bcpho_rrtmg_c100508.nc'
+
+! ---------------------------------------------------------------------------
+! MAM diagnostics baseline (h1): all FHIST/MAM4 fields emitted by the calcsize
+! + wateruptake diagnostics schemes in this suite.
+! ---------------------------------------------------------------------------
+! calcsize number-adjust source/sink:
+hist_add_inst_fields;h1: num_a1_sfcsiz1, num_c1_sfcsiz1, num_a2_sfcsiz1, num_c2_sfcsiz1, num_a3_sfcsiz1, num_c3_sfcsiz1, num_a4_sfcsiz1, num_c4_sfcsiz1
+hist_add_inst_fields;h1: num_a1_sfcsiz2, num_c1_sfcsiz2, num_a2_sfcsiz2, num_c2_sfcsiz2, num_a3_sfcsiz2, num_c3_sfcsiz2, num_a4_sfcsiz2, num_c4_sfcsiz2
+! calcsize aitken<->accum transfer, interstitial (_sfcsiz3 = aitken->accum, _sfcsiz4 = accum->aitken):
+hist_add_inst_fields;h1: num_a2_sfcsiz3, num_a1_sfcsiz3, so4_a2_sfcsiz3, so4_a1_sfcsiz3, soa_a2_sfcsiz3, soa_a1_sfcsiz3, ncl_a2_sfcsiz3, ncl_a1_sfcsiz3, dst_a2_sfcsiz3, dst_a1_sfcsiz3
+hist_add_inst_fields;h1: num_a2_sfcsiz4, num_a1_sfcsiz4, so4_a2_sfcsiz4, so4_a1_sfcsiz4, soa_a2_sfcsiz4, soa_a1_sfcsiz4, ncl_a2_sfcsiz4, ncl_a1_sfcsiz4, dst_a2_sfcsiz4, dst_a1_sfcsiz4
+! calcsize aitken<->accum transfer, cloud-borne:
+hist_add_inst_fields;h1: num_c2_sfcsiz3, num_c1_sfcsiz3, so4_c2_sfcsiz3, so4_c1_sfcsiz3, soa_c2_sfcsiz3, soa_c1_sfcsiz3, ncl_c2_sfcsiz3, ncl_c1_sfcsiz3, dst_c2_sfcsiz3, dst_c1_sfcsiz3
+hist_add_inst_fields;h1: num_c2_sfcsiz4, num_c1_sfcsiz4, so4_c2_sfcsiz4, so4_c1_sfcsiz4, soa_c2_sfcsiz4, soa_c1_sfcsiz4, ncl_c2_sfcsiz4, ncl_c1_sfcsiz4, dst_c2_sfcsiz4, dst_c1_sfcsiz4
+! wateruptake per-mode dry/wet diameter + aerosol water:
+hist_add_inst_fields;h1: dgnd_a01, dgnd_a02, dgnd_a03, dgnd_a04, dgnw_a01, dgnw_a02, dgnw_a03, dgnw_a04, wat_a1, wat_a2, wat_a3, wat_a4
+! wateruptake PM mass diagnostics:
+hist_add_inst_fields;h1: PM25, PM25_SRF, PM25_MMR, PM1_SRF, PM1_MMR, PM10_SRF, PM10_MMR, PMTOT_MMR, RHO_AIR
+hist_output_frequency;h1: 1*nstep
+hist_precision;h1: REAL64
+hist_max_frames;h1: 1
+
+! ---------------------------------------------------------------------------
+! SAD sandbox: MUSICA chemistry (MICM only, default terminator mechanism).
+! TUV-x is off so no photolysis inputs are needed beyond the snapshot; the
+! terminator species are absent from the snapshot and start from their
+! constituent defaults.
+! ---------------------------------------------------------------------------
+filename_of_tuvx_configuration = 'none'
+filename_of_tuvx_micm_mapping_configuration = 'none'
+
+! MAM surface area density plumbing demo (mam_surfarea_diagnostics):
+! total + per-mode SAD (cm2/cm3) and per-mode wet dgnum used for SAD (cm)
+hist_add_inst_fields;h1: SAD_TROP, REFF_TROP, sad_a01, sad_a02, sad_a03, sad_a04
+hist_add_inst_fields;h1: dmaer_a01, dmaer_a02, dmaer_a03, dmaer_a04
