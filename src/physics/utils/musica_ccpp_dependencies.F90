@@ -172,6 +172,7 @@ contains
     use cam_logfile,               only: iulog
     use spmd_utils,                only: primary_process => masterproc
     use ccpp_constituent_prop_mod, only: ccpp_constituent_prop_ptr_t
+    use cam_ccpp_cap,              only: ccpp_physics_suite_schemes
 
     !-----------------------------------------------------------------------
     !
@@ -189,9 +190,17 @@ contains
         trim(module_name)//':(musica_ccpp_dependencies_init)'
     character(len=512)          :: errmsg
     integer                     :: errcode
+    character(len=64), allocatable :: schemes(:)
 
-    ! Check if a MUSICA configuration is being used.  If not then just exit.
-    if (trim(phys_suite_name) /= "musica") return
+    ! Check if the MUSICA scheme is part of the active suite.  If not then just exit.
+    ! Keyed on the suite's scheme list rather than the suite name so that any
+    ! suite containing musica_ccpp gets the placeholder data (buildlib uses the
+    ! same test to decide whether to build the MUSICA library).
+    call ccpp_physics_suite_schemes(phys_suite_name, schemes, errmsg, errcode)
+    if (errcode /= 0) then
+        call endrun(subroutine_name//': '//trim(errmsg), file=__FILE__, line=__LINE__)
+    end if
+    if (.not. any(schemes == 'musica_ccpp')) return
     is_musica_suite = .true.
 
     if (primary_process) then
