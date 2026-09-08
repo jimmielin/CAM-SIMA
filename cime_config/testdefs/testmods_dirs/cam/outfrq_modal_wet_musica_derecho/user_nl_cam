@@ -58,3 +58,11 @@ filename_of_tuvx_micm_mapping_configuration = 'none'
 ! total + per-mode SAD (cm2/cm3) and per-mode wet dgnum used for SAD (cm)
 hist_add_inst_fields;h1: SAD_TROP, REFF_TROP, sad_a01, sad_a02, sad_a03, sad_a04
 hist_add_inst_fields;h1: dmaer_a01, dmaer_a02, dmaer_a03, dmaer_a04
+
+! Identity check of the SAD -> MICM bridge: once the mechanism defines
+! surface reactions, mam_surfarea_diagnostics registers, per reaction,
+! srx_sad_<label> (4 pi r^2 N recovered from the rate parameters, cm2/cm3)
+! and srx_chk_<label> (MAM mode it matches; 0 = both zero, -1 = mismatch),
+! where <label> is the reaction label with non-alphanumerics replaced by '_'
+! and cut to 24 characters. Add them here to write them out, e.g.
+!   hist_add_inst_fields;h1: srx_sad_N2O5_aer_mode1, srx_chk_N2O5_aer_mode1
