@@ -13,6 +13,7 @@ import logging
 
 from cam_config import ConfigCAM # CAM's configure structure
 from atm_musica_config import MUSICA_CCPP_SCHEME_NAME, MUSICA_CONFIG_DIR_NAME
+from atm_musica_config import link_musica_configuration
 from atm_musica_config import MUSICA_REPO_URL, MUSICA_TAG
 from atm_musica_config import CHEMISTRY_DATA_REPO_URL, CHEMISTRY_DATA_TAG
 
@@ -179,6 +180,10 @@ def _build_cam():
         # the MUSICA configuration and build the MUSICA library
         if MUSICA_CCPP_SCHEME_NAME in scheme_names:
             _ = _download_musica_configuration(caseroot)
+            # Link the configuration into the run directory here as well as in
+            # buildnml: under create_test, buildnml runs before this download
+            # and is skipped at run time, so the links would otherwise never exist.
+            link_musica_configuration(caseroot, case.get_value("RUNDIR"))
             musica_install_path = _build_musica(caseroot)
 
             cam_linked_libs = case.get_value("CAM_LINKED_LIBS")
