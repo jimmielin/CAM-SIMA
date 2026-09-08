@@ -166,13 +166,12 @@ contains
 
   subroutine musica_ccpp_dependencies_init( &
               horizontal_dimension, vertical_layer_dimension, &
-              constituents_properties, phys_suite_name)
+              constituents_properties, musica_in_suite)
 
     use cam_abortutils,            only: check_allocate, endrun
     use cam_logfile,               only: iulog
     use spmd_utils,                only: primary_process => masterproc
     use ccpp_constituent_prop_mod, only: ccpp_constituent_prop_ptr_t
-    use cam_ccpp_cap,              only: ccpp_physics_suite_schemes
 
     !-----------------------------------------------------------------------
     !
@@ -183,24 +182,18 @@ contains
     integer,                        intent(in) :: horizontal_dimension
     integer,                        intent(in) :: vertical_layer_dimension
     type(ccpp_constituent_prop_ptr_t), pointer :: constituents_properties(:)
-    character(len=*),               intent(in) :: phys_suite_name            ! name of the physics suite being run
+    logical,                        intent(in) :: musica_in_suite            ! musica_ccpp is a scheme of the active suite
 
     ! local variables
     character(len=*), parameter :: subroutine_name = &
         trim(module_name)//':(musica_ccpp_dependencies_init)'
     character(len=512)          :: errmsg
     integer                     :: errcode
-    character(len=64), allocatable :: schemes(:)
 
     ! Check if the MUSICA scheme is part of the active suite.  If not then just exit.
-    ! Keyed on the suite's scheme list rather than the suite name so that any
-    ! suite containing musica_ccpp gets the placeholder data (buildlib uses the
-    ! same test to decide whether to build the MUSICA library).
-    call ccpp_physics_suite_schemes(phys_suite_name, schemes, errmsg, errcode)
-    if (errcode /= 0) then
-        call endrun(subroutine_name//': '//trim(errmsg), file=__FILE__, line=__LINE__)
-    end if
-    if (.not. any(schemes == 'musica_ccpp')) return
+    ! (The caller decides from the suite's scheme list; this module cannot
+    ! query the CCPP cap itself because the cap imports this module.)
+    if (.not. musica_in_suite) return
     is_musica_suite = .true.
 
     if (primary_process) then

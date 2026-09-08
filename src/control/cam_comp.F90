@@ -98,6 +98,7 @@ contains
       use air_composition,           only: air_composition_init
       use cam_ccpp_cap,              only: cam_ccpp_initialize_constituents
       use cam_ccpp_cap,              only: cam_model_const_properties
+      use cam_ccpp_cap,              only: ccpp_physics_suite_schemes
       use physics_grid,              only: columns_on_task
       use vert_coord,                only: pver
       use phys_vars_init_check,      only: mark_as_initialized
@@ -154,6 +155,7 @@ contains
       character(len=cx)        :: errmsg
 
       type(ccpp_constituent_prop_ptr_t), pointer :: constituent_properties(:)
+      character(len=64), allocatable :: schemes(:)  ! schemes of the active physics suite
       !-----------------------------------------------------------------------
 
       call init_pio_subsystem()
@@ -274,12 +276,19 @@ contains
 
       ! TEMPORARY:  Prescribe realistic but inaccurate physical quantities
       ! necessary for MUSICA that are currently unavailable in CAM-SIMA.
+      ! Applies to any suite that contains the musica_ccpp scheme (the same
+      ! test buildlib uses to decide whether to build the MUSICA library).
       !
       ! Remove this when MUSICA input data are available from CAM-SIMA or
       ! other physics schemes.
+      call ccpp_physics_suite_schemes(phys_suite_name, schemes, errmsg, errflg)
+      if (errflg /= 0) then
+         call endrun('cam_init: ccpp_physics_suite_schemes: '//trim(errmsg), &
+              file=__FILE__, line=__LINE__)
+      end if
       constituent_properties => cam_model_const_properties()
       call musica_ccpp_dependencies_init(columns_on_task, pver, &
-           constituent_properties, phys_suite_name)
+           constituent_properties, any(schemes == 'musica_ccpp'))
 
       ! Initialize orbital data
       call orbital_data_init(columns_on_task)
