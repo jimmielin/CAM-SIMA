@@ -147,7 +147,11 @@ contains
       call endrun(errmsg, file=__FILE__, line=__LINE__)
     end if
 
+    ! The placeholder TUV-x species are registered as constituents by the
+    ! TUV-x part of the musica_ccpp scheme; when TUV-x is turned off they are
+    ! not constituents (index -1) and there is nothing to initialize.
     do i_species = 1, size(tuvx_species)
+      if (tuvx_species(i_species)%constituent_index < 1) cycle
       constituents_array(:,:,tuvx_species(i_species)%constituent_index) = &
         tuvx_species(i_species)%initial_mixing_ratio
     end do
