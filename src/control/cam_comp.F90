@@ -96,8 +96,8 @@ contains
 !      use history_defaults,          only: initialize_iop_history
       use stepon,                    only: stepon_init
       use air_composition,           only: air_composition_init
-      use cam_ccpp_cap,              only: cam_ccpp_initialize_constituents
-      use cam_ccpp_cap,              only: cam_model_const_properties
+      use cam_ccpp_cap,              only: ccpp_initialize_constituents
+      use cam_ccpp_cap,              only: ccpp_model_const_properties
       use physics_grid,              only: columns_on_task
       use vert_coord,                only: pver
       use phys_vars_init_check,      only: mark_as_initialized
@@ -222,7 +222,7 @@ contains
       call model_grid_init()
 
       ! Initialize constituent data
-      call cam_ccpp_initialize_constituents(columns_on_task, pver, errflg, errmsg)
+      call ccpp_initialize_constituents(columns_on_task, pver, errflg, errmsg)
 
       ! Ensure the constituents object is locked and allocated:
       if (errflg /= 0) then
@@ -269,7 +269,7 @@ contains
       !
       ! Remove this when MUSICA input data are available from CAM-SIMA or
       ! other physics schemes.
-      constituent_properties => cam_model_const_properties()
+      constituent_properties => ccpp_model_const_properties()
       call musica_ccpp_dependencies_init(columns_on_task, pver, &
            constituent_properties, phys_suite_name)
 
@@ -315,8 +315,8 @@ contains
       use orbital_data,              only: orbital_data_advance
       use stepon,                    only: stepon_timestep_init
       use physics_types,             only: dt_avg
-      use cam_ccpp_cap,              only: cam_constituents_array
-      use cam_ccpp_cap,              only: cam_model_const_properties
+      use cam_ccpp_cap,              only: ccpp_constituents_array
+      use cam_ccpp_cap,              only: ccpp_model_const_properties
       use ccpp_constituent_prop_mod, only: ccpp_constituent_prop_ptr_t
       use ccpp_kinds,                only: kind_phys
       use musica_ccpp_dependencies,  only: set_initial_musica_concentrations
@@ -346,8 +346,8 @@ contains
       !            by CAM-SIMA.
       !----------------------------------------------------------
       if (is_first_timestep) then
-         constituents_array => cam_constituents_array()
-         constituent_properties => cam_model_const_properties()
+         constituents_array => ccpp_constituents_array()
+         constituent_properties => ccpp_model_const_properties()
          call set_initial_musica_concentrations(constituents_array, &
               constituent_properties)
       end if
@@ -625,22 +625,34 @@ contains
       use phys_comp,                 only: phys_suite_name
       use cam_constituents,          only: cam_constituents_init
       use cam_constituents,          only: const_set_qmin, const_get_index
+      use cam_constituents,          only: num_water_tracer_constituents
+      use cam_constituents,          only: register_water_tracer_constituents
       use ccpp_kinds,                only: kind_phys
       use ccpp_constituent_prop_mod, only: ccpp_constituent_prop_ptr_t
-      use cam_ccpp_cap,              only: cam_ccpp_register_constituents
-      use cam_ccpp_cap,              only: cam_ccpp_number_constituents
-      use cam_ccpp_cap,              only: cam_model_const_properties
-      use cam_ccpp_cap,              only: cam_ccpp_is_scheme_constituent
+      use ccpp_constituent_prop_mod, only: ccpp_constituent_properties_t
+      use cam_ccpp_cap,              only: ccpp_register_constituents
+      use cam_ccpp_cap,              only: ccpp_number_constituents
+      use cam_ccpp_cap,              only: ccpp_model_const_properties
+      use cam_ccpp_cap,              only: ccpp_is_scheme_constituent
+      use cam_ccpp_cap,              only: ccpp_scheme_const_properties
+      use shr_wtracers_mod,          only: shr_wtracers_initialized
+      use shr_wtracers_mod,          only: shr_wtracers_present
 
       ! Dummy arguments
       type(runtime_options), intent(in) :: cam_runtime_opts
       ! Local variables
-      logical                                        :: is_constituent
-      integer                                        :: num_advect
-      integer                                        :: const_idx
-      integer                                        :: errflg
-      character(len=512)                             :: errmsg
-      type(ccpp_constituent_prop_ptr_t), pointer     :: const_props(:)
+      logical                                          :: is_constituent
+      logical                                          :: wtracers_present
+      integer                                          :: num_advect
+      integer                                          :: const_idx
+      integer                                          :: num_host_const
+      integer                                          :: num_wtracer_const
+      integer                                          :: host_idx
+      integer                                          :: errflg
+      character(len=512)                               :: errmsg
+      type(ccpp_constituent_prop_ptr_t), pointer       :: const_props(:)
+      type(ccpp_constituent_properties_t), allocatable :: phys_scheme_const_props(:)
+      type(ccpp_constituent_properties_t), allocatable :: host_const_props(:)
       character(len=*), parameter :: subname = 'cam_register_constituents: '
 
       ! Initalize error flag and message:
@@ -649,24 +661,30 @@ contains
 
       ! Check if water vapor is already marked as a constituent by the
       ! physics:
-      call cam_ccpp_is_scheme_constituent(wv_stdname, is_constituent, errflg, errmsg)
+      call ccpp_is_scheme_constituent(wv_stdname, is_constituent, errflg, errmsg)
 
       if (errflg /= 0) then
          call endrun(subname//trim(errmsg), file=__FILE__, line=__LINE__)
       end if
 
-      !If not requested by the physics, then add water vapor to the
-      !constituents object:
+      ! Build the constituents the host is adding itself.  Water vapor is only
+      ! added here if the physics did not already request it:
       !-------------------------------------------
       if (.not. is_constituent) then
+         num_host_const = 1
+      else
+         num_host_const = 0
+      end if
 
-         ! Allocate host_constituents object:
-         allocate(host_constituents(1), stat=errflg, errmsg=errmsg)
-         call check_allocate(errflg, subname, 'host_constituents(1)',                   &
-                             file=__FILE__, line=__LINE__, errmsg=errmsg)
+      allocate(host_const_props(num_host_const), stat=errflg, errmsg=errmsg)
+      call check_allocate(errflg, subname, 'host_const_props(num_host_const)', &
+                          file=__FILE__, line=__LINE__, errmsg=errmsg)
 
-         ! Register the constituents so they can be advected:
-         call host_constituents(1)%instantiate( &
+      if (num_host_const == 1) then
+         ! Register the constituents so they can be advected.  Water vapor is
+         ! also flagged as a water species here for use in registering water
+         ! water tracers if needed.
+         call host_const_props(1)%instantiate(           &
               std_name=wv_stdname,                       &
               long_name=wv_longname,                     &
               units='kg kg-1',                           &
@@ -674,23 +692,76 @@ contains
               vertical_dim='vertical_layer_dimension',   &
               advected=.true.,                           &
               diag_name='Q',                             &
-           errcode=errflg, errmsg=errmsg)
+              water_species=.true.,                      &
+              errcode=errflg, errmsg=errmsg)
 
          if (errflg /= 0) then
             call endrun(subname//trim(errmsg), file=__FILE__, line=__LINE__)
          end if
+      end if
+      !-------------------------------------------
+
+      ! Check whether this CAM-SIMA run is using water tracers:
+      if (shr_wtracers_initialized()) then
+         wtracers_present = shr_wtracers_present()
       else
-         ! Allocate zero-size object so nothing is added
-         ! to main constituents object:
-         allocate(host_constituents(0), stat=errflg, errmsg=errmsg)
-         call check_allocate(errflg, subname, 'host_constituents(0)',                   &
-                             file=__FILE__, line=__LINE__, errmsg=errmsg)
+         wtracers_present = .false.
+      end if
+
+      ! If running with water tracers, then determine
+      ! the total number of new tracer constituents:
+      !-------------------------------------------
+      num_wtracer_const = 0
+      if (wtracers_present) then
+
+         ! Ask the physics which constituents it registered during the CCPP
+         ! register phase.  This is only valid between 'ccpp_register' and
+         ! 'ccpp_register_constituents', which is the last point at which the
+         ! host can still declare constituents of its own:
+         call ccpp_scheme_const_properties(phys_suite_name,                   &
+              phys_scheme_const_props, errcode=errflg, errmsg=errmsg)
+
+         if (errflg /= 0) then
+            call endrun(subname//trim(errmsg), file=__FILE__, line=__LINE__)
+         end if
+
+         ! Determine how many new constituents are needed to carry water
+         ! tracers for the water species the host and the physics registered:
+         num_wtracer_const =                                                  &
+              num_water_tracer_constituents(phys_scheme_const_props,          &
+                                            host_const_props)
+      end if
+      !-------------------------------------------
+
+      ! Allocate host_constituents object and fill in the host's own
+      ! constituents:
+      !-------------------------------------------
+      allocate(host_constituents(num_host_const + num_wtracer_const),         &
+               stat=errflg, errmsg=errmsg)
+      call check_allocate(errflg, subname,                                    &
+                          'host_constituents(num_host_const + num_wtracer_const)', &
+                          file=__FILE__, line=__LINE__, errmsg=errmsg)
+
+      do host_idx = 1, num_host_const
+         host_constituents(host_idx) = host_const_props(host_idx)
+      end do
+
+      ! Add a water tracer constituent for every (water tracer, water species)
+      ! pair, which must happen before the constituents object is locked below:
+      if (num_wtracer_const > 0) then
+         call register_water_tracer_constituents(phys_scheme_const_props,     &
+              host_constituents, num_host_const + 1)
+      end if
+
+      deallocate(host_const_props)
+      if (allocated(phys_scheme_const_props)) then
+         deallocate(phys_scheme_const_props)
       end if
       !-------------------------------------------
 
       !Combine host and physics constituents into a single
       !constituents object:
-      call cam_ccpp_register_constituents(             &
+      call ccpp_register_constituents(             &
            host_constituents, errcode=errflg, errmsg=errmsg)
 
       if (errflg /= 0) then
@@ -698,7 +769,7 @@ contains
       end if
 
       !Determine total number of advected constituents:
-      call cam_ccpp_number_constituents(num_advect, advected=.true.,                    &
+      call ccpp_number_constituents(num_advect, advected=.true.,                    &
            errcode=errflg, errmsg=errmsg)
 
       if (errflg /= 0) then
@@ -706,7 +777,7 @@ contains
       end if
 
       ! Grab a pointer to the constituent array
-      const_props => cam_model_const_properties()
+      const_props => ccpp_model_const_properties()
 
       ! Initialize the constituents module
       call cam_constituents_init(const_props, num_advect)
@@ -736,7 +807,7 @@ contains
       ! objects) and before history_init_files (registers history fields).
       use radiative_aerosol,     only: rad_aer_init
       use aerosol_instances_mod, only: aerosol_instances_init, aerosol_instances_init_states
-      use cam_ccpp_cap,          only: cam_constituents_array
+      use cam_ccpp_cap,          only: ccpp_constituents_array
       use ccpp_kinds,            only: kind_phys
       use phys_vars_init_check, only: mark_as_initialized
 
@@ -749,7 +820,7 @@ contains
       call aerosol_instances_init()
 
       ! Wire constituents pointer into aerosol state objects
-      constituents => cam_constituents_array()
+      constituents => ccpp_constituents_array()
       call aerosol_instances_init_states(constituents)
 
       ! Mark module vars part of radiative_aerosol_definitions as initialized.

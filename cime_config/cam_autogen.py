@@ -24,15 +24,34 @@ import glob
 _CIME_CONFIG_DIR = os.path.dirname(os.path.abspath(__file__))
 _CAM_ROOT_DIR = os.path.dirname(_CIME_CONFIG_DIR)
 _REG_GEN_DIR = os.path.abspath(os.path.join(_CAM_ROOT_DIR, "src", "data"))
-_CCPP_FRAMEWORK_DIR = os.path.join(_CAM_ROOT_DIR, "ccpp_framework", "scripts")
-# Add CCPP-framework path to python path:
+# capgen compatibility layer: holds the flat ``ccpp_capgen`` /
+# ``parse_tools`` / ``metadata_table`` / ``framework_env`` /
+# ``ccpp_state_machine`` / ``fortran_tools`` shims that adapt
+# capgen to CAM-SIMA's original-capgen import surface.  See
+# cime_config/capgen_compat/README.md for the contract and removal
+# procedure.
+_CCPP_FRAMEWORK_DIR = os.path.join(_CIME_CONFIG_DIR, "capgen_compat")
+# capgen itself (the canonical CCPP code generator) lives under
+# ccpp_framework/capgen as a fleximod-pinned external.  The compat
+# shims import ``ccpp_capgen`` and ``metadata.parse_tools`` from
+# here.
+_CCPP_CAPGEN_DIR = os.path.join(_CAM_ROOT_DIR, "ccpp_framework",
+                                "capgen")
+# Add CCPP-framework paths to python path:
 sys.path.append(_CCPP_FRAMEWORK_DIR)
+sys.path.append(_CCPP_CAPGEN_DIR)
 # Add registry generator path to python path:
 sys.path.append(_REG_GEN_DIR)
 
 # Import needed registry and other src/data scripts:
 from generate_registry_data import gen_registry
 from write_init_files import write_init_files
+
+# Framework Fortran modules that CAM-SIMA's host code compiles against in
+# every configuration, independent of the suites being built.  See
+# cime_config/host_framework_deps.py for the rationale and the list.
+from host_framework_deps import check_host_framework_deps
+from host_framework_deps import HostFrameworkDepsError
 
 ###############################################################################
 
@@ -61,6 +80,7 @@ except ImportError as ierr:
 #pylint: enable=wrong-import-position
 # Cleanup python path
 sys.path.remove(_CCPP_FRAMEWORK_DIR)
+sys.path.remove(_CCPP_CAPGEN_DIR)
 sys.path.remove(_REG_GEN_DIR)
 
 # Acquire python logger:
@@ -466,8 +486,17 @@ def generate_registry(data_search, build_cache, atm_root, bldroot,
             reg_files_list += reg_file_list
         # End for
 
-        # Save build details in the build cache
-        reg_file_paths = [x.file_path for x in reg_file_list if x.file_path]
+        # Save build details in the build cache.
+        # gen_registry returns one File object per metadata TABLE, so a
+        # .meta file declaring N ccpp-table-properties blocks appears N
+        # times here (e.g. radiative_aerosol_definitions.meta: 9 DDTs +
+        # 1 module).  These paths become capgen's --host-files list, and
+        # capgen parses each entry, so a repeated file re-registers its
+        # host variables and capgen rejects them as duplicate standard
+        # names.  De-duplicate, preserving order (the registry lists
+        # DDT-defining files first, which capgen relies on).
+        reg_file_paths = list(dict.fromkeys(
+            x.file_path for x in reg_file_list if x.file_path))
         build_cache.update_registry(gen_reg_file, registry_files, dycore,
                                     reg_file_paths, ic_names, registry_constituents, vars_init_value)
     else:
@@ -566,6 +595,17 @@ def generate_physics_suites(build_cache, preproc_defs, host_name,
 
     # Add in files generated from the registry:
     host_files.extend(reg_files)
+
+    # Required CCPP control variables (suite_name, horizontal_loop_*,
+    # thread_number, number_of_threads, number_of_physics_threads,
+    # ccpp_error_code, ccpp_error_message).  Capgen requires these
+    # in a type = control table; no Fortran backs them (the host driver
+    # supplies the values as args to ccpp_physics_*).
+    _control_vars_meta = os.path.join(
+        atm_root, "src", "data", "ccpp_control_vars.meta")
+    if os.path.isfile(_control_vars_meta):
+        host_files.append(_control_vars_meta)
+    # end if
 
     # Convert preproc defs to string:
     if preproc_defs:
@@ -731,6 +771,16 @@ def generate_physics_suites(build_cache, preproc_defs, host_name,
         request = DatatableReport("utility_files")
         ufiles_str = datatable_report(cap_output_file, request, ";")
         utility_files = ufiles_str.split(';')
+        # CAM-SIMA host code USEs framework modules that capgen cannot see --
+        # cam_comp.F90 and friends are compiled in every configuration, not
+        # just when a suite touches constituent state.  Confirm the framework
+        # shipped them before the build gets as far as an opaque "Cannot open
+        # module file".  See cime_config/host_framework_deps.py.
+        try:
+            check_host_framework_deps(utility_files)
+        except HostFrameworkDepsError as derr:
+            raise CamAutoGenError(str(derr)) from derr
+        # end try
         _update_genccpp_dir(utility_files, genccpp_dir)
         request = DatatableReport("dependencies")
         dep_str = datatable_report(cap_output_file, request, ";")

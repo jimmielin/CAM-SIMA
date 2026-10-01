@@ -10,10 +10,11 @@
   <test compset="FPHYStest" grid="ne3pg3_ne3pg3_mg37" name="SMS_Ln2" testmods="cam/outfrq_kessler_derecho">
     <machines>
       <machine name="derecho" compiler="gnu" category="aux_sima"/>
+      <machine name="derecho" compiler="gnu" category="dom"/>
     </machines>
     <options>
       <option name="wallclock">00:10:00</option>
-      <option name="comment">Test for Kessler physics</option>
+      <option name="comment">Test for Kessler physics - no dycore</option>
     </options>
   </test>
   <test compset="FPHYStest" grid="ne3pg3_ne3pg3_mg37" name="SMS_Ln2" testmods="cam/outfrq_held_suarez_derecho">
@@ -118,10 +119,11 @@
   <test compset="FPHYStest" grid="ne3pg3_ne3pg3_mg37" name="SMS_Ln2" testmods="cam/outfrq_rrtmgp_derecho">
     <machines>
       <machine name="derecho" compiler="gnu" category="aux_sima"/>
+      <machine name="derecho" compiler="gnu" category="dom"/>
     </machines>
     <options>
       <option name="wallclock">00:10:00</option>
-      <option name="comment">Snapshot test for RRTMGP</option>
+      <option name="comment">Snapshot test for RRTMGP - no dycore</option>
     </options>
   </test>
   <test compset="FPHYStest" grid="ne3pg3_ne3pg3_mg37" name="SMS_Ln2" testmods="cam/outfrq_rrtmgp_derecho_gpu">
@@ -244,7 +246,9 @@
   <test compset="F2000_C7" grid="ne3pg3_ne3pg3_mg37" name="SMS_Ln9" testmods="cam/outfrq_se_cslam_analy_ic">
     <machines>
       <machine name="derecho" compiler="intel" category="aux_sima"/>
+      <machine name="derecho" compiler="intel" category="dom"/>
       <machine name="derecho" compiler="gnu" category="aux_sima"/>
+      <machine name="derecho" compiler="gnu" category="dom"/>
     </machines>
     <options>
       <option name="wallclock">00:10:00</option>

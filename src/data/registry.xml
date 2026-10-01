@@ -365,7 +365,8 @@
       <dimensions>horizontal_dimension</dimensions>
       <initial_value>0.0</initial_value>
     </variable>
-    <variable local_name="dycore_energy_consistency_adjust"
+    <!-- Renamed from dycore_energy_consistency_adjust to avoid name collision with scheme module name -->
+    <variable local_name="do_dycore_energy_consistency_adjust"
               standard_name="flag_for_dycore_energy_consistency_adjustment"
               units="flag" type="logical">
       <long_name>flag indicating if dynamical core energy is not consistent with CAM physics and to perform adjustment of temperature and temperature tendency</long_name>
@@ -510,19 +511,7 @@
               units="s" type = "integer">
       <long_name>number of seconds until next shortwave radiation timestep</long_name>
     </variable>
-    <!-- Error handling variables -->
-    <variable local_name="errcode"
-              standard_name="ccpp_error_code"
-              units="1" type="integer">
-      <long_name>ccpp error code</long_name>
-      <initial_value>0</initial_value>
-    </variable>
-    <variable local_name="errmsg"
-              standard_name="ccpp_error_message"
-              units="none" type="character" kind="len=512">
-      <long_name>ccpp error message</long_name>
-      <initial_value>''</initial_value>
-    </variable>
+    <!-- CCPP error handling variables moved to src/data/ccpp_control_vars.meta -->
     <!-- SIMA History (diagnostic output) variables -->
     <variable local_name="fillvalue"
               standard_name="fill_value_for_diagnostic_output"

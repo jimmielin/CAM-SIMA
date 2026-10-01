@@ -982,8 +982,8 @@ def write_phys_read_subroutine(outfile, host_dict, host_vars, host_imports,
                                    "prot_no_init_idx", "const_idx",
                                    "read_constituent_dimensioned_field"]],
                  ["cam_ccpp_cap", ["ccpp_physics_suite_variables",
-                                   "cam_constituents_array",
-                                   "cam_model_const_properties"]],
+                                   "ccpp_constituents_array",
+                                   "ccpp_model_const_properties"]],
                  ["ccpp_kinds", ["kind_phys"]],
                  ["string_utils", ["to_lower", "to_upper"]],
                  [phys_check_fname_str, ["phys_var_num", "phys_var_stdnames",
@@ -1048,7 +1048,7 @@ def write_phys_read_subroutine(outfile, host_dict, host_vars, host_imports,
 
     # Prepare constituent properties pointer for later usage:
     outfile.comment("Get constituent properties pointer:", 2)
-    outfile.write("const_props => cam_model_const_properties()", 2)
+    outfile.write("const_props => ccpp_model_const_properties()", 2)
     outfile.blank_line()
 
     # Initialize variables:
@@ -1186,7 +1186,7 @@ def write_phys_read_subroutine(outfile, host_dict, host_vars, host_imports,
 
     # Read in constituent data
     outfile.comment("Read in constituent variables if not using init variables", 2)
-    outfile.write("field_data_ptr => cam_constituents_array()", 2)
+    outfile.write("field_data_ptr => ccpp_constituents_array()", 2)
     outfile.blank_line()
     outfile.comment("Iterate over all registered constituents", 2)
     outfile.write("do constituent_idx = 1, size(const_props)", 2)
@@ -1325,8 +1325,8 @@ def write_phys_check_subroutine(outfile, host_dict, host_vars, host_imports,
                                    "prot_no_init_idx", "const_idx",
                                    "flush_check_field_verbose"]],
                  ["cam_ccpp_cap", ["ccpp_physics_suite_variables",
-                                   "cam_constituents_array",
-                                   "cam_model_const_properties"]],
+                                   "ccpp_constituents_array",
+                                   "ccpp_model_const_properties"]],
                  ["cam_constituents", ["const_get_index"]],
                  ["ccpp_kinds", ["kind_phys"]],
                  ["string_utils", ["to_lower", "to_upper"]],
@@ -1510,8 +1510,8 @@ def write_phys_check_subroutine(outfile, host_dict, host_vars, host_imports,
     outfile.write("end do !CCPP suites", 2)
     outfile.blank_line()
     outfile.comment("Check constituent variables", 2)
-    outfile.write("field_data_ptr => cam_constituents_array()", 2)
-    outfile.write("const_props => cam_model_const_properties()", 2)
+    outfile.write("field_data_ptr => ccpp_constituents_array()", 2)
+    outfile.write("const_props => ccpp_model_const_properties()", 2)
     outfile.blank_line()
     outfile.write("do constituent_idx = 1, size(const_props)", 2)
     outfile.comment("Check if constituent standard name in registered SIMA standard names list:", 3)
