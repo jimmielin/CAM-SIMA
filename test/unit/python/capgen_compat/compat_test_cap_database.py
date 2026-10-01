@@ -219,3 +219,75 @@ class TestPhaseAlias(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class TestSuiteList(unittest.TestCase):
+    """``suite_list()`` rebuilds original capgen's suite -> groups ->
+    schemes walk in execution order (write_init_files set-before-use)."""
+
+    def _db(self):
+        reg  = _StubResolvedCall('reg_scheme', 'register',
+                                 [_StubResolvedArg('const_props', intent='out')])
+        ini  = _StubResolvedCall('alpha', 'init',
+                                 [_StubResolvedArg('alpha_table', intent='out')])
+        tsi  = _StubResolvedCall('alpha', 'timestep_init',
+                                 [_StubResolvedArg('alpha_table', intent='in')])
+        run1 = _StubResolvedCall('alpha', 'run',
+                                 [_StubResolvedArg('ustar', intent='out'),
+                                  _StubResolvedArg('tmp', intent='out',
+                                                   source='suite')])
+        run2 = _StubResolvedCall('beta', 'run',
+                                 [_StubResolvedArg('ustar', intent='in')])
+        fin  = _StubResolvedCall('beta', 'final', [])
+        g1 = _StubResolvedGroup('physics_before_coupler',
+                                {'register': [reg], 'init': [ini],
+                                 'timestep_init': [tsi], 'run': [run1]})
+        # beta's timestep_init is listed on a second group too; it must
+        # appear once in the synthesized timestep_init group.
+        g2 = _StubResolvedGroup('physics_after_coupler',
+                                {'timestep_init': [tsi], 'run': [run2],
+                                 'final': [fin]})
+        return CapDatabase(_hd(), [_StubSuiteResolution('cam_test', [g1, g2])])
+
+    def test_group_order_and_phase_names(self):
+        suite, = self._db().suite_list()
+        self.assertEqual(suite.name, 'cam_test')
+        self.assertEqual([g.phase() for g in suite.groups],
+                         ['register', 'initialize', 'timestep_initial',
+                          'run', 'run', 'timestep_final', 'finalize'])
+        self.assertEqual([g.name for g in suite.groups][3:5],
+                         ['physics_before_coupler', 'physics_after_coupler'])
+
+    def test_schemes_in_call_order_once_per_phase(self):
+        suite, = self._db().suite_list()
+        tsi_group = suite.groups[2]
+        self.assertEqual([s.name for s in tsi_group.schemes()], ['alpha'])
+        run_names = [s.name for g in suite.groups if g.phase() == 'run'
+                     for s in g.schemes()]
+        self.assertEqual(run_names, ['alpha', 'beta'])
+
+    def test_variable_list_exposes_intent(self):
+        suite, = self._db().suite_list()
+        first_intent = {}
+        for group in suite.groups:
+            if group.phase() in ('register', 'initialize'):
+                continue
+            for scheme in group.schemes():
+                for var in scheme.variable_list():
+                    std = var.get_prop_value('standard_name')
+                    first_intent.setdefault(std, var.get_prop_value('intent'))
+        self.assertEqual(first_intent['ustar'], 'out')
+        self.assertEqual(first_intent['alpha_table'], 'in')
+        self.assertEqual(first_intent['tmp'], 'out')
+
+    def test_suite_init_final_calls_bracket_the_walk(self):
+        sinit = _StubResolvedCall('suite_setup', 'init', [])
+        sfin  = _StubResolvedCall('suite_teardown', 'final', [])
+        g = _StubResolvedGroup('g', {'init': [_StubResolvedCall('a', 'init', [])],
+                                     'final': [_StubResolvedCall('a', 'final', [])]})
+        db = CapDatabase(_hd(), [_StubSuiteResolution('s', [g], sinit, sfin)])
+        suite, = db.suite_list()
+        self.assertEqual([s.name for s in suite.groups[1].schemes()],
+                         ['suite_setup', 'a'])
+        self.assertEqual([s.name for s in suite.groups[-1].schemes()],
+                         ['a', 'suite_teardown'])
