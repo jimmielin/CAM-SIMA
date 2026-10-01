@@ -28,12 +28,9 @@ module phys_comp
 
    ! Private module data
    character(len=SHR_KIND_CS), allocatable :: suite_names(:)
-   character(len=SHR_KIND_CS) :: suite_parts_expect(2) = (/"physics_before_coupler", "physics_after_coupler "/)
+   character(len=SHR_KIND_CS) :: suite_parts_expect(2) = ["physics_before_coupler", "physics_after_coupler "]
    character(len=SHR_KIND_CS), allocatable :: suite_parts(:)
    logical                                 :: ncdata_check_err = .false.
-   ! ncdata_check_exclude: ordered glob patterns excluding rows from the
-   ! ncdata_check comparison; first match wins, a leading '!' keeps a
-   ! matching row (see set_check_field_exclusions in physics_data)
    integer, parameter                      :: max_check_exclude = 200
    character(len=SHR_KIND_CL)              :: ncdata_check_exclude(max_check_exclude)
    character(len=SHR_KIND_CL)              :: cam_physics_mesh = unset_str
@@ -62,6 +59,7 @@ CONTAINS
 
       ! Local variables
       character(len=SHR_KIND_CS)  :: physics_suite
+      character(len=SHR_KIND_CL)  :: io_errmsg
 
       integer                     :: unitn, ierr, i
       character(len=*), parameter :: subname = 'phys_readnl'
@@ -83,12 +81,12 @@ CONTAINS
 
       ! Read namelist
       if (masterproc) then
-         open(newunit=unitn, file=trim(nlfilename), status='old')
+         open(newunit=unitn, action='read', file=trim(nlfilename), status='old')
          call find_group_name(unitn, 'physics_nl', status=ierr)
          if (ierr == 0) then
-            read(unitn, physics_nl, iostat=ierr)
+            read(unitn, physics_nl, iostat=ierr, iomsg=io_errmsg)
             if (ierr /= 0) then
-               call endrun(subname // ':: ERROR reading namelist')
+               call endrun(subname // ':: ERROR reading namelist: ' // trim(io_errmsg))
             end if
          end if
          close(unitn)
@@ -148,7 +146,7 @@ CONTAINS
             write(iulog,*) 'Value Under Which Absolute Difference Calculated: ', &
                min_relative_value
             if (any(len_trim(ncdata_check_exclude) > 0)) then
-               write(iulog,*) '    Rows excluded from the check by pattern ', &
+               write(iulog,*) '    Variables excluded from the check by pattern ', &
                   '(first match wins, ''!'' keeps):'
                do i = 1, max_check_exclude
                   if (len_trim(ncdata_check_exclude(i)) > 0) then
