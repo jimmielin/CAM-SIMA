@@ -410,6 +410,14 @@
               units="flag" type="logical">
       <long_name>flag indicating if it is the first timestep of restart run</long_name>
     </variable>
+    <variable local_name="num_first_timestep_subcycles"
+              standard_name="number_of_first_timestep_only_subcycles"
+              units="count" type="integer">
+      <!-- helper to enclose schemes that only run on the first timestep of an initial run into a subcycle -->
+      <long_name>trip count of SDF subcycles that run on the first timestep of an initial run only (1 on that timestep, 0 otherwise)</long_name>
+      <initial_value>0</initial_value>
+    </variable>
+
     <!-- State tendencies -->
     <variable local_name="dTdt_total"
               standard_name="tendency_of_air_temperature_due_to_model_physics"
@@ -1514,6 +1522,44 @@
       <ic_file_input_names>pbuf_LANDM</ic_file_input_names>
     </variable>
 
+    <!-- Surface precipitation rates persisted across timesteps -->
+    <variable local_name="prec_str"
+              standard_name="lwe_large_scale_precipitation_rate_at_surface"
+              units="m s-1" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <long_name>LWE large-scale (stratiform) precipitation rate at surface</long_name>
+      <dimensions>horizontal_dimension</dimensions>
+      <initial_value>0.0_kind_phys</initial_value>
+      <ic_file_input_names>pbuf_PREC_STR</ic_file_input_names>
+    </variable>
+    <variable local_name="snow_str"
+              standard_name="lwe_snow_and_cloud_ice_precipitation_rate_at_surface_due_to_microphysics"
+              units="m s-1" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <long_name>LWE snow and cloud ice precipitation rate at surface due to microphysics</long_name>
+      <dimensions>horizontal_dimension</dimensions>
+      <initial_value>0.0_kind_phys</initial_value>
+      <ic_file_input_names>pbuf_SNOW_STR</ic_file_input_names>
+    </variable>
+    <variable local_name="prec_sh"
+              standard_name="lwe_precipitation_rate_at_surface_due_to_shallow_convection"
+              units="m s-1" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <long_name>LWE precipitation rate at surface due to shallow convection</long_name>
+      <dimensions>horizontal_dimension</dimensions>
+      <initial_value>0.0_kind_phys</initial_value>
+      <ic_file_input_names>pbuf_PREC_SH</ic_file_input_names>
+    </variable>
+    <variable local_name="snow_sh"
+              standard_name="lwe_frozen_precipitation_rate_at_surface_due_to_shallow_convection"
+              units="m s-1" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <long_name>LWE frozen precipitation rate at surface due to shallow convection</long_name>
+      <dimensions>horizontal_dimension</dimensions>
+      <initial_value>0.0_kind_phys</initial_value>
+      <ic_file_input_names>pbuf_SNOW_SH</ic_file_input_names>
+    </variable>
+
     <!-- Temporary initializations from snapshot -->
     <!-- Note that no_deep_pbl defaults to false, but needs to be set to true for diag_TKE or UW schemes -->
     <variable local_name="pblh"
@@ -2150,7 +2196,7 @@
               units="fraction" type="real" kind="kind_phys"
               allocatable="allocatable">
       <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
-      <initial_value>unset_real</initial_value>
+      <initial_value>0.0_kind_phys</initial_value>
       <ic_file_input_names>CLDFSNOW pbuf_CLDFSNOW</ic_file_input_names>
     </variable>
     <variable local_name="cldfgrau"
@@ -2158,7 +2204,7 @@
               units="fraction" type="real" kind="kind_phys"
               allocatable="allocatable">
       <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
-      <initial_value>unset_real</initial_value>
+      <initial_value>0.0_kind_phys</initial_value>
       <ic_file_input_names>CLDFGRAU pbuf_CLDFGRAU</ic_file_input_names>
     </variable>
     <variable local_name="icgrauwp"
@@ -2166,7 +2212,7 @@
               units="kg m-2" type="real" kind="kind_phys"
               allocatable="allocatable">
       <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
-      <initial_value>unset_real</initial_value>
+      <initial_value>0.0_kind_phys</initial_value>
       <ic_file_input_names>ICGRAUWP pbuf_ICGRAUWP</ic_file_input_names>
     </variable>
     <variable local_name="degrau"
@@ -2174,7 +2220,7 @@
               units="m" type="real" kind="kind_phys"
               allocatable="allocatable">
       <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
-      <initial_value>unset_real</initial_value>
+      <initial_value>0.0_kind_phys</initial_value>
       <ic_file_input_names>DEGRAU pbuf_DEGRAU</ic_file_input_names>
     </variable>
     <variable local_name="lamc"
