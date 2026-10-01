@@ -17,11 +17,16 @@ import sys
 import logging
 from collections import OrderedDict
 
-# Find and include the ccpp-framework scripts directory
-# Assume we are in <CAMROOT>/src/data and SPIN is in <CAMROOT>/ccpp_framework
+# Find and include both the capgen_compat flat-shim directory and
+# the capgen external.  See cime_config/capgen_compat/README.md.
 __CURRDIR = os.path.abspath(os.path.dirname(__file__))
 __CAMROOT = os.path.abspath(os.path.join(__CURRDIR, os.pardir, os.pardir))
-__SPINSCRIPTS = os.path.join(__CAMROOT, "ccpp_framework", 'scripts')
+__COMPAT_DIR = os.path.join(__CAMROOT, "cime_config", "capgen_compat")
+__SPINSCRIPTS = os.path.join(__CAMROOT, "ccpp_framework", "capgen")
+# Insert compat dir at the front so flat-shim modules win the resolve.
+if __COMPAT_DIR not in sys.path:
+    sys.path.insert(0, __COMPAT_DIR)
+# end if
 if __SPINSCRIPTS not in sys.path:
     sys.path.append(__SPINSCRIPTS)
 # end if
@@ -30,12 +35,12 @@ _FORTRAN_NUMERIC_REGEX = re.compile(r'^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?(_ki
 
 # CCPP framework imports
 # pylint: disable=wrong-import-position
-from framework_env import CCPPFrameworkEnv
 from parse_tools import validate_xml_file, read_xml_file
 from parse_tools import find_schema_file, find_schema_version
 from parse_tools import init_log, CCPPError, ParseInternalError
 from metadata_table import parse_metadata_file
 from fortran_tools import FortranWriter
+from framework_env import CCPPFrameworkEnv
 # pylint: enable=wrong-import-position
 
 ###############################################################################
@@ -1083,7 +1088,19 @@ class VarDict(OrderedDict):
         return self.values()
 
     def write_metadata(self, outfile):
-        """Write out the variables in this dictionary as CCPP metadata"""
+        """Write out the variables in this dictionary as CCPP metadata.
+
+        The ``type =`` attribute uses CAM-SIMA's original-capgen
+        vocabulary (``host`` / ``module`` / ``ddt``).  The
+        capgen_compat layer's ``metadata_table`` shim rewrites
+        ``type = module`` to ``type = host`` at parse time so
+        capgen's stricter parser accepts the file, and records the
+        affected table names in ``MODULE_ORIGIN_TABLE_NAMES`` so the
+        ``_VarWrapper`` can preserve original capgen's
+        ``source.ptype = 'module'`` classification -- which
+        ``write_init_files.py`` needs to decide which variables to
+        allocate and initialise.
+        """
         outfile.write('[ccpp-table-properties]\n')
         outfile.write(f'  name = {self.name}\n')
         outfile.write(f'  type = {self.module_type}\n')
