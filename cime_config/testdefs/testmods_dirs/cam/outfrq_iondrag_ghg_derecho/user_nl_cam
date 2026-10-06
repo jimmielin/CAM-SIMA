@@ -1,17 +1,15 @@
-! CAM6 SC-WACCM (FWsc2000climo, L70) snapshot around iondrag_calc_section, from the CAM case run directory.
-ncdata = '/glade/derecho/scratch/hplin/cam_fwsc_iondrag/run/cam_fwsc_iondrag.cam.h5i.0001-01-01-01800.nc'
-ncdata_check = '/glade/derecho/scratch/hplin/cam_fwsc_iondrag/run/cam_fwsc_iondrag.cam.h6i.0001-01-01-01800.nc'
+! CAM6 SC-WACCM (FWsc2000climo, L70) snapshot around iondrag_calc_section. The tapes come from
+! the split-branch case, whose fields are identical to the unsplit baseline (cprnc) and which
+! also carry lat_rad/lon_rad; they stay in the CAM case run directory until the PR.
+ncdata = '/glade/derecho/scratch/hplin/cam_fwsc_iondrag_split/run/cam_fwsc_iondrag_split.cam.h5i.0001-01-01-01800.nc'
+ncdata_check = '/glade/derecho/scratch/hplin/cam_fwsc_iondrag_split/run/cam_fwsc_iondrag_split.cam.h6i.0001-01-01-01800.nc'
 pver = 70
 
 ! tolerances for testing
 ncdata_check_err = .true.
 min_difference = 2e-15
 
-! The null dycore rebuilds latitude in radians from the degrees on the snapshot, which
-! differs from CAM's native radians by one ulp at 44 of 486 columns (dropsonde, 2026-10-06).
-! Only the meridional tendency depends on latitude; the wind state stays within threshold,
-! but the accumulated northward tendency amplifies the seed by cancellation.
-ncdata_check_exclude = 'tendency_of_northward_wind_due_to_model_physics'
+! no namelist on the ghg ion drag path
 
 hist_output_frequency;h1: 1*nsteps
 hist_max_frames;h1: 1
