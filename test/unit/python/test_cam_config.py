@@ -73,6 +73,7 @@ class FakeCase:
             "NTHRDS_ATM" : 1,
             "RUN_STARTDATE" : "101",
             "CAM_SIM_YEAR" : "2000",
+            "CAM_CHEM_MECHANISM" : "",
             "DEBUG" : False,
             "OPENACC_GPU_OFFLOAD": False
             }
@@ -131,6 +132,33 @@ class CamConfigTestRoutine(unittest.TestCase):
 
         #Check that testval matches ATM_NY set in the "fake" case:
         self.assertEqual(testval, 16)
+
+    #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    #check that the chem_mechanism config follows CAM_CHEM_MECHANISM
+    #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+    def test_config_chem_mechanism_check(self):
+
+        """
+        Check that CAM_CHEM_MECHANISM becomes the chem_mechanism
+        namelist attribute, and that an unset case variable (None)
+        is an empty mechanism name.
+        """
+
+        #The fake case has an empty CAM_CHEM_MECHANISM:
+        self.assertEqual(self.test_config_cam.get_value("chem_mechanism"), "")
+        self.assertTrue(self.test_config_cam.config_dict["chem_mechanism"].is_nml_attr)
+
+        #A compset selecting a mechanism:
+        fcase = FakeCase()
+        fcase.conf_opts["CAM_CHEM_MECHANISM"] = "trop_mam4"
+        config_cam = ConfigCAM(fcase, logging.getLogger("cam_config"))
+        self.assertEqual(config_cam.get_value("chem_mechanism"), "trop_mam4")
+
+        #CIME returns None for an unset case variable:
+        fcase.conf_opts["CAM_CHEM_MECHANISM"] = None
+        config_cam = ConfigCAM(fcase, logging.getLogger("cam_config"))
+        self.assertEqual(config_cam.get_value("chem_mechanism"), "")
 
     #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     #check that "get_value" method works properly for non-null dycores
@@ -353,6 +381,8 @@ class CamConfigTestRoutine(unittest.TestCase):
                   'DEBUG:print_config:ic_ymd = 101',
                   'DEBUG:print_config:# Simulation (climatology) year used for namelist defaults.',
                   'DEBUG:print_config:sim_year = 2000',
+                  'DEBUG:print_config:# Gas-phase chemistry mechanism used for namelist defaults.',
+                  'DEBUG:print_config:chem_mechanism = ',
                   'DEBUG:print_config:# Flag to check if debug mode is enabled.',
                   'DEBUG:print_config:debug = 0',
                   'DEBUG:print_config:# Maximum number of columns assigned to a thread.',

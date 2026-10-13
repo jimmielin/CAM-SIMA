@@ -183,6 +183,7 @@ class ConfigCAM:
         start_date = case.get_value("RUN_STARTDATE")        # Model simulation start date
         debug_case = case.get_value("DEBUG")                # Case debug flag
         sim_year = case.get_value("CAM_SIM_YEAR")           # Simulation (climatology) year
+        chem_mechanism = case.get_value("CAM_CHEM_MECHANISM") # Gas-phase chemistry mechanism
 
         # Save case variables needed for code auto-generation:
         self.__atm_root = case.get_value("COMP_ROOT_DIR_ATM")
@@ -287,6 +288,20 @@ class ConfigCAM:
         self.create_config("sim_year",
                            "Simulation (climatology) year used for namelist defaults.",
                            sim_year, is_nml_attr=True)
+
+        #----------------------------------------------------
+        # Set gas-phase chemistry mechanism (needed for namelist generation)
+        #----------------------------------------------------
+
+        # CAM_CHEM_MECHANISM is empty for compsets without a
+        # gas-phase chemistry mechanism, which CIME returns as None:
+        if chem_mechanism is None:
+            chem_mechanism = ""
+        # End if
+
+        self.create_config("chem_mechanism",
+                           "Gas-phase chemistry mechanism used for namelist defaults.",
+                           chem_mechanism, is_nml_attr=True)
 
         #----------------------------------------------------
         # Set CAM debug flag (needed for namelist generation)

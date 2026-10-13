@@ -634,10 +634,21 @@ def _check_string_quotes(var_name, var_val):
     Banana"
     has mis-matched quotes.  Please fix.
 
+    6.  Check that an empty string (a valid namelist default meaning
+        "none") returns "False" so that it is written as an empty
+        quoted string:
+    >>> _check_string_quotes("Apple", "")
+    False
+
     """
 
     #Make sure variable has been stripped:
     var_val_strip = var_val.strip()
+
+    #An empty value has no quotes to check:
+    if not var_val_strip:
+        return False
+    #End if
 
     #Set error message (just in case):
     emsg = f"Namelist entry '{var_name}' is of type character"

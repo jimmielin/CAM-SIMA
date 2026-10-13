@@ -135,6 +135,22 @@
     </desc>
   </entry>
 
+  <entry id="CAM_CHEM_MECHANISM">
+    <type>char</type>
+    <valid_values></valid_values>
+    <default_value></default_value>
+    <group>run_component_cam</group>
+    <file>env_run.xml</file>
+    <desc>
+      Name of the chem_proc generated gas-phase chemistry mechanism the compset runs
+      (lower case, for example trop_mam4), the default of the chem_mechanism namelist
+      variable and the value of the chem_mechanism namelist XML attribute.
+      Empty means no gas-phase chemistry mechanism; the physics suite must list a
+      chem_mechanism_NAME scheme for any non-empty value.
+      No compset selects a mechanism until its chemistry schemes are in the suite.
+    </desc>
+  </entry>
+
   <entry id="CAM_LINKED_LIBS">
     <type>char</type>
     <valid_values></valid_values>

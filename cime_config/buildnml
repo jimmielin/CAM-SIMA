@@ -91,6 +91,37 @@ def nml_attr_set(config):
 
 ##################
 
+def chem_mechanism_check(pg_atm, scheme_names):
+
+    """
+    Check that the gas-phase chemistry mechanism selected by the
+    chem_mechanism namelist variable is provided by a
+    chem_mechanism_<name> scheme in one of the configured suites.
+    The register phase of that scheme is what publishes the mechanism,
+    so a value with no scheme would fail only at run time.
+    An empty value means no gas-phase mechanism and is always valid.
+    """
+
+    #The namelist group exists only when a suite lists chem_mechanism_select:
+    if "chem_mechanism_nl" not in pg_atm.data:
+        return
+    # End if
+
+    chem_mech = pg_atm.data["chem_mechanism_nl"]["chem_mechanism"]["values"]
+    chem_mech = chem_mech.strip().strip("'\"").strip()
+
+    if chem_mech and f"chem_mechanism_{chem_mech}" not in scheme_names:
+        available = sorted(name[len("chem_mechanism_"):] for name in scheme_names
+                           if name.startswith("chem_mechanism_")
+                           and name != "chem_mechanism_select")
+        emsg  = f"chem_mechanism = '{chem_mech}' but no chem_mechanism_{chem_mech}"
+        emsg += " scheme is listed in the configured physics suite(s)."
+        emsg += f"\nMechanisms available in the suite(s): {available}"
+        expect(False, emsg)
+    # End if
+
+##################
+
 def nml_file_dict_update(nml_fil_dict, nml_def_fils):
 
     """
@@ -355,6 +386,13 @@ def buildnml(case, caseroot, compname):
         #---------------------------------
 
         pg_atm.reduce_atm_in(case, cam_nml_dict)
+
+        #-----------------------------------------------------------
+        # Check that the selected gas-phase chemistry mechanism has a
+        # package scheme in the configured suite(s):
+        #-----------------------------------------------------------
+
+        chem_mechanism_check(pg_atm, scheme_names)
 
         #---------------------------
         # Write out Fortran namelist:
