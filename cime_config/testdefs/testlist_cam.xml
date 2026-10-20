@@ -302,6 +302,15 @@
       <option name="comment">Test for modal aerosol model (MAM4): aerosol wet deposition including convective processing (including deep) and stratiform scavenging</option>
     </options>
   </test>
+  <test compset="FPHYStest" grid="ne3pg3_ne3pg3_mg37" name="SMS_Ln5" testmods="cam/outfrq_mam_gas_phase_chemistry_derecho">
+    <machines>
+      <machine name="derecho" compiler="gnu" category="aux_sima"/>
+    </machines>
+    <options>
+      <option name="wallclock">00:20:00</option>
+      <option name="comment">Test for chem_proc (MOZART) gas-phase chemistry: trop_mam4 mechanism chain (invariants, rate constants, table photolysis, external forcing, solver) bracketing CAM's chem_timestep_tend in an FHIST snapshot</option>
+    </options>
+  </test>
   <test compset="FPHYStest" grid="ne3pg3_ne3pg3_mg37" name="SMS_Ln2" testmods="cam/outfrq_modal_setsox_derecho">
     <machines>
       <machine name="derecho" compiler="gnu" category="aux_sima"/>

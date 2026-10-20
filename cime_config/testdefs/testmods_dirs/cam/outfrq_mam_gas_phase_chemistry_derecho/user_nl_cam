@@ -1,0 +1,128 @@
+! ---------------------------------------------------------------------------
+! chem_proc gas-phase chemistry gate (suite mam_gas_phase_chemistry).
+! FPHYStest from the CAM cam6_4_213 FHIST trop_mam4 capture bracketing
+! chem_timestep_tend (gas_wetdep_method OFF, ZEN_ANGLE and the oxidant file
+! vmr added to the tapes), ne3pg3 L32, start 1979-01-01 00:00, dtime 1800,
+! CAM's variable_year orbit mirrored through user_nl_cpl. Every file and
+! value below mirrors that run's atm_in / drv_flds_in. Frame k of the tapes
+! is CAM nstep k; SIMA reads frame get_nstep(), so with the same start date
+! the calendar lines up for nstep >= 1.
+! ---------------------------------------------------------------------------
+ncdata       = '/glade/campaign/cesm/community/amwg/sima_baselines/cam_sima_test_snapshots/cam6_4_213_ne3pg3_fhist_trop_mam4_chem_timestep_tend_snapshot_derecho_gnu_before_c20261019.nc'
+ncdata_check = '/glade/campaign/cesm/community/amwg/sima_baselines/cam_sima_test_snapshots/cam6_4_213_ne3pg3_fhist_trop_mam4_chem_timestep_tend_snapshot_derecho_gnu_after_c20261019.nc'
+
+! FHIST (cam6) vertical grid
+pver = 32
+
+! Absolute tolerance (min_relative_value is left at its default, so every
+! difference is absolute). 5e-15 passes the pack round-trip floor on the
+! workspace species and the ulp-level cascade of the known forcing floor.
+ncdata_check_err = .true.
+min_difference = 5.0e-15
+
+! Rows excluded with their documented floors (gate run of 2026-10-20, values
+! are the maximum absolute difference over five steps):
+!  - o3: the registry maps the O3 constituent to the tape's pbuf_ozone
+!    (CAM's prescribed_ozone dataset) while SIMA's O3 is the prescribed
+!    oxidant (tracer_cnst dataset); two datasets, not a check of the port.
+!  - num_a1, num_a2, so4_a1, so4_a2, so2 and the cloud-borne so4_c1..c3,
+!    num_c1, num_c2, h2o2, ncl_a1, ncl_a2, ncl_c1, ncl_c2, num_a4: the
+!    altitude-based anthro-ene forcing files are interpolated by CAM at
+!    timestep init with the dycore interface heights, which the tape does
+!    not carry (2.8 percent in so4_a1_XFRC/num_a1_XFRC at levels 30-31),
+!    and the aerosol cluster carries that difference into these rows
+!    (num_a2 1.6 kg-1, num_a1 0.8, so4_a1 3e-11, so2 2e-11, h2o2 2e-13,
+!    ncl 2e-13). A recapture with the two anthro-ene entries dropped on
+!    both sides, or the tape's <spc>_XFRC injected, removes the floor.
+! Every thermal rate constant, every solver production and loss term and
+! the H2O tendency are bitwise; photolysis is within 4 ulp at 8 percent of
+! daylight columns (null-dycore lat/lon round trip in the zenith angle).
+ncdata_check_exclude = 'o3', 'num_a1', 'num_a2', 'num_a4', 'num_c1', 'num_c2',
+         'so4_a1', 'so4_a2', 'so4_c1', 'so4_c2', 'so4_c3', 'so2', 'h2o2',
+         'ncl_a1', 'ncl_a2', 'ncl_c1', 'ncl_c2'
+
+! mechanism selection (chem_mechanism_trop_mam4 is in the suite)
+chem_mechanism = 'trop_mam4'
+
+! prescribed oxidants: CAM's tracer_cnst settings. The gate reads the invariant
+! slots from the capture (aerochem_vmr_*); these keep the constituents consistent.
+prescribed_oxidants_datapath = '/glade/campaign/cesm/cesmdata/inputdata/atm/cam/tracer_cnst'
+prescribed_oxidants_file     = 'tracer_cnst_halons_3D_L70_1849-2015_CMIP6ensAvg_c180927.nc'
+prescribed_oxidants_type     = 'INTERP_MISSING_MONTHS'
+! the scheme default cycle year (2000) is rejected with a non-cyclical type
+prescribed_oxidants_cycle_yr = 0
+
+! table photolysis: files match the scheme defaults, photo_max_zen does not
+rsf_file         = '/glade/campaign/cesm/cesmdata/inputdata/atm/waccm/phot/RSF_GT200nm_v3.0_c080811.nc'
+xs_long_file     = '/glade/campaign/cesm/cesmdata/inputdata/atm/waccm/phot/temp_prs_GT200nm_c221005mm_slh_c250930.nc'
+exo_coldens_file = '/glade/campaign/cesm/cesmdata/inputdata/atm/cam/chem/trop_mozart/phot/exo_coldens.nc'
+photo_max_zen    = 88.85D0
+
+! solar irradiance (photon flux for photolysis): CAM's historical file, SERIAL
+! Needs the fhist_c4 solar_irradiance_data fixes (single-element probe, module-scope
+! bracketing slices); the pre-fix build reads the whole 5 GB ssi array per rank.
+! A bitwise-equivalent 5-day slice for an unfixed build is
+! /glade/derecho/scratch/hplin/chemproc_gate/SolarForcingCMIP6_19781230-19790103_slice_c20200615.nc
+solar_irrad_data_file = '/glade/campaign/cesm/cesmdata/inputdata/atm/cam/solar/SolarForcingCMIP6_18491230-23000102_c20200615.nc'
+solar_data_type       = 'SERIAL'
+solar_htng_spctrl_scl = .true.
+
+! external (elevated) forcing, CAM's ext_frc_specifier incl. H2O from CH4 oxidation
+ext_frc_type = 'INTERP_MISSING_MONTHS'
+ext_frc_specifier = 'H2O -> /glade/campaign/cesm/cesmdata/inputdata/atm/cam/chem/emis/elev/H2OemissionCH4oxidationx2_3D_L70_1849-2015_CMIP6ensAvg_c180927.nc',
+         'num_a1 -> /glade/campaign/cesm/cesmdata/inputdata/atm/cam/chem/emis/CMIP6_emissions_1750_2015/emissions-cmip6_num_so4_a1_anthro-ene_vertical_1750-2015_0.9x1.25_c20170616.nc',
+         'num_a1 -> /glade/campaign/cesm/cesmdata/inputdata/atm/cam/chem/emis/CMIP6_emissions_1750_2015/emissions-cmip6_num_a1_so4_contvolcano_vertical_850-5000_0.9x1.25_c20170724.nc',
+         'num_a2 -> /glade/campaign/cesm/cesmdata/inputdata/atm/cam/chem/emis/CMIP6_emissions_1750_2015/emissions-cmip6_num_a2_so4_contvolcano_vertical_850-5000_0.9x1.25_c20170724.nc',
+         'SO2 -> /glade/campaign/cesm/cesmdata/inputdata/atm/cam/chem/emis/CMIP6_emissions_1750_2015/emissions-cmip6_SO2_contvolcano_vertical_850-5000_0.9x1.25_c20170724.nc',
+         'so4_a1 -> /glade/campaign/cesm/cesmdata/inputdata/atm/cam/chem/emis/CMIP6_emissions_1750_2015/emissions-cmip6_so4_a1_anthro-ene_vertical_1750-2015_0.9x1.25_c20170616.nc',
+         'so4_a1 -> /glade/campaign/cesm/cesmdata/inputdata/atm/cam/chem/emis/CMIP6_emissions_1750_2015/emissions-cmip6_so4_a1_contvolcano_vertical_850-5000_0.9x1.25_c20170724.nc',
+         'so4_a2 -> /glade/campaign/cesm/cesmdata/inputdata/atm/cam/chem/emis/CMIP6_emissions_1750_2015/emissions-cmip6_so4_a2_contvolcano_vertical_850-5000_0.9x1.25_c20170724.nc'
+
+! Henry's law data for setsox (CAM drv_flds_in dep_data_file)
+gas_deposition_dep_data_file = '/glade/campaign/cesm/cesmdata/inputdata/atm/cam/chem/trop_mozart/dvel/dep_data_c20221208.nc'
+
+! MAM options as CAM ran them
+modal_accum_coarse_exch = .true.
+modal_strat_sulfate     = .false.
+
+tropopause_climo_file = '/glade/campaign/cesm/cesmdata/inputdata/atm/cam/chem/trop_mozart/ub/clim_p_trop.nc'
+
+! mode property files exactly as CAM's FHIST rad_climate (mode 3 is the
+! sig1.2_dgnl.40_c150219 file, not the one in the FHISTC testmods); bulk
+! VOLC_MMR entries dropped on purpose (SIMA resolves every entry eagerly)
+rad_aer_climate = 'M:mam4_mode1:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/mam4_mode1_rrtmg_aeronetdust_sig1.6_dgnh.48_c140304.nc',
+         'M:mam4_mode2:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/mam4_mode2_rrtmg_aitkendust_c141106.nc',
+         'M:mam4_mode3:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/mam4_mode3_rrtmg_aeronetdust_sig1.2_dgnl.40_c150219.nc',
+         'M:mam4_mode4:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/mam4_mode4_rrtmg_c130628.nc'
+
+! mode definitions, verbatim from the CAM atm_in
+mode_defs = 'mam4_mode1:accum:=', 'A:num_a1:N:num_c1:num_mr:+',
+         'A:so4_a1:N:so4_c1:sulfate:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/sulfate_rrtmg_c080918.nc:+', 'A:pom_a1:N:pom_c1:p-organic:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ocpho_rrtmg_c130709.nc:+',
+         'A:soa_a1:N:soa_c1:s-organic:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ocphi_rrtmg_c100508.nc:+', 'A:bc_a1:N:bc_c1:black-c:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/bcpho_rrtmg_c100508.nc:+',
+         'A:dst_a1:N:dst_c1:dust:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/dust_aeronet_rrtmg_c141106.nc:+', 'A:ncl_a1:N:ncl_c1:seasalt:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ssam_rrtmg_c100508.nc',
+         'mam4_mode2:aitken:=', 'A:num_a2:N:num_c2:num_mr:+',
+         'A:so4_a2:N:so4_c2:sulfate:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/sulfate_rrtmg_c080918.nc:+', 'A:soa_a2:N:soa_c2:s-organic:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ocphi_rrtmg_c100508.nc:+',
+         'A:ncl_a2:N:ncl_c2:seasalt:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ssam_rrtmg_c100508.nc:+', 'A:dst_a2:N:dst_c2:dust:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/dust_aeronet_rrtmg_c141106.nc',
+         'mam4_mode3:coarse:=', 'A:num_a3:N:num_c3:num_mr:+',
+         'A:dst_a3:N:dst_c3:dust:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/dust_aeronet_rrtmg_c141106.nc:+', 'A:ncl_a3:N:ncl_c3:seasalt:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ssam_rrtmg_c100508.nc:+',
+         'A:so4_a3:N:so4_c3:sulfate:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/sulfate_rrtmg_c080918.nc', 'mam4_mode4:primary_carbon:=',
+         'A:num_a4:N:num_c4:num_mr:+', 'A:pom_a4:N:pom_c4:p-organic:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ocpho_rrtmg_c130709.nc:+',
+         'A:bc_a4:N:bc_c4:black-c:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/bcpho_rrtmg_c100508.nc'
+
+! history: one REAL64 h1 with the chemistry diagnostics, same names as the CAM
+! extras tape (<case>_extras.nc) for offline comparison
+hist_output_frequency;h1: 1*nsteps
+hist_write_nstep0;h1: .true.
+hist_precision;h1: REAL64
+hist_max_frames;h1: 6
+! prescribed oxidant O3 (the excluded o3 row)
+hist_add_inst_fields;h1: O3_D
+! photolysis tags (chem_photolysis_diagnostics)
+hist_add_inst_fields;h1: jh2o2,jsoa_a1,jsoa_a2
+! thermal tags (chem_rate_constants_diagnostics)
+hist_add_inst_fields;h1: OH_H2O2,usr_HO2_HO2,DMS_NO3,DMS_OHa,SO2_OH_M,usr_DMS_OH,SOAE_tau
+! production and loss (chem_prod_loss_diagnostics)
+hist_add_inst_fields;h1: H2O2_CHMP,H2O2_CHML,SO2_CHMP,SO2_CHML,H2SO4_CHMP,H2SO4_CHML
+hist_add_inst_fields;h1: DMS_CHMP,DMS_CHML,SOAG_CHMP,SOAG_CHML
+! external forcing after the division by M (chem_extfrc), same names as CAM's <spc>_XFRC
+hist_add_inst_fields;h1: H2O_XFRC,SO2_XFRC,so4_a1_XFRC,so4_a2_XFRC,num_a1_XFRC,num_a2_XFRC
