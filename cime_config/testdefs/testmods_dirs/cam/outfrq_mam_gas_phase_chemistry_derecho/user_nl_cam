@@ -7,6 +7,9 @@
 ! value below mirrors that run's atm_in / drv_flds_in. Frame k of the tapes
 ! is CAM nstep k; SIMA reads frame get_nstep(), so with the same start date
 ! the calendar lines up for nstep >= 1.
+! The test runs four steps: after the last step the null dycore reads the
+! frame of the step that follows, so a five-step run on a five-frame tape
+! stops with an end-of-tape read after the last check.
 ! ---------------------------------------------------------------------------
 ncdata       = '/glade/campaign/cesm/community/amwg/sima_baselines/cam_sima_test_snapshots/cam6_4_213_ne3pg3_fhist_trop_mam4_chem_timestep_tend_snapshot_derecho_gnu_before_c20261019.nc'
 ncdata_check = '/glade/campaign/cesm/community/amwg/sima_baselines/cam_sima_test_snapshots/cam6_4_213_ne3pg3_fhist_trop_mam4_chem_timestep_tend_snapshot_derecho_gnu_after_c20261019.nc'
@@ -114,7 +117,7 @@ mode_defs = 'mam4_mode1:accum:=', 'A:num_a1:N:num_c1:num_mr:+',
 hist_output_frequency;h1: 1*nsteps
 hist_write_nstep0;h1: .true.
 hist_precision;h1: REAL64
-hist_max_frames;h1: 6
+hist_max_frames;h1: 5
 ! prescribed oxidant O3 (the excluded o3 row)
 hist_add_inst_fields;h1: O3_D
 ! photolysis tags (chem_photolysis_diagnostics)

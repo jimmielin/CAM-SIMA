@@ -302,7 +302,7 @@
       <option name="comment">Test for modal aerosol model (MAM4): aerosol wet deposition including convective processing (including deep) and stratiform scavenging</option>
     </options>
   </test>
-  <test compset="FPHYStest" grid="ne3pg3_ne3pg3_mg37" name="SMS_Ln5" testmods="cam/outfrq_mam_gas_phase_chemistry_derecho">
+  <test compset="FPHYStest" grid="ne3pg3_ne3pg3_mg37" name="SMS_Ln4" testmods="cam/outfrq_mam_gas_phase_chemistry_derecho">
     <machines>
       <machine name="derecho" compiler="gnu" category="aux_sima"/>
     </machines>
