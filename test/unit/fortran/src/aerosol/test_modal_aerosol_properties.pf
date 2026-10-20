@@ -4,6 +4,7 @@
 ! Tests the modal aerosol properties type using a minimal 2-mode MAM config:
 !   Mode 1 "accum": 2 species (sulfate, black-c)
 !   Mode 2 "coarse": 1 species (dust)
+! The mixed-density rebin test sets up its own single-mode config instead.
 !
 ! Mock boundary: radiative_aerosol (modal mock interfaces)
 ! Helper module: modal_test_helpers (compiled separately)
@@ -216,5 +217,225 @@ subroutine test_get_density_hygro()
     deallocate(props)
     call cleanup_mock_rad_aer()
 end subroutine test_get_density_hygro
+
+!-----------------------------------------------------------------------
+! rebin_bulk_fluxes tests.
+!
+! The mass fraction of a lognormal mode between diameters d_lo and d_hi is
+!   0.5 * ( erf(ln(d_hi/vmd)/(sqrt(2) ln(sigma_g))) - erf(ln(d_lo/vmd)/(sqrt(2) ln(sigma_g))) )
+! where vmd is the volume median diameter obtained from the mode's deposited
+! number flux and total deposited volume (each species' mass flux over its own density).
+!-----------------------------------------------------------------------
+
+subroutine lognormal_bin_fractions(vmd, sigma_g, edges, frac)
+    use shr_kind_mod, only: r8 => shr_kind_r8
+    real(r8), intent(in)  :: vmd        ! volume median diameter (m)
+    real(r8), intent(in)  :: sigma_g    ! geometric standard deviation
+    real(r8), intent(in)  :: edges(:)   ! bin edges (m), size(frac)+1
+    real(r8), intent(out) :: frac(:)    ! mass fraction in each bin
+
+    real(r8) :: denom
+    integer :: k
+
+    denom = sqrt(2._r8) * log(sigma_g)
+    do k = 1, size(frac)
+       frac(k) = 0.5_r8 * ( erf(log(edges(k+1)/vmd)/denom) - erf(log(edges(k)/vmd)/denom) )
+    end do
+end subroutine lognormal_bin_fractions
+
+@test
+subroutine test_rebin_bulk_fluxes_single_species_mode()
+    use funit
+    use shr_kind_mod, only: r8 => shr_kind_r8
+    use physconst, only: pi
+    use modal_aerosol_properties_mod, only: modal_aerosol_properties
+    use radiative_aerosol, only: cleanup_mock_rad_aer
+    use modal_test_helpers, only: setup_2mode_mock, sigmag_coarse, dens_dust
+
+    ! CAM4 bulk dust bin edges (m), as used by the deposition schemes
+    real(r8), parameter :: edges(5) = [0.1e-6_r8, 1.0e-6_r8, 2.5e-6_r8, 5.0e-6_r8, 40.e-6_r8]
+    real(r8), parameter :: num_flux  = 1.0e8_r8   ! #/m2
+    real(r8), parameter :: dust_flux = 1.0e-6_r8  ! kg/m2
+
+    type(modal_aerosol_properties), pointer :: props
+    real(r8), allocatable :: dep_fluxes(:)
+    real(r8) :: bulk_fluxes(4), frac(4), expected(4), vmd
+    integer :: m, ncnst, error_code
+    character(len=256) :: error_string
+
+    call setup_2mode_mock()
+    props => modal_aerosol_properties()
+
+    ! one number flux plus one mass flux per species, in every mode
+    ncnst = 0
+    do m = 1, props%nbins()
+       ncnst = ncnst + props%nspecies(m) + 1
+    end do
+    allocate(dep_fluxes(ncnst))
+    dep_fluxes(:) = 0._r8
+
+    ! Mode 1 (accum) holds no dust; give it non-zero fluxes to confirm they are ignored.
+    dep_fluxes(props%indexer(1,0)) = 3.0e9_r8
+    dep_fluxes(props%indexer(1,1)) = 5.0e-7_r8
+    dep_fluxes(props%indexer(1,2)) = 1.0e-7_r8
+    ! Mode 2 (coarse) is pure dust.
+    dep_fluxes(props%indexer(2,0)) = num_flux
+    dep_fluxes(props%indexer(2,1)) = dust_flux
+
+    call props%rebin_bulk_fluxes('dust', dep_fluxes, edges, bulk_fluxes, error_code, error_string)
+    @assertEqual(0, error_code)
+
+    ! Single species: the mode volume is the dust mass over the dust density.
+    vmd = (6._r8*(dust_flux/dens_dust)/(pi*num_flux))**(1._r8/3._r8) &
+          * exp(1.5_r8*log(sigmag_coarse)**2)
+    call lognormal_bin_fractions(vmd, sigmag_coarse, edges, frac)
+    expected = frac * dust_flux
+    @assertEqual(expected, bulk_fluxes, 1.0e-12_r8*dust_flux)
+
+    ! Every bin receives mass and the bins add up to the fraction inside the edges.
+    @assertTrue(all(bulk_fluxes > 0._r8))
+    @assertEqual(sum(expected), sum(bulk_fluxes), 1.0e-12_r8*dust_flux)
+
+    deallocate(dep_fluxes)
+    deallocate(props)
+    call cleanup_mock_rad_aer()
+end subroutine test_rebin_bulk_fluxes_single_species_mode
+
+@test
+subroutine test_rebin_bulk_fluxes_mixed_density_mode()
+    ! Regression test for ESCOMP/CAM issue #1715 (fixed in CAM PR #1700).
+    ! The volume median diameter must come from the mode's total volume, summing each
+    ! species' mass flux over its own density. The earlier mass-weighted form applied
+    ! the dust density to all of the mode's mass, which is wrong as soon as the mode
+    ! also holds a species of different density.
+    use funit
+    use shr_kind_mod, only: r8 => shr_kind_r8
+    use physconst, only: pi
+    use modal_aerosol_properties_mod, only: modal_aerosol_properties
+    use radiative_aerosol, only: setup_mock_modal_rad_aer, cleanup_mock_rad_aer
+
+    real(r8), parameter :: edges(5) = [0.1e-6_r8, 1.0e-6_r8, 2.5e-6_r8, 5.0e-6_r8, 40.e-6_r8]
+    real(r8), parameter :: sigmag    = 2.0_r8
+    real(r8), parameter :: dens_dust = 2600._r8  ! kg/m3
+    real(r8), parameter :: dens_ss   = 1900._r8  ! kg/m3
+    real(r8), parameter :: num_flux  = 1.0e8_r8  ! #/m2
+    real(r8), parameter :: dust_flux = 1.0e-6_r8 ! kg/m2
+    real(r8), parameter :: ss_flux   = 2.0e-6_r8 ! kg/m2
+
+    type(modal_aerosol_properties), pointer :: props
+    character(len=32) :: spec_type(1,2), spec_name(1,2), spec_name_cw(1,2)
+    real(r8) :: spec_density(1,2), spec_hygro(1,2)
+    real(r8) :: dep_fluxes(3), bulk_fluxes(4), frac(4), frac_massw(4), expected(4), vmd
+    integer :: error_code
+    character(len=256) :: error_string
+
+    ! One coarse mode holding dust and sea salt of different densities.
+    spec_type(1,:)    = [character(len=32) :: 'dust', 'seasalt']
+    spec_name(1,:)    = [character(len=32) :: 'dst_a3', 'ncl_a3']
+    spec_name_cw(1,:) = [character(len=32) :: 'dst_c3', 'ncl_c3']
+    spec_density(1,:) = [dens_dust, dens_ss]
+    spec_hygro(1,:)   = [0.14_r8, 1.16_r8]
+
+    call setup_mock_modal_rad_aer( &
+         nmodes = 1, &
+         nspec = [2], &
+         mode_type = [character(len=32) :: 'coarse'], &
+         num_name = [character(len=32) :: 'num_a3'], &
+         num_name_cw = [character(len=32) :: 'num_c3'], &
+         sigmag = [sigmag], &
+         dgnum = [2.0e-6_r8], &
+         dgnumlo = [0.2e-6_r8], &
+         dgnumhi = [20.e-6_r8], &
+         rhcrystal = [0.35_r8], &
+         rhdeliques = [0.80_r8], &
+         spec_type = spec_type, &
+         spec_name = spec_name, &
+         spec_name_cw = spec_name_cw, &
+         spec_density = spec_density, &
+         spec_hygro = spec_hygro)
+    props => modal_aerosol_properties()
+
+    dep_fluxes(props%indexer(1,0)) = num_flux
+    dep_fluxes(props%indexer(1,1)) = dust_flux
+    dep_fluxes(props%indexer(1,2)) = ss_flux
+
+    call props%rebin_bulk_fluxes('dust', dep_fluxes, edges, bulk_fluxes, error_code, error_string)
+    @assertEqual(0, error_code)
+
+    ! Volume-based vmd: each species contributes its mass over its own density.
+    vmd = (6._r8*(dust_flux/dens_dust + ss_flux/dens_ss)/(pi*num_flux))**(1._r8/3._r8) &
+          * exp(1.5_r8*log(sigmag)**2)
+    call lognormal_bin_fractions(vmd, sigmag, edges, frac)
+    expected = frac * dust_flux
+    @assertEqual(expected, bulk_fluxes, 1.0e-12_r8*dust_flux)
+
+    ! The pre-fix mass-weighted form (all mass at the dust density) must give a
+    ! visibly different split here, otherwise this test would not detect a regression.
+    vmd = (6._r8*((dust_flux + ss_flux)/dens_dust)/(pi*num_flux))**(1._r8/3._r8) &
+          * exp(1.5_r8*log(sigmag)**2)
+    call lognormal_bin_fractions(vmd, sigmag, edges, frac_massw)
+    @assertTrue(any(abs(frac_massw - frac) > 1.0e-3_r8))
+
+    deallocate(props)
+    call cleanup_mock_rad_aer()
+end subroutine test_rebin_bulk_fluxes_mixed_density_mode
+
+@test
+subroutine test_rebin_bulk_fluxes_zero_flux()
+    ! A mode with no deposited number or mass contributes nothing and is not an error.
+    use funit
+    use shr_kind_mod, only: r8 => shr_kind_r8
+    use modal_aerosol_properties_mod, only: modal_aerosol_properties
+    use radiative_aerosol, only: cleanup_mock_rad_aer
+    use modal_test_helpers, only: setup_2mode_mock
+
+    real(r8), parameter :: edges(5) = [0.1e-6_r8, 1.0e-6_r8, 2.5e-6_r8, 5.0e-6_r8, 40.e-6_r8]
+    type(modal_aerosol_properties), pointer :: props
+    real(r8) :: dep_fluxes(5)  ! 2 modes: (2+1) + (1+1) constituents
+    real(r8) :: bulk_fluxes(4)
+    integer :: error_code
+    character(len=256) :: error_string
+
+    call setup_2mode_mock()
+    props => modal_aerosol_properties()
+
+    dep_fluxes(:) = 0._r8
+    call props%rebin_bulk_fluxes('dust', dep_fluxes, edges, bulk_fluxes, error_code, error_string)
+    @assertEqual(0, error_code)
+    @assertTrue(all(bulk_fluxes == 0._r8))
+
+    deallocate(props)
+    call cleanup_mock_rad_aer()
+end subroutine test_rebin_bulk_fluxes_zero_flux
+
+@test
+subroutine test_rebin_bulk_fluxes_type_not_found()
+    ! Requesting a species type that no mode holds returns an error and NaN fluxes.
+    use funit
+    use, intrinsic :: ieee_arithmetic, only: ieee_is_nan
+    use shr_kind_mod, only: r8 => shr_kind_r8
+    use modal_aerosol_properties_mod, only: modal_aerosol_properties
+    use radiative_aerosol, only: cleanup_mock_rad_aer
+    use modal_test_helpers, only: setup_2mode_mock
+
+    real(r8), parameter :: edges(5) = [0.1e-6_r8, 1.0e-6_r8, 2.5e-6_r8, 5.0e-6_r8, 40.e-6_r8]
+    type(modal_aerosol_properties), pointer :: props
+    real(r8) :: dep_fluxes(5)  ! 2 modes: (2+1) + (1+1) constituents
+    real(r8) :: bulk_fluxes(4)
+    integer :: error_code
+    character(len=256) :: error_string
+
+    call setup_2mode_mock()
+    props => modal_aerosol_properties()
+
+    dep_fluxes(:) = 1.0e-6_r8
+    call props%rebin_bulk_fluxes('seasalt', dep_fluxes, edges, bulk_fluxes, error_code, error_string)
+    @assertEqual(1, error_code)
+    @assertTrue(index(error_string, 'not found') > 0)
+    @assertTrue(all(ieee_is_nan(bulk_fluxes)))
+
+    deallocate(props)
+    call cleanup_mock_rad_aer()
+end subroutine test_rebin_bulk_fluxes_type_not_found
 
 end module test_modal_aerosol_properties
