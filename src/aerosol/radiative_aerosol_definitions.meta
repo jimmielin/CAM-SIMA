@@ -77,12 +77,6 @@
 [ccpp-arg-table]
   name  = radiative_aerosol_definitions
   type  = module
-[ nmodes_aero ]
-  standard_name = number_of_aerosol_modes
-  units = count
-  type = integer
-  dimensions = ()
-  protected = True
 [ N_DIAG ]
   standard_name = number_of_radiative_aerosol_diagnostic_lists
   units = count

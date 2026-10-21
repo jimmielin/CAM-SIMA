@@ -29,6 +29,7 @@
   <metadata_file>$SRCROOT/src/physics/utils/fraction_landuse_read.meta</metadata_file>
   <metadata_file>$SRCROOT/src/physics/utils/soil_erodibility_read.meta</metadata_file>
   <metadata_file>$SRCROOT/src/aerosol/radiative_aerosol_definitions.meta</metadata_file>
+  <metadata_file>$SRCROOT/src/aerosol/aerosol_mode_dimension.meta</metadata_file>
   <metadata_file>$SRCROOT/src/data/air_composition.meta</metadata_file>
   <metadata_file>$SRCROOT/src/data/cam_thermo.meta</metadata_file>
   <metadata_file>$SRCROOT/src/data/cam_thermo_formula.meta</metadata_file>
@@ -1726,7 +1727,7 @@
     </variable>
 
     <!-- Modal aerosol persistent state. The mode count
-         (number_of_aerosol_modes) is nmodes_aero of radiative_aerosol_definitions,
+         (number_of_aerosol_modes) is nmodes_aero of aerosol_mode_dimension,
          set from the parsed mode_defs namelist so MAM4 and MAM5 size these arrays. -->
     <variable local_name="dgncur_a"
               standard_name="dry_number_mode_diameter_of_modal_aerosol"

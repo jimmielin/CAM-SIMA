@@ -1,0 +1,13 @@
+[ccpp-table-properties]
+  name = aerosol_mode_dimension
+  type = module
+
+[ccpp-arg-table]
+  name  = aerosol_mode_dimension
+  type  = module
+[ nmodes_aero ]
+  standard_name = number_of_aerosol_modes
+  units = count
+  type = integer
+  dimensions = ()
+  protected = True
