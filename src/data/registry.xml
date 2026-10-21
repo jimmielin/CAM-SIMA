@@ -1899,7 +1899,7 @@
               standard_name="molar_mixing_ratio_of_mam_microphysics_constituents_before_aqueous_sulfur_chemistry"
               units="none" type="real" kind="kind_phys"
               allocatable="allocatable">
-      <long_name>constituent molar mixing ratios before aqueous sulfur chemistry (the P-1 capture, immediately after qqcw2vmr = setsox entry); standalone-setsox input via mam_vmr_inject_presetsox</long_name>
+      <long_name>constituent molar mixing ratios before aqueous sulfur chemistry (the P-1 capture, immediately after qqcw2vmr = setsox entry); saved in-suite by mam_vmr_checkpoint_presetsox as the baseline of the setsox tendency, or injected from the snapshot by mam_vmr_inject_presetsox for standalone setsox tests</long_name>
       <dimensions>horizontal_dimension vertical_layer_dimension number_of_ccpp_constituents</dimensions>
       <initial_value>0.0_kind_phys</initial_value>
       <ic_file_input_names>aerochem_vmr_presetsox</ic_file_input_names>
