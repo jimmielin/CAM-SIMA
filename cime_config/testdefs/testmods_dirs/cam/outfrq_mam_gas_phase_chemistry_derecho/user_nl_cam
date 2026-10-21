@@ -23,25 +23,28 @@ pver = 32
 ncdata_check_err = .true.
 min_difference = 5.0e-15
 
-! Rows excluded with their documented floors (gate run of 2026-10-20, values
-! are the maximum absolute difference over five steps):
+! Rows excluded with their documented floors (gate run of 2026-10-21, values
+! are the maximum absolute difference over four steps):
 !  - o3: the registry maps the O3 constituent to the tape's pbuf_ozone
 !    (CAM's prescribed_ozone dataset) while SIMA's O3 is the prescribed
 !    oxidant (tracer_cnst dataset); two datasets, not a check of the port.
-!  - num_a1, num_a2, so4_a1, so4_a2, so2 and the cloud-borne so4_c1..c3,
-!    num_c1, num_c2, h2o2, ncl_a1, ncl_a2, ncl_c1, ncl_c2, num_a4: the
+!  - num_a1, num_a2, so4_a1, so4_a2, the cloud-borne so4_c1, so4_c2,
+!    num_c1, num_c2, ncl_a1, ncl_a2, ncl_c1, ncl_c2, num_a4: the
 !    altitude-based anthro-ene forcing files are interpolated by CAM at
 !    timestep init with the dycore interface heights, which the tape does
 !    not carry (2.8 percent in so4_a1_XFRC/num_a1_XFRC at levels 30-31),
 !    and the aerosol cluster carries that difference into these rows
-!    (num_a2 1.6 kg-1, num_a1 0.8, so4_a1 3e-11, so2 2e-11, h2o2 2e-13,
-!    ncl 2e-13). A recapture with the two anthro-ene entries dropped on
+!    (num_a2 and num_c2 1.7 kg-1, num_a1 0.13, num_c1 0.036, num_a4 5e-3,
+!    so4_a1 and so4_a2 3e-11, so4_c1 and so4_c2 2e-12, ncl_a 1e-13,
+!    ncl_c 9e-15). A recapture with the two anthro-ene entries dropped on
 !    both sides, or the tape's <spc>_XFRC injected, removes the floor.
+!    so2, h2o2 and so4_c3 left the list once the gas-aerosol exchange read
+!    CAM's H2SO4 equilibrium (MAMH2SO4EQ): they now sit at 1e-24 to 1e-28.
 ! Every thermal rate constant, every solver production and loss term and
 ! the H2O tendency are bitwise; photolysis is within 4 ulp at 8 percent of
 ! daylight columns (null-dycore lat/lon round trip in the zenith angle).
 ncdata_check_exclude = 'o3', 'num_a1', 'num_a2', 'num_a4', 'num_c1', 'num_c2',
-         'so4_a1', 'so4_a2', 'so4_c1', 'so4_c2', 'so4_c3', 'so2', 'h2o2',
+         'so4_a1', 'so4_a2', 'so4_c1', 'so4_c2',
          'ncl_a1', 'ncl_a2', 'ncl_c1', 'ncl_c2'
 
 ! mechanism selection (chem_mechanism_trop_mam4 is in the suite)
