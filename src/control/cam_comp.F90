@@ -23,11 +23,12 @@ module cam_comp
    use time_manager,              only: timemgr_init, get_step_size
    use time_manager,              only: get_nstep
    use time_manager,              only: is_first_step, is_first_restart_step
-   use time_manager,              only: get_curr_calday
+   use time_manager,              only: get_curr_calday, get_curr_date
 
    use physics_types,             only: phys_state, phys_tend
    use physics_types,             only: dtime_phys
    use physics_types,             only: calday, next_calday, radiation_offset, nextsw_cday
+   use physics_types,             only: current_date, current_sec
    use physics_types,             only: is_first_timestep, nstep
    use physics_types,             only: is_first_restart_timestep
    use dyn_comp,                  only: dyn_import_t, dyn_export_t
@@ -150,6 +151,7 @@ contains
 
       ! Local variables
       character(len=cs)        :: filein        ! Input namelist filename
+      integer                  :: yr, mon, day, tod
       integer                  :: errflg
       character(len=cx)        :: errmsg
 
@@ -198,8 +200,15 @@ contains
       call mark_as_initialized('number_of_seconds_until_next_shortwave_radiation_timestep')
       call mark_as_initialized('next_calendar_day_to_perform_shortwave_radiation_for_surface_models')
 
+      ! Get current date and elapsed seconds. Needs to be updated at every timestep.
+      call get_curr_date(yr, mon, day, tod)
+      current_date = yr*10000 + mon*100 + day
+      current_sec = tod
+      call mark_as_initialized('current_model_date_in_iso_order')
+      call mark_as_initialized('seconds_of_current_model_date')
+
       ! Read CAM namelists.
-      filein = "atm_in" // trim(inst_suffix)
+      filein = 'atm_in' // trim(inst_suffix)
       call read_namelist(filein, single_column, scmlat, scmlon)
 
       ! Determine if physics is "simple", which needs to be known by some dycores:
@@ -332,9 +341,15 @@ contains
 
       real(kind_phys), pointer :: constituents_array(:,:,:)
       type(ccpp_constituent_prop_ptr_t), pointer :: constituent_properties(:)
+      integer :: yr, mon, day, tod
 
       ! Update current fractional calendar day. Needs to be updated at every timestep.
       calday = get_curr_calday()
+
+      ! Update current date and elapsed seconds
+      call get_curr_date(yr, mon, day, tod)
+      current_date = yr*10000 + mon*100 + day
+      current_sec = tod
 
       ! Update the orbital data
       call orbital_data_advance(calday, lat_rad, lon_rad, use_rad_uniform_angle, &
@@ -632,7 +647,9 @@ contains
       use runtime_obj,               only: wv_stdname, wv_longname
       use phys_comp,                 only: phys_suite_name
       use cam_constituents,          only: cam_constituents_init
-      use cam_constituents,          only: const_set_qmin, const_get_index
+      use cam_constituents,          only: const_set_qmin, const_name
+      use cam_constituents,          only: num_constituents
+      use string_utils,              only: to_lower
       use ccpp_kinds,                only: kind_phys
       use ccpp_constituent_prop_mod, only: ccpp_constituent_prop_ptr_t
       use cam_ccpp_cap,              only: cam_ccpp_register_constituents
@@ -646,6 +663,7 @@ contains
       logical                                        :: is_constituent
       integer                                        :: num_advect
       integer                                        :: const_idx
+      integer                                        :: idx
       integer                                        :: errflg
       character(len=512)                             :: errmsg
       type(ccpp_constituent_prop_ptr_t), pointer     :: const_props(:)
@@ -725,8 +743,23 @@ contains
       !-------------------------------------------
       if (phys_suite_name /= 'held_suarez_1994') then !Held-Suarez is "dry" physics
 
-         ! Get constituent index for water vapor:
-         call const_get_index(wv_stdname, const_idx)
+         ! Get constituent index for water vapor.
+         ! Search the constituent properties directly, as the CCPP
+         ! constituents object is not yet locked, which means
+         ! 'const_get_index' (i.e. 'ccpp_constituent_index') cannot be used.
+         ! Note that the minimum value must be set before the object is
+         ! locked, as 'lock_data' copies it into the minimum value array.
+         const_idx = -1
+         do idx = 1, num_constituents
+            if (to_lower(trim(const_name(idx))) == to_lower(trim(wv_stdname))) then
+               const_idx = idx
+               exit
+            end if
+         end do
+         if (const_idx < 1) then
+            call endrun(subname//'Water vapor constituent ('//trim(wv_stdname)//') not found', &
+                 file=__FILE__, line=__LINE__)
+         end if
 
          ! Set new minimum value:
          call const_set_qmin(const_idx, 1.E-12_kind_phys)
