@@ -202,8 +202,14 @@ contains
             if (is_initialized(std_name)) then
                cycle
             end if
-            call read_field(file, std_name, input_var_names(:,const_input_idx), 'lev', timestep, field_data_ptr(:,:,constituent_idx), &
-                mark_as_read=.false., error_on_not_found=.false., var_found=var_found)
+            ! The registry's input names come first; the constituent name and the
+            ! cnst_, pbuf_ forms of CAM snapshots follow, so a registry entry never
+            ! hides a CAM capture of the same constituent (a miss would silently
+            ! leave the constituent at its minimum value):
+            call read_field(file, std_name, [character(len=max(len(input_var_names), std_name_len+5)) :: input_var_names(:,const_input_idx), &
+                std_name, 'cnst_'//trim(std_name), 'pbuf_'//trim(std_name), to_upper(std_name), 'cnst_'//trim(to_upper(std_name)), &
+                'pbuf_'//trim(to_upper(std_name)), to_lower(std_name), 'cnst_'//trim(to_lower(std_name)), 'pbuf_'//trim(to_lower(std_name))], 'lev', &
+                timestep, field_data_ptr(:,:,constituent_idx), mark_as_read=.false., error_on_not_found=.false., var_found=var_found)
          else
             ! If not in standard names list, then attempt constituent name
             ! and cnst_, pbuf_ prefixes used by CAM snapshots (advected, non-advected) as input names.
@@ -382,8 +388,11 @@ contains
             end if
          end do stdname_search
          if(const_input_idx > 0) then
-            call check_field(file, input_var_names(:,const_input_idx), 'lev', timestep, field_data_ptr(:,:,constituent_idx), std_name, &
-                min_difference, min_relative_value, is_first, diff_found)
+            ! Registry input names first, then the CAM snapshot forms (as in physics_read_data):
+            call check_field(file, [character(len=max(len(input_var_names), std_name_len+5)) :: input_var_names(:,const_input_idx), std_name, &
+                'cnst_'//trim(std_name), 'pbuf_'//trim(std_name), to_upper(std_name), 'cnst_'//trim(to_upper(std_name)), &
+                'pbuf_'//trim(to_upper(std_name)), to_lower(std_name), 'cnst_'//trim(to_lower(std_name)), 'pbuf_'//trim(to_lower(std_name))], 'lev', &
+                timestep, field_data_ptr(:,:,constituent_idx), std_name, min_difference, min_relative_value, is_first, diff_found)
             if (diff_found) then
                overall_diff_found = .true.
             end if
