@@ -1843,6 +1843,9 @@
       <long_name>H2SO4 equilibrium mixing ratio of modal aerosol</long_name>
       <dimensions>horizontal_dimension vertical_layer_dimension number_of_aerosol_modes</dimensions>
       <initial_value>0.0_kind_phys</initial_value>
+      <!-- CAM's MAMH2SO4EQ pbuf field (modal_aero_wateruptake), so a snapshot
+           run of the gas-aerosol exchange sees CAM's equilibrium instead of 0 -->
+      <ic_file_input_names>MAMH2SO4EQ pbuf_MAMH2SO4EQ</ic_file_input_names>
     </variable>
     <variable local_name="do_aqueous_sulfur_chemistry_aerosol_update"
               standard_name="do_aqueous_sulfur_chemistry_aerosol_update"
