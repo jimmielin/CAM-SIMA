@@ -1,0 +1,4 @@
+! CAM's HIST orbit (the capture ran variable_year aligned at 1850)
+orb_mode = "variable_year"
+orb_iyear = 1850
+orb_iyear_align = 1850

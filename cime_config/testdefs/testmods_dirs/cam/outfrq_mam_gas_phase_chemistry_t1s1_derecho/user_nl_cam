@@ -1,0 +1,158 @@
+! ---------------------------------------------------------------------------
+! chem_proc gas-phase chemistry gate, T1S1 (suite mam_gas_phase_chemistry,
+! chem_mechanism trop_strat_mam5_t1s1: 230 species, 542 reactions, MAM5 with
+! the prognostic stratospheric sulfate). FPHYStest from the CAM cam6_4_213
+! FCHIST capture bracketing chem_timestep_tend (gas_wetdep_method OFF,
+! lght_no_prd_factor 0, ZEN_ANGLE added), ne3pg3 L32, start 1979-01-01 00:00,
+! dtime 1800. Every file and value below mirrors that run's atm_in /
+! drv_flds_in. Frame k of the tapes is CAM nstep k; SIMA reads frame
+! get_nstep(), so with the same start date the calendar lines up for
+! nstep >= 1. The test runs four steps: after the last step the null dycore
+! reads the frame of the step that follows, so a five-step run on a
+! five-frame tape stops with an end-of-tape read after the last check.
+! ---------------------------------------------------------------------------
+ncdata       = '/glade/campaign/cesm/community/amwg/sima_baselines/cam_sima_test_snapshots/cam6_4_213_ne3pg3_fchist_trop_strat_mam5_t1s1_chem_timestep_tend_snapshot_derecho_gnu_before_c20261021.nc'
+ncdata_check = '/glade/campaign/cesm/community/amwg/sima_baselines/cam_sima_test_snapshots/cam6_4_213_ne3pg3_fchist_trop_strat_mam5_t1s1_chem_timestep_tend_snapshot_derecho_gnu_after_c20261021.nc'
+
+! FCHIST (cam6) vertical grid
+pver = 32
+
+! Tolerance. The check reports a relative difference for values at or above
+! min_relative_value (its default, 1e-5) and an absolute one below it, so
+! the number tracers (kg-1), CO2 and stratospheric O3 are compared relative
+! and the other mass mixing ratios absolute. 1e-14 clears the ulp-class
+! floors (the mam_vmr pack round trip, the solver tolerance cascade) and
+! the zenith floor of the null dycore's lat/lon degree round trip, which
+! perturbs 21 of 273 daylight columns' photolysis rates by 1e-14 to 1e-12
+! and leaves O3 at 4e-15 relative.
+ncdata_check_err = .true.
+min_difference = 1.0e-14
+
+! Rows excluded with their documented floors (gate run 16 of 2026-10-21,
+! maxima over the four steps; relative for values at or above 1e-5,
+! absolute below, so num_c5 is absolute).
+! All of them trace to the altitude-based external forcing files (aircraft
+! bc_a4/num_a4/NO2/SO2, anthro-ene num_a1/so4_a1, volcano SO2/num/so4): CAM
+! interpolates them at timestep init with the dycore interface heights,
+! which the tape does not carry, so SIMA's forcing differs in about 2900
+! aircraft cells (up to a full cell at the layer edges) and 360 volcano
+! cells, and the aerosol cluster and the solver carry that forward. A
+! capture with ext_frc_specifier empty on both sides drops every one of
+! these rows into the ulp class.
+!  - num_a4 0.11 (an aircraft forcing cell), num_a1 3.2e-3, num_a2 1.3e-4,
+!    num_a5 1e-5, num_c2 9.1e-6, num_c1 1.9e-6, num_c5 1.3e-12
+!  - so4_a1 5e-13, soa5_a1 and soag4 6.4e-14 (the anthro-ene cell)
+!  - co2 1.8e-12 (CO + OH in the forcing-perturbed columns)
+!  - water vapor 4e-12 relative in about 1100 cells (H2O is a solution
+!    species of T1S1, produced by CH4 oxidation in the forcing-perturbed
+!    columns; 1e-23 without the forcing). The row carries the standard name
+!    because water vapor is the host's constituent, not a chemistry one.
+! Every thermal and user rate constant, every stratospheric heterogeneous
+! rate and every solver production and loss term is bitwise; the NH3 to NH4
+! bookkeeping and the setsox tendency baseline of the aerosol cluster match
+! CAM (runs 13 and 16 of the gate).
+ncdata_check_exclude = 'num_a4', 'num_a1', 'num_a2', 'num_a5', 'num_c1', 'num_c2',
+         'num_c5', 'so4_a1', 'soa5_a1', 'soag4', 'co2',
+         'water_vapor_mixing_ratio_wrt_moist_air_and_condensed_water'
+
+! mechanism selection (both packages are in the suite)
+chem_mechanism = 'trop_strat_mam5_t1s1'
+
+! no prescribed oxidants: O3, OH, NO3 and HO2 are solution species of T1S1
+prescribed_oxidants_file = 'UNSET'
+
+! table photolysis plus the short-wavelength (jshort) files, as CAM's atm_in;
+! CAM's T1S1 run sets no exo_coldens_file, which disables the columns above
+! the model top in both codes
+rsf_file         = '/glade/campaign/cesm/cesmdata/inputdata/atm/waccm/phot/RSF_GT200nm_v3.0_c080811.nc'
+xs_long_file     = '/glade/campaign/cesm/cesmdata/inputdata/atm/waccm/phot/temp_prs_GT200nm_c221005mm_slh_c250930.nc'
+xs_coef_file     = '/glade/campaign/cesm/cesmdata/inputdata/atm/waccm/phot/effxstex.txt'
+xs_short_file    = '/glade/campaign/cesm/cesmdata/inputdata/atm/waccm/phot/xs_short_c221005mm_slh_c250930.nc'
+exo_coldens_file = ' '
+photo_max_zen    = 97.01D0
+
+! solar irradiance (photon flux for photolysis): CAM's historical file, SERIAL
+solar_irrad_data_file = '/glade/campaign/cesm/cesmdata/inputdata/atm/cam/solar/SolarForcingCMIP6_18491230-23000102_c20200615.nc'
+solar_data_type       = 'SERIAL'
+solar_htng_spctrl_scl = .true.
+
+! external (elevated) forcing, CAM's ext_frc_specifier verbatim
+ext_frc_type = 'INTERP_MISSING_MONTHS'
+ext_frc_specifier = 'bc_a4 -> /glade/campaign/cesm/cesmdata/inputdata/atm/cam/chem/emis/CMIP6_emissions_1750_2015/emissions-cmip6_bc_a4_aircraft_vertical_1750-2015_0.9x1.25_c20170608.nc',
+         'NO2 -> /glade/campaign/cesm/cesmdata/inputdata/atm/cam/chem/emis/CMIP6_emissions_1750_2015/emissions-cmip6_NO2_aircraft_vertical_1750-2015_0.9x1.25_c20170608.nc',
+         'num_a1 -> /glade/campaign/cesm/cesmdata/inputdata/atm/cam/chem/emis/CMIP6_emissions_1750_2015/emissions-cmip6_num_so4_a1_anthro-ene_vertical_1750-2015_0.9x1.25_c20170616.nc',
+         'num_a1 -> /glade/campaign/cesm/cesmdata/inputdata/atm/cam/chem/emis/CMIP6_emissions_1750_2015/emissions-cmip6_num_a1_so4_contvolcano_vertical_850-5000_0.9x1.25_c20170724.nc',
+         'num_a2 -> /glade/campaign/cesm/cesmdata/inputdata/atm/cam/chem/emis/CMIP6_emissions_1750_2015/emissions-cmip6_num_a2_so4_contvolcano_vertical_850-5000_0.9x1.25_c20170724.nc',
+         'num_a4 -> /glade/campaign/cesm/cesmdata/inputdata/atm/cam/chem/emis/CMIP6_emissions_1750_2015/emissions-cmip6_num_bc_a4_aircraft_vertical_1750-2015_0.9x1.25_c20170608.nc',
+         'SO2 -> /glade/campaign/cesm/cesmdata/inputdata/atm/cam/chem/emis/CMIP6_emissions_1750_2015/emissions-cmip6_SO2_aircraft_vertical_1750-2015_0.9x1.25_c20170608.nc',
+         'SO2 -> /glade/campaign/cesm/cesmdata/inputdata/atm/cam/chem/emis/CMIP6_emissions_1750_2015/emissions-cmip6_SO2_contvolcano_vertical_850-5000_0.9x1.25_c20170724.nc',
+         'SO2 -> /glade/campaign/cesm/cesmdata/inputdata/atm/cam/chem/stratvolc/VolcanEESMv3.11_SO2_850-2016_Mscale_Zreduc_1deg_c191121.nc',
+         'so4_a1 -> /glade/campaign/cesm/cesmdata/inputdata/atm/cam/chem/emis/CMIP6_emissions_1750_2015/emissions-cmip6_so4_a1_anthro-ene_vertical_1750-2015_0.9x1.25_c20170616.nc',
+         'so4_a1 -> /glade/campaign/cesm/cesmdata/inputdata/atm/cam/chem/emis/CMIP6_emissions_1750_2015/emissions-cmip6_so4_a1_contvolcano_vertical_850-5000_0.9x1.25_c20170724.nc',
+         'so4_a2 -> /glade/campaign/cesm/cesmdata/inputdata/atm/cam/chem/emis/CMIP6_emissions_1750_2015/emissions-cmip6_so4_a2_contvolcano_vertical_850-5000_0.9x1.25_c20170724.nc'
+
+! fixed lower boundary mixing ratios, CAM's chem_surfvals_nl verbatim
+flbc_file = '/glade/campaign/cesm/cesmdata/inputdata/atm/waccm/lb/LBC_17500116-25001216_CMIP6_SSP585_0p5degLat_c20200824.nc'
+flbc_list = 'CCL4', 'CF2CLBR', 'CF3BR', 'CFC11', 'CFC113', 'CFC12', 'CH3BR', 'CH3CCL3', 'CH3CL', 'CH4', 'CO2', 'H2',
+         'HCFC22', 'N2O', 'CFC114', 'CFC115', 'HCFC141B', 'HCFC142B', 'CH2BR2', 'CHBR3', 'H2402', 'OCS', 'SF6'
+flbc_type = 'SERIAL'
+
+! Henry's law data for setsox (CAM drv_flds_in dep_data_file)
+gas_deposition_dep_data_file = '/glade/campaign/cesm/cesmdata/inputdata/atm/cam/chem/trop_mozart/dvel/dep_data_c20221208.nc'
+
+! MAM options as CAM ran them (MAM5 with the prognostic stratospheric sulfate)
+modal_accum_coarse_exch = .true.
+modal_strat_sulfate     = .true.
+
+tropopause_climo_file = '/glade/campaign/cesm/cesmdata/inputdata/atm/cam/chem/trop_mozart/ub/clim_p_trop.nc'
+
+! mode property files exactly as CAM's FCHIST rad_climate (five modes; bulk
+! VOLC_MMR entries dropped on purpose: SIMA resolves every entry eagerly)
+rad_aer_climate = 'M:mam5_mode1:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/mam4_mode1_rrtmg_aeronetdust_sig1.6_dgnh.48_c140304.nc',
+         'M:mam5_mode2:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/mam4_mode2_rrtmg_aitkendust_c141106.nc',
+         'M:mam5_mode3:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/mam4_mode3_rrtmg_aeronetdust_c141106.nc',
+         'M:mam5_mode4:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/mam4_mode4_rrtmg_c130628.nc',
+         'M:mam5_mode5:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/mam4_mode3_rrtmg_aeronetdust_sig1.2_dgnl.40_c150219.nc'
+
+! mode definitions, verbatim from the CAM atm_in
+mode_defs = 'mam5_mode1:accum:=', 'A:num_a1:N:num_c1:num_mr:+',
+         'A:so4_a1:N:so4_c1:sulfate:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/sulfate_rrtmg_c080918.nc:+', 'A:pom_a1:N:pom_c1:p-organic:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ocpho_rrtmg_c130709.nc:+',
+         'A:soa1_a1:N:soa1_c1:s-organic:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ocphi_rrtmg_c100508.nc:+', 'A:soa2_a1:N:soa2_c1:s-organic:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ocphi_rrtmg_c100508.nc:+',
+         'A:soa3_a1:N:soa3_c1:s-organic:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ocphi_rrtmg_c100508.nc:+', 'A:soa4_a1:N:soa4_c1:s-organic:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ocphi_rrtmg_c100508.nc:+',
+         'A:soa5_a1:N:soa5_c1:s-organic:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ocphi_rrtmg_c100508.nc:+', 'A:bc_a1:N:bc_c1:black-c:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/bcpho_rrtmg_c100508.nc:+',
+         'A:dst_a1:N:dst_c1:dust:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/dust_aeronet_rrtmg_c141106.nc:+', 'A:ncl_a1:N:ncl_c1:seasalt:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ssam_rrtmg_c100508.nc',
+         'mam5_mode2:aitken:=', 'A:num_a2:N:num_c2:num_mr:+',
+         'A:so4_a2:N:so4_c2:sulfate:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/sulfate_rrtmg_c080918.nc:+', 'A:soa1_a2:N:soa1_c2:s-organic:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ocphi_rrtmg_c100508.nc:+',
+         'A:soa2_a2:N:soa2_c2:s-organic:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ocphi_rrtmg_c100508.nc:+', 'A:soa3_a2:N:soa3_c2:s-organic:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ocphi_rrtmg_c100508.nc:+',
+         'A:soa4_a2:N:soa4_c2:s-organic:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ocphi_rrtmg_c100508.nc:+', 'A:soa5_a2:N:soa5_c2:s-organic:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ocphi_rrtmg_c100508.nc:+',
+         'A:ncl_a2:N:ncl_c2:seasalt:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ssam_rrtmg_c100508.nc:+', 'A:dst_a2:N:dst_c2:dust:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/dust_aeronet_rrtmg_c141106.nc',
+         'mam5_mode3:coarse:=', 'A:num_a3:N:num_c3:num_mr:+',
+         'A:dst_a3:N:dst_c3:dust:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/dust_aeronet_rrtmg_c141106.nc:+', 'A:ncl_a3:N:ncl_c3:seasalt:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ssam_rrtmg_c100508.nc:+',
+         'A:so4_a3:N:so4_c3:sulfate:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/sulfate_rrtmg_c080918.nc', 'mam5_mode4:primary_carbon:=',
+         'A:num_a4:N:num_c4:num_mr:+', 'A:pom_a4:N:pom_c4:p-organic:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/ocpho_rrtmg_c130709.nc:+',
+         'A:bc_a4:N:bc_c4:black-c:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/bcpho_rrtmg_c100508.nc', 'mam5_mode5:coarse_strat:=',
+         'A:num_a5:N:num_c5:num_mr:+', 'A:so4_a5:N:so4_c5:sulfate:/glade/campaign/cesm/cesmdata/inputdata/atm/cam/physprops/sulfate_rrtmg_c080918.nc'
+
+! history: one REAL64 h1 with the chemistry diagnostics, same names as the CAM
+! extras tape (<case>_extras.nc) for offline comparison
+hist_output_frequency;h1: 1*nsteps
+hist_write_nstep0;h1: .true.
+hist_precision;h1: REAL64
+hist_max_frames;h1: 5
+! photolysis tags (chem_photolysis_diagnostics)
+hist_add_inst_fields;h1: jo2_a,jo2_b,jno,jo3_a,jo3_b,jno2,jh2o2,jcl2o2,jn2o5_a,jclono2_a,jhno3,jhocl
+! thermal and user tags (chem_rate_constants_diagnostics)
+hist_add_inst_fields;h1: usr_O_O,usr_O_O2,usr_HO2_HO2,usr_HNO3_OH,usr_HO2NO2_M,usr_N2O5_M,usr_CL2O2_M,usr_CO_OH
+hist_add_inst_fields;h1: usr_PAN_M,usr_CH3COCH3_OH,usr_MPAN_M,usr_PBZNIT_M,usr_DMS_OH,usr_SO3_H2O,usr_HO2_aer
+hist_add_inst_fields;h1: usr_HONITR_aer,usr_ISOPNITA_aer,usr_ISOPNITB_aer,usr_N2O5_aer,usr_NC4CH2OH_aer,usr_NC4CHO_aer
+hist_add_inst_fields;h1: usr_NH4_strat_tau,usr_NO2_aer,usr_NO3_aer,usr_NTERPOOH_aer,usr_ONITR_aer,usr_TERPNIT_aer,usr_GLYOXAL_aer
+hist_add_inst_fields;h1: het1,het2,het3,het4,het5,het6,het7,het8,het9,het10,het11,het12,het13,het14,het15,het16,het17
+hist_add_inst_fields;h1: O_O3,O1D_H2O,CLO_O,BRO_O,NO2_O,CLO_CLOa,OH_O3,HO2_O3
+! external forcing after the division by M (chem_extfrc), same names as CAM's <spc>_XFRC
+hist_add_inst_fields;h1: num_a4_XFRC,pom_a4_XFRC,bc_a4_XFRC,SVOC_XFRC,SO2_XFRC,NO2_XFRC,CO_XFRC
+hist_add_inst_fields;h1: num_a1_XFRC,num_a2_XFRC,so4_a1_XFRC,so4_a2_XFRC,H2O_XFRC
+! production and loss (chem_prod_loss_diagnostics)
+hist_add_inst_fields;h1: O3_CHMP,O3S_CHMP,NO_CHMP,NO2_CHMP,HNO3_CHMP,N2O5_CHMP,CH4_CHMP,CO_CHMP,OH_CHMP,HO2_CHMP
+hist_add_inst_fields;h1: CLO_CHMP,HCL_CHMP,CLONO2_CHMP,BRO_CHMP,HOBR_CHMP,H2O_CHMP,SO2_CHMP,H2SO4_CHMP,DMS_CHMP,SOAG0_CHMP
+hist_add_inst_fields;h1: O3_CHML,O3S_CHML,NO_CHML,NO2_CHML,HNO3_CHML,N2O5_CHML,CH4_CHML,CO_CHML,OH_CHML,HO2_CHML
+hist_add_inst_fields;h1: CLO_CHML,HCL_CHML,CLONO2_CHML,BRO_CHML,HOBR_CHML,H2O_CHML,SO2_CHML,H2SO4_CHML,DMS_CHML,SOAG0_CHML

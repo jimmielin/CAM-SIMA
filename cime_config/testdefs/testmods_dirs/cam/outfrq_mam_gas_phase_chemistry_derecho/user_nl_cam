@@ -17,35 +17,39 @@ ncdata_check = '/glade/campaign/cesm/community/amwg/sima_baselines/cam_sima_test
 ! FHIST (cam6) vertical grid
 pver = 32
 
-! Absolute tolerance (min_relative_value is left at its default, so every
-! difference is absolute). 5e-15 passes the pack round-trip floor on the
-! workspace species and the ulp-level cascade of the known forcing floor.
+! Tolerance. The check reports a relative difference for values at or above
+! min_relative_value (its default, 1e-5) and an absolute one below it, so
+! the number tracers (kg-1) are compared relative and the mass mixing
+! ratios absolute. 5e-15 clears the pack round-trip floor on the workspace
+! species and the ulp-level cascade of the known forcing floor.
 ncdata_check_err = .true.
 min_difference = 5.0e-15
 
-! Rows excluded with their documented floors (gate run of 2026-10-21, values
-! are the maximum absolute difference over four steps):
+! Rows excluded with their documented floors (gate run 13 of 2026-10-21,
+! maxima over the four steps; relative for values at or above 1e-5,
+! absolute below):
 !  - o3: the registry maps the O3 constituent to the tape's pbuf_ozone
 !    (CAM's prescribed_ozone dataset) while SIMA's O3 is the prescribed
 !    oxidant (tracer_cnst dataset); two datasets, not a check of the port.
-!  - num_a1, num_a2, so4_a1, so4_a2, the cloud-borne so4_c1, so4_c2,
-!    num_c1, num_c2, ncl_a1, ncl_a2, ncl_c1, ncl_c2, num_a4: the
-!    altitude-based anthro-ene forcing files are interpolated by CAM at
-!    timestep init with the dycore interface heights, which the tape does
-!    not carry (2.8 percent in so4_a1_XFRC/num_a1_XFRC at levels 30-31),
-!    and the aerosol cluster carries that difference into these rows
-!    (num_a2 and num_c2 1.7 kg-1, num_a1 0.13, num_c1 0.036, num_a4 5e-3,
-!    so4_a1 and so4_a2 3e-11, so4_c1 and so4_c2 2e-12, ncl_a 1e-13,
-!    ncl_c 9e-15). A recapture with the two anthro-ene entries dropped on
-!    both sides, or the tape's <spc>_XFRC injected, removes the floor.
-!    so2, h2o2 and so4_c3 left the list once the gas-aerosol exchange read
-!    CAM's H2SO4 equilibrium (MAMH2SO4EQ): they now sit at 1e-24 to 1e-28.
+!  - num_a1 3.6e-3, num_a2 8.3e-4, num_a4 1e-5, num_c1 2.1e-7, num_c2
+!    5.9e-8 and so4_a1 5e-13: the altitude-based anthro-ene forcing files
+!    are interpolated by CAM at timestep init with the dycore interface
+!    heights, which the tape does not carry (2.8 percent in
+!    so4_a1_XFRC/num_a1_XFRC at levels 30-31), and the aerosol cluster
+!    carries that difference into these rows at the forcing cells. A
+!    recapture with the two anthro-ene entries dropped on both sides
+!    removes the floor.
+! Earlier floors of 1.7 (relative) in num_a2/num_c2 and 3e-11 in
+! so4_a1/so4_a2 were the setsox tendency baseline of the aerosol cluster
+! (measured against the pack-time state instead of the pre-setsox state,
+! so the SOA photolysis of the gas-phase solver counted as aqueous growth
+! for renaming); so4_a2, so4_c1, so4_c2 and the ncl rows now sit at
+! 1e-16 to 1e-21 and so2, h2o2, so4_c3 at 1e-24 to 1e-28 since the
+! gas-aerosol exchange reads CAM's H2SO4 equilibrium (MAMH2SO4EQ).
 ! Every thermal rate constant, every solver production and loss term and
 ! the H2O tendency are bitwise; photolysis is within 4 ulp at 8 percent of
 ! daylight columns (null-dycore lat/lon round trip in the zenith angle).
-ncdata_check_exclude = 'o3', 'num_a1', 'num_a2', 'num_a4', 'num_c1', 'num_c2',
-         'so4_a1', 'so4_a2', 'so4_c1', 'so4_c2',
-         'ncl_a1', 'ncl_a2', 'ncl_c1', 'ncl_c2'
+ncdata_check_exclude = 'o3', 'num_a1', 'num_a2', 'num_a4', 'num_c1', 'num_c2', 'so4_a1'
 
 ! mechanism selection (chem_mechanism_trop_mam4 is in the suite)
 chem_mechanism = 'trop_mam4'
