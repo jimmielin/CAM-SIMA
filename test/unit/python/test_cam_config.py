@@ -74,6 +74,7 @@ class FakeCase:
             "RUN_STARTDATE" : "101",
             "CAM_SIM_YEAR" : "2000",
             "CAM_CHEM_MECHANISM" : "",
+            "CAM_SIM_TYPE" : None,
             "DEBUG" : False,
             "OPENACC_GPU_OFFLOAD": False
             }
@@ -383,6 +384,8 @@ class CamConfigTestRoutine(unittest.TestCase):
                   'DEBUG:print_config:sim_year = 2000',
                   'DEBUG:print_config:# Gas-phase chemistry mechanism used for namelist defaults.',
                   'DEBUG:print_config:chem_mechanism = ',
+                  'DEBUG:print_config:# Simulation type (e.g. historical) used for namelist defaults.',
+                  'DEBUG:print_config:sim_type = ',
                   'DEBUG:print_config:# Flag to check if debug mode is enabled.',
                   'DEBUG:print_config:debug = 0',
                   'DEBUG:print_config:# Maximum number of columns assigned to a thread.',
