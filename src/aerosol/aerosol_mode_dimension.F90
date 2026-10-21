@@ -11,6 +11,8 @@ module aerosol_mode_dimension
 
   public :: aerosol_mode_dimension_set
 
+  !> \section arg_table_aerosol_mode_dimension  Argument Table
+  !! \htmlinclude aerosol_mode_dimension.html
   integer, public, protected :: nmodes_aero = 4
 
 contains
