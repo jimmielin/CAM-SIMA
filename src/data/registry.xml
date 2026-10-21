@@ -1930,6 +1930,14 @@
       <dimensions>horizontal_dimension vertical_layer_dimension number_of_ccpp_constituents</dimensions>
       <initial_value>0.0_kind_phys</initial_value>
     </variable>
+    <variable local_name="mam_nh3_vmr_entry"
+              standard_name="molar_mixing_ratio_of_nh3_at_mam_microphysics_cluster_entry"
+              units="mol mol-1" type="real" kind="kind_phys"
+              allocatable="allocatable">
+      <long_name>NH3 molar mixing ratio at microphysics-cluster entry, saved by mam_nh3_checkpoint_entry; the NH3 the cluster consumes is moved into the gas-phase NH4 tracer at the cluster exit by mam_nh4_from_nh3 (CAM aero_model_gasaerexch nh3_beg). Computed in-suite, never read from a snapshot.</long_name>
+      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <initial_value>0.0_kind_phys</initial_value>
+    </variable>
     <!-- H2SO4 vapor deltas consumed by new-particle nucleation. gasprod is
          produced by gas-phase chemistry (MOZART), so it is always read from
          the snapshot; aeruptk is recovered by mam_vmr_apply (bracketing the
