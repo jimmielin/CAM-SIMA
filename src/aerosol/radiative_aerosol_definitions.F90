@@ -264,6 +264,11 @@ module radiative_aerosol_definitions
   logical, public :: active_calls(id_climate:N_DIAG) = .false.
 
   type(modes_t), public, target :: modes  ! mode definitions
+
+  ! Number of aerosol modes the registry sizes the modal aerosol state by
+  ! (CCPP number_of_aerosol_modes): the parsed mode_defs count, so MAM4 and
+  ! MAM5 both fit; 4 when no modes are defined
+  integer, public, protected :: nmodes_aero = 4
   type(bins_t),  public, target :: bins   ! bin definitions
 
   ! list of bulk aerosols used in climate/diagnostic calculations
@@ -541,6 +546,7 @@ subroutine parse_mode_defs(nl_in, modes)
 
    end do
    modes%nmodes = nmodes
+   if (nmodes > 0) nmodes_aero = nmodes
 
    ! return if no modes defined
    if (nmodes == 0) return

@@ -1725,13 +1725,9 @@
            coupling to the land model (see dstdry1/2/3/4, dstwet1/2/3/4) -->
     </variable>
 
-    <!-- Modal aerosol persistent state -->
-    <variable local_name="nmodes_aero"
-              standard_name="number_of_aerosol_modes"
-              units="count" type="integer" allocatable="parameter">
-      <long_name>number of aerosol modes (set by mam_mode_metadata_init)</long_name>
-      <initial_value>4</initial_value>
-    </variable>
+    <!-- Modal aerosol persistent state. The mode count
+         (number_of_aerosol_modes) is nmodes_aero of radiative_aerosol_definitions,
+         set from the parsed mode_defs namelist so MAM4 and MAM5 size these arrays. -->
     <variable local_name="dgncur_a"
               standard_name="dry_number_mode_diameter_of_modal_aerosol"
               units="m" type="real" kind="kind_phys"
