@@ -7,20 +7,26 @@
 [submodule "history"]
 	path          = src/history/buffers
 	url           = https://github.com/ESMCI/history_output
-	fxtag         = history01_02
+	fxtag         = history01_04
 	fxrequired    = AlwaysRequired
 	fxDONOTUSEurl = https://github.com/ESMCI/history_output
 [submodule "mpas"]
         path          = src/dynamics/mpas/dycore
         url           = https://github.com/MPAS-Dev/MPAS-Model.git
         fxsparse      = ../.mpas_sparse_checkout
-        fxtag         = v8.4.0
+        fxtag         = v8.4.2
         fxrequired    = AlwaysRequired
         fxDONOTUSEurl = https://github.com/MPAS-Dev/MPAS-Model.git
+[submodule "scotch"]
+        path          = src/dynamics/mpas/scotch
+        url           = https://gitlab.inria.fr/scotch/scotch.git
+        fxtag         = v7.0.18
+        fxrequired    = AlwaysOptional
+        fxDONOTUSEurl = https://gitlab.inria.fr/scotch/scotch.git
 [submodule "ncar-physics"]
         path          = src/physics/ncar_ccpp
 	url           = https://github.com/ESCOMP/atmospheric_physics
-	fxtag         = atmos_phys0_33_000
+	fxtag         = 15f745dbdb8d54d30b536f61709fd1458edada3a
         fxrequired    = AlwaysRequired
         fxDONOTUSEurl = https://github.com/ESCOMP/atmospheric_physics
 [submodule "rrtmgp-data"]
