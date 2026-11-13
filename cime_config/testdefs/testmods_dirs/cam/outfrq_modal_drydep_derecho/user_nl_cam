@@ -1,6 +1,6 @@
 ! Modal aerosol dry deposition (suite_mam_drydep): aero_model_drydep snapshot
-ncdata = '/glade/campaign/cesm/community/amwg/sima_baselines/cam_sima_test_snapshots/cam6_4_185_ne3pg3_fhist_modal_aero_drydep_snapshot_derecho_gnu_before_c20260710.nc'
-ncdata_check = '/glade/campaign/cesm/community/amwg/sima_baselines/cam_sima_test_snapshots/cam6_4_185_ne3pg3_fhist_modal_aero_drydep_snapshot_derecho_gnu_after_c20260710.nc'
+ncdata = '/glade/campaign/cesm/amwg/soft_eng/sima_baselines/cam_sima_test_snapshots/cam6_4_185_ne3pg3_fhist_modal_aero_drydep_snapshot_derecho_gnu_before_c20260710.nc'
+ncdata_check = '/glade/campaign/cesm/amwg/soft_eng/sima_baselines/cam_sima_test_snapshots/cam6_4_185_ne3pg3_fhist_modal_aero_drydep_snapshot_derecho_gnu_after_c20260710.nc'
 
 ! land use class fractions for the deposition velocities:
 drydep_srf_file = '/glade/campaign/cesm/cesmdata/inputdata/atm/cam/chem/trop_mam/atmsrf_ne3np4.pg3_221214.nc'

@@ -1,8 +1,8 @@
 ! REPLACE after the classic cam_snapshot capture run
 ! (cam_take_snapshot_before/after = "aero_model_wetdep";
 !  convproc_do_aer = .false. override on the capture):
-ncdata = '/glade/campaign/cesm/community/amwg/sima_baselines/cam_sima_test_snapshots/cam6_4_185_ne3pg3_fhist_modal_aero_wetdep_nodoaer_snapshot_derecho_gnu_before_c20260708.nc'
-ncdata_check = '/glade/campaign/cesm/community/amwg/sima_baselines/cam_sima_test_snapshots/cam6_4_185_ne3pg3_fhist_modal_aero_wetdep_nodoaer_snapshot_derecho_gnu_after_c20260708.nc'
+ncdata = '/glade/campaign/cesm/amwg/soft_eng/sima_baselines/cam_sima_test_snapshots/cam6_4_185_ne3pg3_fhist_modal_aero_wetdep_nodoaer_snapshot_derecho_gnu_before_c20260708.nc'
+ncdata_check = '/glade/campaign/cesm/amwg/soft_eng/sima_baselines/cam_sima_test_snapshots/cam6_4_185_ne3pg3_fhist_modal_aero_wetdep_nodoaer_snapshot_derecho_gnu_after_c20260708.nc'
 
 ! fhist:
 pver = 32
