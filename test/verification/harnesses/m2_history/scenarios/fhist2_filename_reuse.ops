@@ -1,0 +1,13 @@
+# F-HIST-2 replay (TLC M2_prefix_fhist2 counterexample, concrete): a
+# filename spec without %s plus mfilt=1 produces the same name for both
+# files of the run; production PIO_CLOBBER truncates the first.
+dtime 1800
+volume h1 1 1*nsteps F %c.cam.%u%f.%y-%m-%d.nc
+field F1 inst F
+setup
+nstep 1
+sample F1 42.0
+write
+nstep 2
+sample F1 43.0
+write

@@ -1,0 +1,15 @@
+# F-HIST-5 replay (TLC M2_prefix_fhist5 counterexample, concrete): an avg
+# field sampled in the first 2-step interval and not in the second.  The
+# second frame must be _FillValue; unfixed code writes the uninitialized
+# normalization buffer.
+dtime 1800
+volume h1 4 2*nsteps F %c.cam.%u%f.%y-%m-%d-%s.nc
+field F1 avg F
+setup
+nstep 1
+sample F1 42.0
+nstep 2
+write
+nstep 3
+nstep 4
+write

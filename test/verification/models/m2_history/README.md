@@ -88,12 +88,16 @@ This is a model of the code, not the code. Anchors at CAM-SIMA
 - Filename allocation and the duplicate check that skips the volume
   itself (F-HIST-2): `src/history/cam_history.F90:212-230`.
 
-Planned bridges, in order: the M2 differential harness (real
-`hist_file_t` operations against an executable reference model with a
-recording PIO stub, replaying TLC counterexamples as concrete failing
-sequences), then runtime assertions derived from these invariants landing
-with the FG-3 fix PRs, each naming its model invariant. Until a bridge
-lands, a green model run constrains the design, not the Fortran.
+The first bridge is the M2 differential harness at
+`test/verification/harnesses/m2_history/`: real `hist_file_t` operations
+against an executable reference model (the FG-3 protocol of this spec,
+`reference_model.py`) with recording PIO/grid stubs. The TLC
+counterexamples of the three `prefix` scenarios replay there as concrete
+failing sequences (expectedFailure ratchets until FG-3 lands). The second
+bridge — runtime assertions derived from these invariants, each naming its
+model invariant — lands with the FG-3 fix PRs. The model and the harness
+reference model must change together; a green model run alone constrains
+the design, not the Fortran.
 
 ### 5. Blind spots
 

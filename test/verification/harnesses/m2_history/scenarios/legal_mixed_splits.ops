@@ -1,0 +1,21 @@
+# Legal: mixed inst+avg volume at a 2-step cadence (no override), each
+# field routed to its own split file.
+dtime 1800
+volume h1 2 2*nsteps F %c.cam.%u%f.%y-%m-%d-%s.nc
+field Fi inst F
+field Fa avg F
+setup
+nstep 1
+sample Fi 41.0
+sample Fa 40.0
+nstep 2
+sample Fi 43.0
+sample Fa 44.0
+write
+nstep 3
+sample Fi 41.0
+sample Fa 40.0
+nstep 4
+sample Fi 43.0
+sample Fa 44.0
+write

@@ -1,0 +1,18 @@
+# Legal: unconditional inst field at 1*nsteps with rollover (mfilt=2).
+# The shape of every shipped 1*nsteps testmod; must match the reference.
+dtime 1800
+volume h1 2 1*nsteps F %c.cam.%u%f.%y-%m-%d-%s.nc
+field F1 inst F
+setup
+nstep 1
+sample F1 42.0
+write
+nstep 2
+sample F1 42.0
+write
+nstep 3
+sample F1 42.0
+write
+nstep 4
+sample F1 42.0
+write

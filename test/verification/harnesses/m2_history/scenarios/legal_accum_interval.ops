@@ -1,0 +1,26 @@
+# Legal: avg/min/max fields over 2-step intervals, sampled every step.
+# Exercises the real buffer arithmetic: avg 42, min 40, max 44.
+dtime 1800
+volume h1 2 2*nsteps F %c.cam.%u%f.%y-%m-%d-%s.nc
+field Favg avg F
+field Fmin min F
+field Fmax max F
+setup
+nstep 1
+sample Favg 40.0
+sample Fmin 40.0
+sample Fmax 40.0
+nstep 2
+sample Favg 44.0
+sample Fmin 44.0
+sample Fmax 44.0
+write
+nstep 3
+sample Favg 40.0
+sample Fmin 40.0
+sample Fmax 40.0
+nstep 4
+sample Favg 44.0
+sample Fmin 44.0
+sample Fmax 44.0
+write

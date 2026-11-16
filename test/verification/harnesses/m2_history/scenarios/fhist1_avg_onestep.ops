@@ -1,0 +1,14 @@
+# F-HIST-1 replay (TLC M2_prefix_fhist1 counterexample, concrete): an
+# avg-only volume at 1*nsteps.  The override commits 'lst' after has_*
+# were set, so only the accumulated file is created and the field is
+# never defined or written despite being sampled.
+dtime 1800
+volume h1 2 1*nsteps F %c.cam.%u%f.%y-%m-%d-%s.nc
+field F1 avg F
+setup
+nstep 1
+sample F1 42.0
+write
+nstep 2
+sample F1 42.0
+write
