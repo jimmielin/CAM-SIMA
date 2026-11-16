@@ -72,6 +72,8 @@ jobs:
           echo "936a262061c914694dfd669a543be24573c45d5aa0ff20a8b96b23d01e050e88  /tmp/tla2tools.jar" | sha256sum -c -
       - name: M2 history-lifecycle model scenarios
         run: TLA2TOOLS_JAR=/tmp/tla2tools.jar python3 test/verification/models/m2_history/run_m2.py
+      - name: M4 tracer_data bracketing oracle scenarios
+        run: python3 test/verification/models/m4_tracer_data/run_m4_oracle.py
 
   # M2 differential harness: the real hist_file_t code compiled against
   # recording stubs, driven through scenario op scripts and compared with
