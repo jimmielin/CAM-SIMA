@@ -116,6 +116,19 @@ def run_driver(ops_text):
     return events, proc.returncode
 
 
+def parse_float(text):
+    """Parse a Fortran-formatted real, tolerating the dropped exponent
+    letter of three-digit exponents ('5.319...-310'): ratchet scenarios
+    legitimately print uninitialized-memory denormals."""
+    try:
+        return float(text)
+    except ValueError:
+        mantissa_end = max(text.rfind("+"), text.rfind("-"))
+        if mantissa_end > 0:
+            return float(text[:mantissa_end] + "E" + text[mantissa_end:])
+        raise
+
+
 def split_kind(name, unit):
     """Infer a created file's split from the unit+suffix naming convention
     ('i' instantaneous / 'a' accumulated), a stable identifier assigned at
@@ -159,7 +172,7 @@ def compare(ops_text, events, unit="h1"):
                 opens[-1]["defs"].add((files[handle][1], var))
         elif kind == "writefield":
             handle, var, frame = ev[1], ev[2], int(ev[3])
-            values = [float(v) for v in ev[4:]]
+            values = [parse_float(v) for v in ev[4:]]
             if var in scenario_fields:
                 writes.append((var, files[handle][1], len(opens) - 1,
                                frame, values))
@@ -292,7 +305,7 @@ class M2HarnessTests(unittest.TestCase):
         events, _ = run_driver(ops)
         frames = [e for e in events if e[0] == "writefield" and e[2] == "F1"]
         self.assertEqual(len(frames), 2)
-        unsampled = [float(v) for v in frames[1][4:]]
+        unsampled = [parse_float(v) for v in frames[1][4:]]
         self.assertTrue(all(abs(v - FILLVALUE) > 1.0 for v in unsampled),
                         "unsampled frame unexpectedly wrote _FillValue - "
                         "has FG-3 landed? retire this ratchet")

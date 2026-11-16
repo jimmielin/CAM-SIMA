@@ -103,7 +103,9 @@ contains
       write(line, '(5a,i0)') 'writefield|', trim(itoa(fh)), '|', trim(vname), &
            '|', frame
       do idx = 1, nvals
-         write(valstr, '(es24.16)') values(idx)
+         ! Three-digit exponent width: a denormal from an uninitialized
+         ! buffer must still print with its E (es24.16 would drop it)
+         write(valstr, '(es25.16e3)') values(idx)
          line = trim(line)//'|'//trim(adjustl(valstr))
       end do
       call ev_emit(line)
