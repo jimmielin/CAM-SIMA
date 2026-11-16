@@ -61,6 +61,11 @@ try:
     from hypothesis.stateful import (RuleBasedStateMachine, rule, invariant,
                                      initialize)
     HAVE_HYPOTHESIS = True
+    # Keep all Hypothesis storage (example DB and the constants cache, which
+    # ignores database=None) out of the repository root.
+    import hypothesis.configuration as _hypothesis_config
+    _hypothesis_config.set_hypothesis_home_dir(
+        tempfile.mkdtemp(prefix="cam_hypothesis_"))
 except ImportError:
     HAVE_HYPOTHESIS = False
 
