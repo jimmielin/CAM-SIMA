@@ -36,6 +36,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+      - name: Install xmllint (registry schema validation)
+        run: |
+          sudo apt-get update
+          sudo apt-get install libxml2-utils
       - name: Checkout externals used by the generator code paths
         run: |
           bin/git-fleximod update ccpp-framework
