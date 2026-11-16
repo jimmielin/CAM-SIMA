@@ -27,3 +27,20 @@ jobs:
         run: python3 test/verification/checkers/check_registry_ic_defaults.py
       - name: MPI broadcast / namelist XML type agreement (P6)
         run: python3 test/verification/checkers/check_bcast_types.py
+
+  # Property suites execute real generator code paths (cam_autogen,
+  # BuildCacheCAM, gen_registry), so they need the ccpp_framework and cime
+  # externals. Known-open defects are expectedFailure ratchets: when the fix
+  # lands the unexpected success fails CI until the marker is removed.
+  verification_properties:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Checkout externals used by the generator code paths
+        run: |
+          bin/git-fleximod update ccpp-framework
+          bin/git-fleximod update cime
+      - name: Install hypothesis
+        run: python3 -m pip install hypothesis
+      - name: Build-cache property suite
+        run: python3 test/verification/properties/test_build_cache.py
