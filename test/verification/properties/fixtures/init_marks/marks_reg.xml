@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- Init-mark fixture registry: one variable per initialization class
+     (see test_init_marks.py for the class table). Standard names are
+     prefixed mark_ so generated-code assertions key on fixture-owned
+     identifiers only. -->
+<registry name="cam_registry" version="1.0">
+  <file name="marks_types" type="module">
+    <use module="ccpp_kinds" reference="kind_phys"/>
+    <variable local_name="theta_m" standard_name="mark_theta"
+              units="K" type="real" kind="kind_phys" allocatable="pointer">
+      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <ic_file_input_names>theta pot_temp</ic_file_input_names>
+    </variable>
+    <variable local_name="slp_m" standard_name="mark_slp"
+              units="Pa" type="real" kind="kind_phys" allocatable="pointer">
+      <dimensions>horizontal_dimension</dimensions>
+    </variable>
+    <variable local_name="prot_rho" standard_name="mark_prot"
+              units="kg m-3" type="real" kind="kind_phys"
+              allocatable="pointer" access="protected">
+      <dimensions>horizontal_dimension</dimensions>
+    </variable>
+    <variable local_name="init_only_m" standard_name="mark_init_only"
+              units="K" type="real" kind="kind_phys" allocatable="pointer">
+      <dimensions>horizontal_dimension</dimensions>
+      <initial_value>42.5_kind_phys</initial_value>
+    </variable>
+    <variable local_name="setout_m" standard_name="mark_setout"
+              units="Pa" type="real" kind="kind_phys" allocatable="pointer">
+      <dimensions>horizontal_dimension</dimensions>
+    </variable>
+    <variable local_name="badpath_init_m" standard_name="mark_badpath_init"
+              units="K" type="real" kind="kind_phys" allocatable="pointer">
+      <dimensions>vertical_layer_dimension</dimensions>
+      <initial_value>1.5_kind_phys</initial_value>
+    </variable>
+    <variable local_name="badpath_noinit_m" standard_name="mark_badpath_noinit"
+              units="K" type="real" kind="kind_phys" allocatable="pointer">
+      <dimensions>vertical_layer_dimension</dimensions>
+    </variable>
+    <variable local_name="const_m" standard_name="mark_const_q"
+              units="kg kg-1" type="real" kind="kind_phys"
+              allocatable="pointer" constituent="true">
+      <dimensions>horizontal_dimension vertical_layer_dimension</dimensions>
+      <ic_file_input_names>CONSTQ cnst_CONSTQ</ic_file_input_names>
+    </variable>
+  </file>
+</registry>

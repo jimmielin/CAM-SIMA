@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<suite name="marks_suite" version="1.0">
+  <group name="physics">
+    <scheme>marks_producer</scheme>
+    <scheme>marks_consumer</scheme>
+  </group>
+</suite>
