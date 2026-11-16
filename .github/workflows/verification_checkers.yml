@@ -48,3 +48,23 @@ jobs:
         run: python3 -m pip install hypothesis
       - name: Build-cache property suite
         run: python3 test/verification/properties/test_build_cache.py
+
+  # TLA+ protocol models: TLC exhaustively checks each scenario and the
+  # driver asserts every declared verdict (pre-fix scenarios must violate
+  # exactly their named invariant, fixed/legal scenarios must pass, fault
+  # injections must fail their liveness companion). The TLC jar is pinned
+  # by version and sha256 so verdict signals stay stable.
+  verification_models:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Fetch pinned TLC (tla2tools.jar, tlaplus release v1.7.4)
+        run: |
+          curl -sSL -o /tmp/tla2tools.jar https://github.com/tlaplus/tlaplus/releases/download/v1.7.4/tla2tools.jar
+          echo "936a262061c914694dfd669a543be24573c45d5aa0ff20a8b96b23d01e050e88  /tmp/tla2tools.jar" | sha256sum -c -
+      - name: M2 history-lifecycle model scenarios
+        run: TLA2TOOLS_JAR=/tmp/tla2tools.jar python3 test/verification/models/m2_history/run_m2.py
