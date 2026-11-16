@@ -96,10 +96,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - name: Install gfortran
+      - name: Install gfortran and xmllint (capgen validates suite XML)
         run: |
           sudo apt-get update
-          sudo apt-get install -y gfortran
+          sudo apt-get install -y gfortran libxml2-utils
       - name: Checkout the ccpp_framework submodule (capgen v0 pin)
         run: bin/git-fleximod update ccpp-framework
       - name: Fetch capgen-v1 at the recorded pin
