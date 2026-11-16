@@ -15,7 +15,8 @@ rules every artifact in this tree must follow, so the tree stands on its own.
 
 | Directory | Contents |
 |---|---|
-| `checkers/` | small static class checkers (stdlib Python; one class per checker) |
+| `checkers/` | small static class checkers (stdlib Python; one class per checker, shared reporting/baseline machinery in `vlib.py`) |
+| `baseline.json` | acknowledged findings per checker, each with a status (`bug` / `placeholder` / `triage`), tracking reference and justification; CI fails on violations not listed here and on entries that no longer fire (remove an entry in the PR that fixes it) |
 | `properties/` | Hypothesis property suites over the generators (`cam_autogen`, registry, buildnml) |
 | `models/` | TLA+/Alloy protocol specs, one subdirectory per model with its README |
 | `harnesses/` | differential harnesses connecting a model to the real code (reference model + recording stubs) |

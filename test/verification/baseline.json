@@ -1,0 +1,116 @@
+{
+  "_comment": [
+    "Acknowledged findings per checker. CI fails on any violation NOT listed",
+    "here (new instance of the class) and on any entry that no longer fires",
+    "(stale: the fix landed, so remove the entry in the same PR). Every entry",
+    "names its tracking reference: audit finding IDs are from the Sep/Nov 2026",
+    "CAM-SIMA audits, FG-n are that audit's fix groups. 'status' is one of:",
+    "bug (fix pending; entry must disappear with the fix PR), placeholder",
+    "(deliberate non-neutral value; entry stays until the registry schema can",
+    "declare it), triage (deliberateness not yet established; FG-1 sweep)."
+  ],
+  "check_bcast_types": {
+    "bcast:src/dynamics/se/dyn_comp.F90:se_dribble_in_rsplit_loop": {
+      "status": "bug",
+      "tracking": "F-se_time-1 / FG-2",
+      "justification": "real(r8) broadcast as one mpi_integer; non-master ranks keep uninitialized bytes. Fix: declare integer (XML and MPI already agree on integer)."
+    },
+    "nmlxml:se_dribble_in_rsplit_loop": {
+      "status": "bug",
+      "tracking": "F-se_time-1 / FG-2",
+      "justification": "namelist XML type integer vs Fortran real(r8); same root cause as the bcast finding, both disappear with the same fix."
+    }
+  },
+  "check_registry_ic_defaults": {
+    "registry:tpert": {
+      "status": "bug",
+      "tracking": "F-AP_MOIST-1 / FG-1",
+      "justification": "273.15 K fallback reads as a +273 K parcel perturbation in ZM on step 0 of every default cam4 run; IC names also miss CAM's uppercase TPERT. Fix: initial value 0, add TPERT ic name."
+    },
+    "registry:cldfrc": {
+      "status": "bug",
+      "tracking": "F-AP_MOIST-5 / FG-1",
+      "justification": "0.7 fallback runs ZM/Hack evaporation at 30 percent strength on step 0; IC name CLD misses CAM's CLOUD. Fix: initial value 0, add CLOUD ic name."
+    },
+    "registry:sst": {
+      "status": "placeholder",
+      "tracking": "FG-11 first-export contract",
+      "justification": "cam_in surface placeholder before the first coupler import; non-neutral by design, hazardous only if exported/read before the import (F-ap_rad-1 class)."
+    },
+    "registry:ts": {
+      "status": "placeholder",
+      "tracking": "FG-11 first-export contract",
+      "justification": "cam_in surface placeholder before the first coupler import."
+    },
+    "registry:tref": {
+      "status": "placeholder",
+      "tracking": "FG-11 first-export contract",
+      "justification": "cam_in surface placeholder before the first coupler import."
+    },
+    "registry:tbot": {
+      "status": "placeholder",
+      "tracking": "FG-11 first-export contract",
+      "justification": "cam_out bottom-level placeholder before the first physics fill."
+    },
+    "registry:thbot": {
+      "status": "placeholder",
+      "tracking": "FG-11 first-export contract",
+      "justification": "cam_out bottom-level placeholder before the first physics fill."
+    },
+    "registry:pbot": {
+      "status": "placeholder",
+      "tracking": "FG-11 first-export contract",
+      "justification": "cam_out bottom-level placeholder before the first physics fill."
+    },
+    "registry:psl": {
+      "status": "placeholder",
+      "tracking": "FG-11 first-export contract",
+      "justification": "cam_out sea-level-pressure placeholder before the first physics fill."
+    },
+    "registry:rho": {
+      "status": "placeholder",
+      "tracking": "FG-11 first-export contract",
+      "justification": "cam_out bottom-level density placeholder before the first physics fill."
+    },
+    "registry:ocnfrac": {
+      "status": "placeholder",
+      "tracking": "FG-11 first-export contract",
+      "justification": "cam_in ocean-fraction placeholder before the first coupler import."
+    },
+    "registry:fv": {
+      "status": "placeholder",
+      "tracking": "FG-11 first-export contract",
+      "justification": "cam_in friction-velocity placeholder before the first coupler import."
+    },
+    "registry:ram1": {
+      "status": "placeholder",
+      "tracking": "FG-11 first-export contract",
+      "justification": "cam_in aerodynamic-resistance placeholder before the first coupler import."
+    },
+    "registry:qcwat": {
+      "status": "placeholder",
+      "tracking": "FG-1 sweep",
+      "justification": "-1.0 is an impossible-value sentinel by convention (cloud water content cannot be negative); undeclared convention, should become an explicit sentinel when the registry schema can say so."
+    },
+    "registry:tcwat": {
+      "status": "placeholder",
+      "tracking": "FG-1 sweep",
+      "justification": "-1.0 impossible-value sentinel, same convention as qcwat."
+    },
+    "registry:lcwat": {
+      "status": "placeholder",
+      "tracking": "FG-1 sweep",
+      "justification": "-1.0 impossible-value sentinel, same convention as qcwat."
+    },
+    "registry:clubbtop": {
+      "status": "triage",
+      "tracking": "FG-1 sweep",
+      "justification": "1.0 as a vertical-index placeholder (top of model) is plausibly deliberate; confirm a step-0 reader cannot mistake it for data before accepting permanently."
+    },
+    "registry:relvar_in": {
+      "status": "triage",
+      "tracking": "FG-1 sweep",
+      "justification": "2.0 is PUMAS's documented relative-variance default, plausibly a deliberate scientific fallback; confirm against CAM's phys_inidat seeding before accepting permanently."
+    }
+  }
+}

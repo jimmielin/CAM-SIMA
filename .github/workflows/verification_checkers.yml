@@ -1,0 +1,29 @@
+name: Verification checkers
+
+# Static class checkers from test/verification/: each run reports
+# checked/violated/unknown and gates against test/verification/baseline.json
+# (fails on violations not in the baseline, and on baseline entries that no
+# longer fire). Self-tests run first so a broken checker cannot pass silently.
+# stdlib-Python only; no submodules required.
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - '**'
+
+jobs:
+  verification_checkers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Checker self-tests
+        run: |
+          python3 test/verification/checkers/check_registry_ic_defaults.py --self-test
+          python3 test/verification/checkers/check_bcast_types.py --self-test
+      - name: Registry IC default neutrality (P2)
+        run: python3 test/verification/checkers/check_registry_ic_defaults.py
+      - name: MPI broadcast / namelist XML type agreement (P6)
+        run: python3 test/verification/checkers/check_bcast_types.py
