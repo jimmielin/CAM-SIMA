@@ -1,0 +1,42 @@
+[ccpp-table-properties]
+  name = ledger_host_mod
+  type = module
+[ccpp-arg-table]
+  name = ledger_host_mod
+  type = module
+[ ncols ]
+  standard_name = horizontal_dimension
+  units = count
+  type = integer
+  protected = True
+  dimensions = ()
+[ pver ]
+  standard_name = vertical_layer_dimension
+  units = count
+  type = integer
+  protected = True
+  dimensions = ()
+[ nstep ]
+  standard_name = ledger_current_timestep
+  units = count
+  type = integer
+  protected = True
+  dimensions = ()
+[ temp ]
+  standard_name = ledger_temperature
+  units = K
+  type = real | kind = kind_phys
+  dimensions = (horizontal_dimension, vertical_layer_dimension)
+  allocatable = True
+[ num_tracked ]
+  standard_name = ledger_number_of_tracked_constituents
+  units = count
+  type = integer
+  protected = True
+  dimensions = ()
+[ tracked_stdnames ]
+  standard_name = ledger_tracked_constituent_names
+  units = count
+  type = character | kind = len=40
+  protected = True
+  dimensions = (ledger_number_of_tracked_constituents)

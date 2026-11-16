@@ -86,3 +86,26 @@ jobs:
         run: bin/git-fleximod update history
       - name: M2 differential harness
         run: python3 test/verification/harnesses/m2_history/run_m2_harness.py
+
+  # capgen v0-vs-v1 assumption ledger: one stub-host fixture generated,
+  # compiled and driven through its phases by both the pinned framework
+  # capgen (v0) and the capgen-v1 branch at the pin recorded in
+  # run_ledger.py, which also records the staged interface divergences.
+  # A behavioural difference fails as a named assumption (A1..A7).
+  verification_ledger:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install gfortran
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gfortran
+      - name: Checkout the ccpp_framework submodule (capgen v0 pin)
+        run: bin/git-fleximod update ccpp-framework
+      - name: Fetch capgen-v1 at the recorded pin
+        run: |
+          V1_PIN=$(python3 -c "import re;print(re.search(r'V1_PIN = \"([0-9a-f]+)\"',open('test/verification/ledger/run_ledger.py').read()).group(1))")
+          git clone --filter=blob:none https://github.com/NCAR/ccpp-framework /tmp/capgen-v1
+          git -C /tmp/capgen-v1 checkout "$V1_PIN"
+      - name: Assumption ledger (both generators)
+        run: CAPGEN_V1_ROOT=/tmp/capgen-v1 python3 test/verification/ledger/run_ledger.py --require-v1

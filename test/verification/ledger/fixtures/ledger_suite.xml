@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<suite name="ledger" version="1.0">
+  <group name="alpha">
+    <scheme>ldg_order_a</scheme>
+    <scheme>ldg_const</scheme>
+  </group>
+  <group name="beta">
+    <scheme>ldg_order_b</scheme>
+    <scheme>ldg_order_c</scheme>
+  </group>
+</suite>

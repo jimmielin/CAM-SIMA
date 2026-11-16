@@ -1,0 +1,125 @@
+[ccpp-table-properties]
+  name = ldg_order_a
+  type = scheme
+  dependencies = ledger_events.F90
+
+[ccpp-arg-table]
+  name = ldg_order_a_init
+  type = scheme
+[ errmsg ]
+  standard_name = ccpp_error_message
+  units = none
+  dimensions = ()
+  type = character
+  kind = len=512
+  intent = out
+[ errflg ]
+  standard_name = ccpp_error_code
+  units = 1
+  dimensions = ()
+  type = integer
+  intent = out
+
+[ccpp-arg-table]
+  name = ldg_order_a_timestep_init
+  type = scheme
+[ nstep ]
+  standard_name = ledger_current_timestep
+  units = count
+  dimensions = ()
+  type = integer
+  intent = in
+[ errmsg ]
+  standard_name = ccpp_error_message
+  units = none
+  dimensions = ()
+  type = character
+  kind = len=512
+  intent = out
+[ errflg ]
+  standard_name = ccpp_error_code
+  units = 1
+  dimensions = ()
+  type = integer
+  intent = out
+
+[ccpp-arg-table]
+  name = ldg_order_a_run
+  type = scheme
+[ ncol ]
+  standard_name = horizontal_loop_extent
+  units = count
+  dimensions = ()
+  type = integer
+  intent = in
+[ nstep ]
+  standard_name = ledger_current_timestep
+  units = count
+  dimensions = ()
+  type = integer
+  intent = in
+[ temp ]
+  standard_name = ledger_temperature
+  units = K
+  dimensions = (horizontal_loop_extent, vertical_layer_dimension)
+  type = real | kind = kind_phys
+  intent = in
+[ marker ]
+  standard_name = ledger_marker_field
+  units = 1
+  dimensions = (horizontal_loop_extent, vertical_layer_dimension)
+  type = real | kind = kind_phys
+  intent = out
+[ errmsg ]
+  standard_name = ccpp_error_message
+  units = none
+  dimensions = ()
+  type = character
+  kind = len=512
+  intent = out
+[ errflg ]
+  standard_name = ccpp_error_code
+  units = 1
+  dimensions = ()
+  type = integer
+  intent = out
+
+[ccpp-arg-table]
+  name = ldg_order_a_timestep_final
+  type = scheme
+[ nstep ]
+  standard_name = ledger_current_timestep
+  units = count
+  dimensions = ()
+  type = integer
+  intent = in
+[ errmsg ]
+  standard_name = ccpp_error_message
+  units = none
+  dimensions = ()
+  type = character
+  kind = len=512
+  intent = out
+[ errflg ]
+  standard_name = ccpp_error_code
+  units = 1
+  dimensions = ()
+  type = integer
+  intent = out
+
+[ccpp-arg-table]
+  name = ldg_order_a_final
+  type = scheme
+[ errmsg ]
+  standard_name = ccpp_error_message
+  units = none
+  dimensions = ()
+  type = character
+  kind = len=512
+  intent = out
+[ errflg ]
+  standard_name = ccpp_error_code
+  units = 1
+  dimensions = ()
+  type = integer
+  intent = out

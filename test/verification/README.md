@@ -20,7 +20,7 @@ rules every artifact in this tree must follow, so the tree stands on its own.
 | `properties/` | Hypothesis property suites over the generators (`cam_autogen`, registry, buildnml) |
 | `models/` | TLA+/Alloy protocol specs, one subdirectory per model with its README |
 | `harnesses/` | differential harnesses connecting a model to the real code (reference model + recording stubs) |
-| `ledger/` | the capgen assumption ledger: numbered assumptions A0..An, each with an executable check run against both the capgen-v0 pin and the capgen-v1 shim |
+| `ledger/` | the capgen assumption ledger: numbered assumptions A0..An, each with an executable check run against both the capgen-v0 pin and the capgen-v1 branch pin, the latter driven the way CAM-SIMA's capgen_compat shim drives it |
 
 ## Guarantee statement (required for every artifact)
 

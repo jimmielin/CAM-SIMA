@@ -1,0 +1,100 @@
+[ccpp-table-properties]
+  name = ldg_const
+  type = scheme
+  dependencies = ledger_events.F90
+
+[ccpp-arg-table]
+  name = ldg_const_register
+  type = scheme
+[ dyn_const ]
+  standard_name = dynamic_constituents_for_ldg_const
+  units = none
+  dimensions = (:)
+  type = ccpp_constituent_properties_t
+  intent = out
+  allocatable = true
+[ errmsg ]
+  standard_name = ccpp_error_message
+  units = none
+  dimensions = ()
+  type = character
+  kind = len=512
+  intent = out
+[ errflg ]
+  standard_name = ccpp_error_code
+  units = 1
+  dimensions = ()
+  type = integer
+  intent = out
+
+[ccpp-arg-table]
+  name = ldg_const_init
+  type = scheme
+[ errmsg ]
+  standard_name = ccpp_error_message
+  units = none
+  dimensions = ()
+  type = character
+  kind = len=512
+  intent = out
+[ errflg ]
+  standard_name = ccpp_error_code
+  units = 1
+  dimensions = ()
+  type = integer
+  intent = out
+
+[ccpp-arg-table]
+  name = ldg_const_run
+  type = scheme
+[ ncol ]
+  standard_name = horizontal_loop_extent
+  units = count
+  dimensions = ()
+  type = integer
+  intent = in
+[ nstep ]
+  standard_name = ledger_current_timestep
+  units = count
+  dimensions = ()
+  type = integer
+  intent = in
+[ num_tracked ]
+  standard_name = ledger_number_of_tracked_constituents
+  units = count
+  dimensions = ()
+  type = integer
+  intent = in
+[ tracked_stdnames ]
+  standard_name = ledger_tracked_constituent_names
+  units = count
+  dimensions = (ledger_number_of_tracked_constituents)
+  type = character | kind = len=*
+  intent = in
+[ const_array ]
+  standard_name = ccpp_constituents
+  units = none
+  dimensions = (horizontal_loop_extent, vertical_layer_dimension, number_of_ccpp_constituents)
+  type = real | kind = kind_phys
+  intent = inout
+[ cloud ]
+  standard_name = ldg_cloud_dry_mixing_ratio
+  diagnostic_name = LDGCLD
+  advected = .true.
+  units = kg kg-1
+  dimensions = (horizontal_loop_extent, vertical_layer_dimension)
+  type = real | kind = kind_phys
+  intent = inout
+[ errmsg ]
+  standard_name = ccpp_error_message
+  units = none
+  dimensions = ()
+  type = character
+  kind = len=512
+  intent = out
+[ errflg ]
+  standard_name = ccpp_error_code
+  units = 1
+  dimensions = ()
+  type = integer
+  intent = out
