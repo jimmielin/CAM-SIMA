@@ -248,9 +248,11 @@ if HAVE_HYPOTHESIS:
             self.ws.cleanup()
             logging.disable(logging.NOTSET)
 
+    # database=None: derandomized runs gain nothing from the example
+    # database, and it would otherwise litter .hypothesis/ in the repo root.
     CacheMachine.TestCase.settings = settings(
         max_examples=25, stateful_step_count=6, deadline=None,
-        derandomize=True,
+        derandomize=True, database=None,
         suppress_health_check=[HealthCheck.too_slow])
 
     class BuildCacheStateful(CacheMachine.TestCase):
