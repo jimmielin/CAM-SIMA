@@ -21,6 +21,23 @@
       "justification": "namelist XML type integer vs Fortran real(r8); same root cause as the bcast finding, both disappear with the same fix."
     }
   },
+  "check_readnl_bcast": {
+    "readnl:src/history/cam_hist_file.F90:hist_interp_out": {
+      "status": "bug",
+      "tracking": "history#9 (Sep 2026 audit)",
+      "justification": "Read from hist_file_config_nl on the root task, never broadcast; non-root ranks keep the .false. default and pass it to config_set_up_hist_config, so interpolated output is configured on the root rank only. Fix: broadcast as MPI_LOGICAL alongside the other hist_file_config_nl broadcasts."
+    },
+    "readnl:src/history/cam_hist_file.F90:hist_interp_nlat": {
+      "status": "bug",
+      "tracking": "history#9 (Sep 2026 audit)",
+      "justification": "Interpolation grid size read on the root task, never broadcast; non-root ranks keep 0. Same fix as hist_interp_out (MPI_INTEGER)."
+    },
+    "readnl:src/history/cam_hist_file.F90:hist_interp_nlon": {
+      "status": "bug",
+      "tracking": "history#9 (Sep 2026 audit)",
+      "justification": "Interpolation grid size read on the root task, never broadcast; non-root ranks keep 0. Same fix as hist_interp_out (MPI_INTEGER)."
+    }
+  },
   "check_registry_ic_defaults": {
     "registry:tpert": {
       "status": "bug",

@@ -23,10 +23,13 @@ jobs:
         run: |
           python3 test/verification/checkers/check_registry_ic_defaults.py --self-test
           python3 test/verification/checkers/check_bcast_types.py --self-test
+          python3 test/verification/checkers/check_readnl_bcast.py --self-test
       - name: Registry IC default neutrality (P2)
         run: python3 test/verification/checkers/check_registry_ic_defaults.py
       - name: MPI broadcast / namelist XML type agreement (P6)
         run: python3 test/verification/checkers/check_bcast_types.py
+      - name: Namelist read / broadcast completeness and counts (P6 companion)
+        run: python3 test/verification/checkers/check_readnl_bcast.py
 
   # Property suites execute real generator code paths (cam_autogen,
   # BuildCacheCAM, gen_registry), so they need the ccpp_framework and cime
