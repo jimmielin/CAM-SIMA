@@ -92,12 +92,17 @@ def scn_serial_two_file():
 
 
 def scn_serial_filelist():
-    """SERIAL with a real filenames_list: the next file comes from the list."""
+    """SERIAL with a real filenames_list: the next file comes from the list.
+    The datapath must be nonempty: incr_filename always joins
+    <datapath>/<list> (the join guard is present(datapath), which
+    check_files satisfies), so an empty datapath opens /<list> and aborts
+    -- a latent quirk the differential harness surfaced."""
     clock = Clock(1980, 12, 20, 0)
     model = build([monthly_file("a.nc", 1980), monthly_file("b.nc", 1981)],
                   clock,
                   filelists={"ozone_files": ["a.nc", "b.nc"]})
-    model.trcdata_init("a.nc", filelist="ozone_files", data_type="SERIAL")
+    model.trcdata_init("a.nc", filelist="ozone_files", datapath="data",
+                       data_type="SERIAL")
     model.advance_trcdata()
     assert model.file.next_filename == "b.nc" or \
         model.file.curr_filename == "b.nc", "list increment not taken"

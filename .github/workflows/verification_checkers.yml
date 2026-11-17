@@ -75,11 +75,13 @@ jobs:
       - name: M4 tracer_data bracketing oracle scenarios
         run: python3 test/verification/models/m4_tracer_data/run_m4_oracle.py
 
-  # M2 differential harness: the real hist_file_t code compiled against
-  # recording stubs, driven through scenario op scripts and compared with
-  # the executable reference model (the M2 TLA+ spec's fixed protocol).
-  # TLC counterexamples replay as expectedFailure ratchets until FG-3
-  # lands; an unexpected success fails the job.
+  # Differential harnesses: real CAM-SIMA code compiled against recording
+  # stubs, driven through the model scenarios and compared with the
+  # executable reference models. Counterexamples replay as expectedFailure
+  # ratchets until their fix groups land; an unexpected success fails the
+  # job. M2 = hist_file_t vs the M2 TLA+ spec's fixed protocol (needs the
+  # buffers submodule); M4 = tracer_data vs the bracketing oracle (needs
+  # gfortran only).
   verification_harness:
     runs-on: ubuntu-latest
     steps:
@@ -92,6 +94,8 @@ jobs:
         run: bin/git-fleximod update history
       - name: M2 differential harness
         run: python3 test/verification/harnesses/m2_history/run_m2_harness.py
+      - name: M4 differential harness
+        run: python3 test/verification/harnesses/m4_tracer_data/run_m4_harness.py
 
   # capgen v0-vs-v1 assumption ledger: one stub-host fixture generated,
   # compiled and driven through its phases by both the pinned framework

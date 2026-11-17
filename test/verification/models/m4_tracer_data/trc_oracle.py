@@ -467,12 +467,16 @@ class TracerDataModel:
             new_stem = (stem[:digits_beg]
                         + str(number).zfill(digits_end - digits_beg))
             return new_stem + (".nc" if filename.endswith(".nc") else "")
-        # filenames_list branch (1018-1100): open <datapath>/<list>
-        if file.pathname:
-            filepath = f"{file.pathname}/{file.filenames_list}"
-        else:
-            filepath = file.filenames_list
-        if file.filenames_list not in self.fs.filelists:   # 1032-1035
+        # filenames_list branch (1018-1100): open <datapath>/<list>.
+        # The join guard is present(datapath), not len_trim (1026-1030), and
+        # check_files always passes datapath, so an EMPTY pathname yields the
+        # absolute path /<list> -- a latent root-path quirk the differential
+        # harness caught in this model's first transcription (which had
+        # branched on emptiness). The Filesystem's filelists are rooted at
+        # the datapath, so an empty pathname never finds the list.
+        filepath = f"{file.pathname}/{file.filenames_list}"
+        if (not file.pathname or
+                file.filenames_list not in self.fs.filelists):  # 1032-1035
             raise Endrun("OPEN_FAIL", filepath)            # F-INPUTS-4
         names = self.fs.filelists[file.filenames_list]
         if filename == "":

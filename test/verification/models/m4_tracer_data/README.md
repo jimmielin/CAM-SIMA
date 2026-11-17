@@ -45,15 +45,18 @@ of the Nov 2026 state-machine audit; fix groups `calendar-date-mapping`,
   line citations, validated against the audit's live-code traces (the
   F-INPUTS-2 trace in `sections/INPUTS.md` is reproduced verbatim,
   including its two-call prefetch precondition). It does NOT execute the
-  Fortran: the differential harness (real `tracer_data.F90` against
-  recording stubs, M2-style) is the planned second bridge and will replay
-  these scenarios against the compiled code.
+  Fortran itself: that bridge is the differential harness
+  (`test/verification/harnesses/m4_tracer_data`), which compiles the real
+  `tracer_data.F90` against recording stubs and replays every replayable
+  scenario of this table against the compiled code.
 - **Blind spots**: data values and vertical/horizontal interpolation
   (weights only are modeled); restart paths (F-INPUTS-7, not implemented
   upstream); CYCLICAL_LIST; `datesec` sub-day records; the `stepTime`
-  mode (never set in SIMA). Until the differential harness exists, drift
-  between this model and the Fortran would go unnoticed — treat model
-  changes like code changes (cite lines).
+  mode (never set in SIMA). Drift between this model and the Fortran is
+  caught by the differential harness, which replays this table against
+  the compiled code (it caught one transcription error on its first run:
+  the `incr_filename` datapath join, see the harness README). Still treat
+  model changes like code changes (cite lines).
 
 ## Scenario table
 
@@ -94,9 +97,11 @@ inherits its expected behavior from the `fixed` scenarios:
   failing ("did the code get fixed?"). In the fix PR: make the flag's
   behavior the model's only behavior (delete the flag), delete the pre-fix
   scenario, and keep the `fixed` scenario as a plain legal scenario.
-- The differential harness, when built, replays this table against the
-  compiled Fortran; finding scenarios become expectedFailure ratchets
-  there (M2 procedure, see `harnesses/m2_history/README.md`).
+- The differential harness replays this table against the compiled
+  Fortran: each finding scenario runs there twice, as a fidelity test
+  (real == flags-off oracle, must pass today) and as an expectedFailure
+  ratchet against the flag-ON target semantics — retire both together
+  with the fix flag (`harnesses/m4_tracer_data/README.md`).
 
 ## Run
 
